@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { MessageBubble } from "./message-bubble";
 import { ThinkingIndicator } from "./thinking-indicator";
+import { getModelInfo } from "@/lib/models";
 import type { Message } from "@/lib/appwrite/types";
 
 interface MessageListProps {
@@ -20,6 +21,7 @@ export function MessageList({
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const modelName = getModelInfo(modelId).name;
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -62,7 +64,12 @@ export function MessageList({
     >
       <div className="max-w-3xl mx-auto space-y-2">
         {messages.map((message, index) => (
-          <MessageBubble key={message.$id} message={message} index={index} />
+          <MessageBubble 
+            key={message.$id} 
+            message={message} 
+            index={index} 
+            modelName={message.role === "assistant" ? modelName : undefined}
+          />
         ))}
 
         {isStreaming && streamingContent && (

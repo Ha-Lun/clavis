@@ -224,8 +224,13 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
         />
       </div>
       <div className="flex flex-col">
-        <ModelSelector chatId={chat.id} currentModel={chat.model} />
-        <ChatInput onSend={handleSend} onStop={handleStop} isStreaming={isStreaming} chatId={chat.id} />
+        <ChatInput 
+          onSend={handleSend} 
+          onStop={handleStop} 
+          isStreaming={isStreaming} 
+          chatId={chat.id} 
+          currentModel={chat.model}
+        />
       </div>
     </div>
   );

@@ -7,12 +7,10 @@ import { logout } from "@/lib/appwrite/auth-actions";
 import { useChatStore } from "@/stores/chat-store";
 import { useProjectStore } from "@/stores/project-store";
 import { useUIStore } from "@/stores/ui-store";
-import { getModelInfo } from "@/lib/models";
 import type { Chat, Project } from "@/lib/appwrite/types";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import {
   Zap,
   Plus,
@@ -22,6 +20,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -43,37 +43,57 @@ export function SidebarProvider({
   userEmail,
   userId,
 }: SidebarProviderProps) {
-  const { chats, setChats } = useChatStore();
-  const { projects, setProjects } = useProjectStore();
+  const { setChats } = useChatStore();
+  const { setProjects } = useProjectStore();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved !== null) {
+      setIsCollapsed(saved === "true");
+    }
+  }, []);
+
+  const toggleCollapse = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    localStorage.setItem("sidebar-collapsed", String(next));
+  };
 
   useEffect(() => {
     setChats(initialChats);
     setProjects(initialProjects);
   }, [initialChats, initialProjects, setChats, setProjects]);
 
-  const sidebarContent = (
-    <SidebarContent
-      chats={chats}
-      projects={projects}
-      userEmail={userEmail}
-      userId={userId}
-      onClose={() => setSidebarOpen(false)}
-    />
-  );
-
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-72 border-r border-[#1e1a2e] bg-[#0f0d1a]/80 backdrop-blur-[12px] flex-col">
-        {sidebarContent}
+      <aside 
+        className={cn(
+          "hidden lg:flex border-r border-[#1e1a2e] bg-[#0f0d1a]/80 backdrop-blur-[12px] flex-col transition-all duration-200 ease-in-out",
+          isCollapsed ? "w-[60px]" : "w-72"
+        )}
+      >
+        <SidebarContent
+          userEmail={userEmail}
+          userId={userId}
+          onClose={() => setSidebarOpen(false)}
+          isCollapsed={isCollapsed}
+          toggleCollapse={toggleCollapse}
+        />
       </aside>
 
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="w-72 p-0 bg-[#0f0d1a] border-r border-[#1e1a2e]">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          {sidebarContent}
+          <SidebarContent
+            userEmail={userEmail}
+            userId={userId}
+            onClose={() => setSidebarOpen(false)}
+            isCollapsed={false}
+          />
         </SheetContent>
       </Sheet>
     </>
@@ -81,21 +101,21 @@ export function SidebarProvider({
 }
 
 function SidebarContent({
-  chats,
-  projects,
   userEmail,
-  userId,
   onClose,
+  isCollapsed,
+  toggleCollapse,
 }: {
-  chats: Chat[];
-  projects: Project[];
   userEmail: string;
   userId: string;
   onClose: () => void;
+  isCollapsed: boolean;
+  toggleCollapse?: () => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { removeChat } = useChatStore();
+  const { chats, removeChat } = useChatStore();
+  const { projects } = useProjectStore();
   const [isChatsOpen, setIsChatsOpen] = useState(true);
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
 
@@ -108,7 +128,6 @@ function SidebarContent({
       });
       const { chat } = await res.json();
       if (chat) {
-        // Appwrite returns $id, map it
         const chatWithId = { ...chat, id: chat.$id ?? chat.id };
         useChatStore.getState().setChats([chatWithId, ...useChatStore.getState().chats]);
         router.push(`/dashboard/chat/${chatWithId.id}`);
@@ -137,184 +156,161 @@ function SidebarContent({
     await logout();
   };
 
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "now";
-    if (mins < 60) return `${mins}m`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d`;
-    return date.toLocaleDateString();
-  };
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-4 flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg bg-[#c9a84c]/10 flex items-center justify-center">
-          <Zap className="h-5 w-5 text-[#c9a84c]" />
-        </div>
-        <span className="text-xl font-bold text-[#c9a84c] drop-shadow-[0_0_8px_rgba(201,168,76,0.3)]">
-          Flux
-        </span>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className={cn(
+        "p-4 flex items-center justify-between",
+        isCollapsed && "flex-col gap-4 px-0"
+      )}>
+        <Link 
+          href="/dashboard" 
+          className={cn(
+            "flex items-center gap-2 group",
+            isCollapsed && "justify-center w-full"
+          )}
+        >
+          <div className="h-8 w-8 rounded-lg bg-[#c9a84c]/10 flex items-center justify-center shrink-0 group-hover:bg-[#c9a84c]/20 transition-colors">
+            <Zap className="h-5 w-5 text-[#c9a84c]" />
+          </div>
+          {!isCollapsed && (
+            <span className="text-xl font-bold text-[#c9a84c] drop-shadow-[0_0_8px_rgba(201,168,76,0.3)] font-serif">
+              Flux
+            </span>
+          )}
+        </Link>
+        
+        {toggleCollapse && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleCollapse}
+            className="h-8 w-8 text-muted-foreground hover:text-[#c9a84c] transition-colors"
+          >
+            {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
+        )}
       </div>
 
       {/* New Chat Button */}
-      <div className="px-3 mb-2">
+      <div className={cn("px-3 mb-4", isCollapsed && "px-2")}>
         <Button
           onClick={handleNewChat}
-          className="w-full justify-start gap-2 bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] border border-transparent hover:border-[#c9a84c] transition-all duration-200 text-[#f5f0ff]"
-          id="new-chat-button"
+          className={cn(
+            "w-full justify-start gap-2 bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] border border-transparent hover:border-[#c9a84c] transition-all duration-200 text-[#f5f0ff] rounded-xl",
+            isCollapsed && "justify-center px-0 h-10"
+          )}
         >
           <Plus className="h-4 w-4" />
-          New Chat
+          {!isCollapsed && <span>New Chat</span>}
         </Button>
       </div>
 
-      <Separator />
+      {!isCollapsed && <Separator className="bg-[#1e1a2e]/50" />}
 
-      {/* Chat List */}
-      <ScrollArea className="flex-1 px-2">
-        <div className="py-2">
-          <div className="flex items-center justify-between px-2 mb-2">
-            <button 
-              onClick={() => setIsChatsOpen(!isChatsOpen)}
-              className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#f5f0ff] transition-colors"
-            >
-              {isChatsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              Recent Chats
-            </button>
-            <button
-              onClick={handleNewChat}
-              className="p-1 hover:bg-[#7c3aed]/20 rounded-full text-muted-foreground hover:text-[#c9a84c] transition-colors"
-              aria-label="New Chat"
-            >
-              <Plus className="h-3 w-3" />
-            </button>
-          </div>
-          {isChatsOpen && (
-            chats.length === 0 ? (
-            <p className="px-2 text-sm text-muted-foreground">
-              No chats yet
-            </p>
-          ) : (
-            <div className="space-y-0.5">
-              {chats.map((chat, index) => {
-                const chatId = chat.$id ?? chat.id;
-                const isActive =
-                  pathname === `/dashboard/chat/${chatId}`;
-                return (
-                  <Link
-                    key={chatId}
-                    href={`/dashboard/chat/${chatId}`}
-                    onClick={onClose}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    className={cn(
-                      "group flex items-center gap-2 px-2 py-2 rounded-full text-base transition-all duration-150 hover:bg-[#7c3aed]/10 hover:shadow-[0_0_12px_rgba(124,58,237,0.1)] animate-slide-in-left opacity-0",
-                      isActive && "bg-[#7c3aed]/10"
-                    )}
-                  >
-                    <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate font-medium">
-                        {chat.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatTime(chat.$updatedAt ?? "")}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => handleDeleteChat(chatId, e)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-destructive"
-                      aria-label="Delete chat"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </Link>
-                );
-              })}
+      {/* Main Content */}
+      <ScrollArea className={cn("flex-1 px-2", isCollapsed && "hidden")}>
+        <div className="py-4">
+          {/* Chats section */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between px-2 mb-2 group">
+              <button 
+                onClick={() => setIsChatsOpen(!isChatsOpen)}
+                className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground/60 uppercase tracking-[0.1em] hover:text-[#f5f0ff] transition-colors"
+              >
+                {isChatsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                Recent
+              </button>
             </div>
-          )
-          )}
-        </div>
-
-        <Separator className="my-2" />
-
-        {/* Projects */}
-        <div className="py-2">
-          <div className="flex items-center justify-between px-2 mb-2">
-            <button 
-              onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-              className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#f5f0ff] transition-colors"
-            >
-              {isProjectsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-              Projects
-            </button>
-            <Link
-              href="/dashboard/projects"
-              onClick={onClose}
-              className="p-1 hover:bg-[#7c3aed]/20 rounded-full text-muted-foreground hover:text-[#c9a84c] transition-colors"
-              aria-label="New Project"
-            >
-              <Plus className="h-3 w-3" />
-            </Link>
+            {isChatsOpen && (
+              <div className="space-y-0.5">
+                {chats.length === 0 ? (
+                  <p className="px-2 text-xs text-muted-foreground/50 italic">No history</p>
+                ) : (
+                  chats.map((chat) => {
+                    const chatId = chat.$id ?? chat.id;
+                    const isActive = pathname === `/dashboard/chat/${chatId}`;
+                    return (
+                      <Link
+                        key={chatId}
+                        href={`/dashboard/chat/${chatId}`}
+                        className={cn(
+                          "group flex items-center gap-2 px-2 py-1 rounded-md text-[13px] transition-all duration-150 hover:bg-[#7c3aed]/10 text-muted-foreground hover:text-[#f5f0ff]",
+                          isActive && "bg-[#7c3aed]/10 text-[#f5f0ff] font-medium"
+                        )}
+                      >
+                        <MessageSquare className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#a78bfa]" : "text-muted-foreground/40")} />
+                        <span className="flex-1 truncate">{chat.title}</span>
+                        <button
+                          onClick={(e) => handleDeleteChat(chatId, e)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-red-400"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </Link>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
-          {isProjectsOpen && (
-            projects.length === 0 ? (
-            <p className="px-2 text-sm text-muted-foreground">
-              No projects
-            </p>
-          ) : (
-            <div className="space-y-0.5">
-              {projects.map((project, index) => {
-                const projectId = project.$id ?? project.id;
-                return (
-                  <Link
-                    key={projectId}
-                    href={`/dashboard/projects/${projectId}`}
-                    onClick={onClose}
-                    style={{ animationDelay: `${(chats.length + index) * 50}ms` }}
-                    className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 rounded-full text-base transition-all duration-150 hover:bg-[#7c3aed]/10 hover:shadow-[0_0_12px_rgba(124,58,237,0.1)] animate-slide-in-left opacity-0",
-                      pathname ===
-                        `/dashboard/projects/${projectId}` &&
-                        "bg-[#7c3aed]/10"
-                    )}
-                  >
-                    <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{project.name}</span>
-                  </Link>
-                );
-              })}
+
+          {/* Projects section */}
+          <div>
+            <div className="flex items-center justify-between px-2 mb-2">
+              <button 
+                onClick={() => setIsProjectsOpen(!isProjectsOpen)}
+                className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground/60 uppercase tracking-[0.1em] hover:text-[#f5f0ff] transition-colors"
+              >
+                {isProjectsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                Projects
+              </button>
             </div>
-          )
-          )}
+            {isProjectsOpen && (
+              <div className="space-y-0.5">
+                {projects.length === 0 ? (
+                  <p className="px-2 text-xs text-muted-foreground/50 italic">No projects</p>
+                ) : (
+                  projects.map((project) => {
+                    const projectId = project.$id ?? project.id;
+                    const isActive = pathname === `/dashboard/projects/${projectId}`;
+                    return (
+                      <Link
+                        key={projectId}
+                        href={`/dashboard/projects/${projectId}`}
+                        className={cn(
+                          "flex items-center gap-2 px-2 py-1 rounded-md text-[13px] transition-all duration-150 hover:bg-[#7c3aed]/10 text-muted-foreground hover:text-[#f5f0ff]",
+                          isActive && "bg-[#7c3aed]/10 text-[#f5f0ff] font-medium"
+                        )}
+                      >
+                        <FolderOpen className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#a78bfa]" : "text-muted-foreground/40")} />
+                        <span className="truncate">{project.name}</span>
+                      </Link>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </ScrollArea>
 
-      <Separator />
-
-      {/* User section */}
-      <div className="p-3">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium text-primary">
+      {/* Footer */}
+      <div className={cn("p-3 border-t border-[#1e1a2e]/50 mt-auto", isCollapsed && "px-2")}>
+        <div className={cn("flex items-center gap-3", isCollapsed && "flex-col")}>
+          <div className="h-8 w-8 rounded-full bg-[#7c3aed]/20 flex items-center justify-center text-xs font-medium text-[#a78bfa] shrink-0">
             {userEmail.charAt(0).toUpperCase()}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{userEmail}</p>
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-medium truncate text-muted-foreground">{userEmail}</p>
+            </div>
+          )}
           <Button
             variant="ghost"
             size="icon"
             onClick={handleLogout}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            id="logout-button"
+            className={cn("h-8 w-8 text-muted-foreground hover:text-red-400 transition-colors", isCollapsed && "h-10 w-10")}
           >
             <LogOut className="h-4 w-4" />
           </Button>
