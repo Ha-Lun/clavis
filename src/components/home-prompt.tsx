@@ -87,7 +87,7 @@ export function HomePrompt() {
         
         {/* Bottom Bar: Model Selector & Send Button */}
         <div className="flex items-center justify-between mt-2 pl-2 pr-1">
-          <Select value={model} onValueChange={setModel} disabled={isSubmitting}>
+          <Select value={model} onValueChange={(value) => setModel(value as typeof model)} disabled={isSubmitting}>
             <SelectTrigger className="w-[180px] md:w-[200px] h-9 text-xs border border-[#7c3aed]/20 bg-[#0f0d1a]/50 hover:bg-[#7c3aed]/10 backdrop-blur-[12px] text-[#c9a84c] rounded-full transition-colors">
               <div className="flex items-center gap-2">
                 <ModelIcon modelId={model} className="h-4 w-4" />
