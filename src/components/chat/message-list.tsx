@@ -58,9 +58,9 @@ export function MessageList({
       ref={containerRef}
       className="flex-1 overflow-y-auto scrollbar-thin px-4 py-6"
     >
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-2">
         {messages.map((message, index) => (
-          <MessageBubble key={message.id} message={message} index={index} />
+          <MessageBubble key={message.$id} message={message} index={index} />
         ))}
 
         {isStreaming && streamingContent && (
