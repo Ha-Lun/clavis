@@ -2,19 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import { MessageBubble } from "./message-bubble";
-import { TypingIndicator } from "./typing-indicator";
+import { ThinkingIndicator } from "./thinking-indicator";
 import type { Message } from "@/lib/appwrite/types";
 
 interface MessageListProps {
   messages: Message[];
   isStreaming: boolean;
   streamingContent: string;
+  modelId: string;
 }
 
 export function MessageList({
   messages,
   isStreaming,
   streamingContent,
+  modelId,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,7 @@ export function MessageList({
           <h2 className="text-xl font-semibold mb-2">Start a conversation</h2>
           <p className="text-muted-foreground text-sm max-w-sm">
             Send a message to begin chatting with the AI. You can switch models
-            at any time using the selector above.
+            at any time using the selector below.
           </p>
         </div>
       </div>
@@ -81,7 +83,9 @@ export function MessageList({
           />
         )}
 
-        {isStreaming && !streamingContent && <TypingIndicator />}
+        {isStreaming && !streamingContent && (
+          <ThinkingIndicator modelId={modelId} />
+        )}
 
         <div ref={bottomRef} />
       </div>

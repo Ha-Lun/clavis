@@ -220,6 +220,7 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
           messages={messages}
           isStreaming={isStreaming}
           streamingContent={smoothContent}
+          modelId={chat.model}
         />
       </div>
       <div className="flex flex-col">
