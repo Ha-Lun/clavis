@@ -1,7 +1,7 @@
 import { createAdminClient, createSessionClient } from "@/lib/appwrite/server";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
-import { ID, InputFile } from "node-appwrite";
+import { ID } from "node-appwrite";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,11 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Upload to storage
     const fileId = ID.unique();
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const inputFile = InputFile.fromBuffer(buffer, file.name);
-
-    await admin.storage.createFile(BUCKET_ID, fileId, inputFile);
+    await admin.storage.createFile(BUCKET_ID, fileId, file);
 
     // Build file URL
     const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!;

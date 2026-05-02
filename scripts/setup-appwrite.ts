@@ -19,6 +19,8 @@ import {
   Storage,
   Permission,
   Role,
+  ID,
+  IndexType,
 } from "node-appwrite";
 
 // Use the existing Appwrite database — do NOT try to create it
@@ -164,7 +166,7 @@ async function main() {
   async function createIndex(
     collectionId: string,
     key: string,
-    type: "key" | "fulltext" | "unique",
+    type: IndexType,
     attributes: string[],
     orders?: ("asc" | "desc")[]
   ) {
@@ -200,7 +202,7 @@ async function main() {
   await createStringAttribute("projects", "description", 2048, false);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("projects", "idx_userId", "key", ["userId"]);
+  await createIndex("projects", "idx_userId", IndexType.Key, ["userId"]);
 
   // ── Chats Collection ─────────────────────────────────────
   await createCollection("chats", "Chats");
@@ -211,9 +213,9 @@ async function main() {
   await createDatetimeAttribute("chats", "updatedAt", true);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("chats", "idx_userId", "key", ["userId"]);
-  await createIndex("chats", "idx_userId_updatedAt", "key", ["userId", "updatedAt"], ["asc", "desc"]);
-  await createIndex("chats", "idx_projectId", "key", ["projectId"]);
+  await createIndex("chats", "idx_userId", IndexType.Key, ["userId"]);
+  await createIndex("chats", "idx_userId_updatedAt", IndexType.Key, ["userId", "updatedAt"], ["asc", "desc"]);
+  await createIndex("chats", "idx_projectId", IndexType.Key, ["projectId"]);
 
   // ── Messages Collection ──────────────────────────────────
   await createCollection("messages", "Messages");
@@ -222,7 +224,7 @@ async function main() {
   await createStringAttribute("messages", "content", 1000000, true);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("messages", "idx_chatId", "key", ["chatId"]);
+  await createIndex("messages", "idx_chatId", IndexType.Key, ["chatId"]);
 
   // ── Files Collection ─────────────────────────────────────
   await createCollection("files", "Files");
@@ -234,8 +236,8 @@ async function main() {
   await createIntegerAttribute("files", "sizeBytes", false);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("files", "idx_userId", "key", ["userId"]);
-  await createIndex("files", "idx_chatId", "key", ["chatId"]);
+  await createIndex("files", "idx_userId", IndexType.Key, ["userId"]);
+  await createIndex("files", "idx_chatId", IndexType.Key, ["chatId"]);
 
   // ── Storage Bucket ───────────────────────────────────────
   try {
