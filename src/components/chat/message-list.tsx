@@ -66,11 +66,15 @@ export function MessageList({
         {isStreaming && streamingContent && (
           <MessageBubble
             message={{
-              id: "streaming",
+              $id: "streaming",
+              $collectionId: "",
+              $databaseId: "",
+              $createdAt: new Date().toISOString(),
+              $updatedAt: new Date().toISOString(),
+              $permissions: [],
               chat_id: "",
               role: "assistant",
               content: streamingContent,
-              created_at: new Date().toISOString(),
             }}
             index={messages.length}
             isStreaming
