@@ -121,7 +121,7 @@ export default function SettingsPage() {
               </p>
               <Select
                 value={defaultModel}
-                onValueChange={setDefaultModel}
+                onValueChange={(value) => setDefaultModel(value as typeof defaultModel)}
               >
                 <SelectTrigger id="settings-default-model" className="w-full">
                   <SelectValue />
