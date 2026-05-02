@@ -82,11 +82,15 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
 
       // Add user message optimistically
       const userMessage: Message = {
-        id: crypto.randomUUID(),
+        $id: crypto.randomUUID(),
+        $collectionId: "",
+        $databaseId: "",
+        $createdAt: new Date().toISOString(),
+        $updatedAt: new Date().toISOString(),
+        $permissions: [],
         chat_id: chat.id,
         role: "user",
         content: content.trim(),
-        created_at: new Date().toISOString(),
       };
       addMessage(userMessage);
 
@@ -133,11 +137,15 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
 
         // Add completed assistant message
         const assistantMessage: Message = {
-          id: crypto.randomUUID(),
+          $id: crypto.randomUUID(),
+          $collectionId: "",
+          $databaseId: "",
+          $createdAt: new Date().toISOString(),
+          $updatedAt: new Date().toISOString(),
+          $permissions: [],
           chat_id: chat.id,
           role: "assistant",
           content: fullContent,
-          created_at: new Date().toISOString(),
         };
         addMessage(assistantMessage);
       } catch (err: any) {
@@ -146,24 +154,32 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
           const partialContent = useChatStore.getState().streamingContent;
           if (partialContent) {
             const partialMessage: Message = {
-              id: crypto.randomUUID(),
+              $id: crypto.randomUUID(),
+              $collectionId: "",
+              $databaseId: "",
+              $createdAt: new Date().toISOString(),
+              $updatedAt: new Date().toISOString(),
+              $permissions: [],
               chat_id: chat.id,
               role: "assistant",
               content: partialContent,
-              created_at: new Date().toISOString(),
             };
             addMessage(partialMessage);
           }
         } else {
           const errorMessage: Message = {
-            id: crypto.randomUUID(),
+            $id: crypto.randomUUID(),
+            $collectionId: "",
+            $databaseId: "",
+            $createdAt: new Date().toISOString(),
+            $updatedAt: new Date().toISOString(),
+            $permissions: [],
             chat_id: chat.id,
             role: "assistant",
             content:
               err instanceof Error
                 ? `⚠️ ${err.message}`
                 : "⚠️ Something went wrong. Please try again.",
-            created_at: new Date().toISOString(),
           };
           addMessage(errorMessage);
         }
