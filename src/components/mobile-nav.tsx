@@ -8,7 +8,7 @@ export function MobileNav() {
   const { toggleSidebar } = useUIStore();
 
   return (
-    <div className="lg:hidden flex items-center gap-2 p-3 border-b border-border">
+    <div className="lg:hidden flex items-center gap-2 p-3 border-b border-border bg-background">
       <Button
         variant="ghost"
         size="icon"

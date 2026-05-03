@@ -51,21 +51,20 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
     <div className={cn("flex items-center", className)}>
       <Select value={model} onValueChange={handleModelChange}>
         <SelectTrigger 
-          className="h-8 min-w-[140px] gap-2 px-3 text-[11px] font-medium border border-[#7c3aed]/20 bg-[#0f0d1a]/40 hover:bg-[#7c3aed]/10 backdrop-blur-md text-[#c9a84c] rounded-full transition-all duration-200"
+          className="h-8 min-w-[140px] gap-2 px-3 text-[12px] font-medium border border-border bg-card hover:bg-secondary text-foreground rounded-[6px] transition-all duration-200 shadow-sm focus:ring-primary focus:border-primary"
           id="model-selector-trigger"
         >
-          <ModelIcon modelId={model} className="h-3.5 w-3.5 shrink-0" />
           <SelectValue placeholder="Select model" />
         </SelectTrigger>
-        <SelectContent className="bg-[#0f0d1a]/95 backdrop-blur-xl border-[#1e1a2e] text-[#f5f0ff] min-w-[200px]">
+        <SelectContent className="bg-card border-border text-foreground min-w-[200px] shadow-stripe-elevated rounded-[8px]">
           {MODELS.map((m) => (
             <SelectItem 
               key={m.id} 
               value={m.id} 
-              className="text-xs hover:bg-[#7c3aed]/10 focus:bg-[#7c3aed]/10 rounded-lg py-2 transition-colors"
+              className="text-[13px] font-light text-muted-foreground hover:bg-primary/5 focus:bg-primary/5 focus:text-foreground rounded-[6px] py-2 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <ModelIcon modelId={m.id} className="h-3.5 w-3.5 opacity-80" />
+                <ModelIcon modelId={m.id} className="h-4 w-4 opacity-70" />
                 <span>{m.name}</span>
               </div>
             </SelectItem>

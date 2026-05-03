@@ -29,6 +29,7 @@ import {
   SheetContent,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface SidebarProviderProps {
   initialChats: Chat[];
@@ -71,7 +72,7 @@ export function SidebarProvider({
       {/* Desktop sidebar */}
       <aside 
         className={cn(
-          "hidden lg:flex border-r border-[#1e1a2e] bg-[#0f0d1a]/80 backdrop-blur-[12px] flex-col transition-all duration-200 ease-in-out",
+          "hidden lg:flex border-r border-border bg-secondary flex-col transition-all duration-200 ease-in-out z-20",
           isCollapsed ? "w-[60px]" : "w-72"
         )}
       >
@@ -86,7 +87,7 @@ export function SidebarProvider({
 
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-[#0f0d1a] border-r border-[#1e1a2e]">
+        <SheetContent side="left" className="w-72 p-0 bg-secondary border-r border-border">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarContent
             userEmail={userEmail}
@@ -170,53 +171,56 @@ function SidebarContent({
             isCollapsed && "justify-center w-full"
           )}
         >
-          <div className="h-8 w-8 rounded-lg bg-[#c9a84c]/10 flex items-center justify-center shrink-0 group-hover:bg-[#c9a84c]/20 transition-colors">
-            <Zap className="h-5 w-5 text-[#c9a84c]" />
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+            <Zap className="h-4 w-4 text-primary" />
           </div>
           {!isCollapsed && (
-            <span className="text-xl font-bold text-[#c9a84c] drop-shadow-[0_0_8px_rgba(201,168,76,0.3)] font-serif">
+            <span className="text-xl font-light tracking-tight text-foreground">
               Flux
             </span>
           )}
         </Link>
         
-        {toggleCollapse && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleCollapse}
-            className="h-8 w-8 text-muted-foreground hover:text-[#c9a84c] transition-colors"
-          >
-            {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
-        )}
+        <div className={cn("flex items-center gap-1", isCollapsed && "flex-col")}>
+          <ThemeToggle className="h-8 w-8" />
+          {toggleCollapse && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleCollapse}
+              className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
+            >
+              {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* New Chat Button */}
-      <div className={cn("px-3 mb-4", isCollapsed && "px-2")}>
+      <div className={cn("px-4 mb-4", isCollapsed && "px-2")}>
         <Button
           onClick={handleNewChat}
           className={cn(
-            "w-full justify-start gap-2 bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] border border-transparent hover:border-[#c9a84c] transition-all duration-200 text-[#f5f0ff] rounded-xl",
+            "w-full justify-start gap-2 bg-card text-foreground border border-border hover:border-primary shadow-stripe-ambient hover:shadow-stripe-elevated transition-all duration-300 rounded-[8px] font-normal",
             isCollapsed && "justify-center px-0 h-10"
           )}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 text-primary" />
           {!isCollapsed && <span>New Chat</span>}
         </Button>
       </div>
 
-      {!isCollapsed && <Separator className="bg-[#1e1a2e]/50" />}
+      {!isCollapsed && <Separator className="bg-border" />}
 
       {/* Main Content */}
-      <ScrollArea className={cn("flex-1 px-2", isCollapsed && "hidden")}>
+      <ScrollArea className={cn("flex-1 px-3", isCollapsed && "hidden")}>
         <div className="py-4">
           {/* Chats section */}
           <div className="mb-6">
             <div className="flex items-center justify-between px-2 mb-2 group">
               <button 
                 onClick={() => setIsChatsOpen(!isChatsOpen)}
-                className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground/60 uppercase tracking-[0.1em] hover:text-[#f5f0ff] transition-colors"
+                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-[0.05em] hover:text-foreground transition-colors"
               >
                 {isChatsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                 Recent
@@ -225,7 +229,7 @@ function SidebarContent({
             {isChatsOpen && (
               <div className="space-y-0.5">
                 {chats.length === 0 ? (
-                  <p className="px-2 text-xs text-muted-foreground/50 italic">No history</p>
+                  <p className="px-2 text-xs text-muted-foreground/60 italic">No history</p>
                 ) : (
                   chats.map((chat) => {
                     const chatId = chat.$id ?? chat.id;
@@ -235,15 +239,15 @@ function SidebarContent({
                         key={chatId}
                         href={`/dashboard/chat/${chatId}`}
                         className={cn(
-                          "group flex items-center gap-2 px-2 py-1 rounded-md text-[13px] transition-all duration-150 hover:bg-[#7c3aed]/10 text-muted-foreground hover:text-[#f5f0ff]",
-                          isActive && "bg-[#7c3aed]/10 text-[#f5f0ff] font-medium"
+                          "group flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-[13px] transition-all duration-150 text-muted-foreground hover:bg-primary/5 hover:text-foreground",
+                          isActive && "bg-primary/10 text-foreground font-medium"
                         )}
                       >
-                        <MessageSquare className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#a78bfa]" : "text-muted-foreground/40")} />
+                        <MessageSquare className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground/60")} />
                         <span className="flex-1 truncate">{chat.title}</span>
                         <button
                           onClick={(e) => handleDeleteChat(chatId, e)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-red-400"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-muted-foreground hover:text-accent"
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
@@ -260,7 +264,7 @@ function SidebarContent({
             <div className="flex items-center justify-between px-2 mb-2">
               <button 
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground/60 uppercase tracking-[0.1em] hover:text-[#f5f0ff] transition-colors"
+                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-[0.05em] hover:text-foreground transition-colors"
               >
                 {isProjectsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                 Projects
@@ -269,7 +273,7 @@ function SidebarContent({
             {isProjectsOpen && (
               <div className="space-y-0.5">
                 {projects.length === 0 ? (
-                  <p className="px-2 text-xs text-muted-foreground/50 italic">No projects</p>
+                  <p className="px-2 text-xs text-muted-foreground/60 italic">No projects</p>
                 ) : (
                   projects.map((project) => {
                     const projectId = project.$id ?? project.id;
@@ -279,11 +283,11 @@ function SidebarContent({
                         key={projectId}
                         href={`/dashboard/projects/${projectId}`}
                         className={cn(
-                          "flex items-center gap-2 px-2 py-1 rounded-md text-[13px] transition-all duration-150 hover:bg-[#7c3aed]/10 text-muted-foreground hover:text-[#f5f0ff]",
-                          isActive && "bg-[#7c3aed]/10 text-[#f5f0ff] font-medium"
+                          "flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-[13px] transition-all duration-150 text-muted-foreground hover:bg-primary/5 hover:text-foreground",
+                          isActive && "bg-primary/10 text-foreground font-medium"
                         )}
                       >
-                        <FolderOpen className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#a78bfa]" : "text-muted-foreground/40")} />
+                        <FolderOpen className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground/60")} />
                         <span className="truncate">{project.name}</span>
                       </Link>
                     );
@@ -296,21 +300,21 @@ function SidebarContent({
       </ScrollArea>
 
       {/* Footer */}
-      <div className={cn("p-3 border-t border-[#1e1a2e]/50 mt-auto", isCollapsed && "px-2")}>
+      <div className={cn("p-4 border-t border-border mt-auto", isCollapsed && "px-2")}>
         <div className={cn("flex items-center gap-3", isCollapsed && "flex-col")}>
-          <div className="h-8 w-8 rounded-full bg-[#7c3aed]/20 flex items-center justify-center text-xs font-medium text-[#a78bfa] shrink-0">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
             {userEmail.charAt(0).toUpperCase()}
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-medium truncate text-muted-foreground">{userEmail}</p>
+              <p className="text-[13px] font-medium truncate text-foreground">{userEmail}</p>
             </div>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={handleLogout}
-            className={cn("h-8 w-8 text-muted-foreground hover:text-red-400 transition-colors", isCollapsed && "h-10 w-10")}
+            className={cn("h-8 w-8 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors rounded-full", isCollapsed && "h-10 w-10")}
           >
             <LogOut className="h-4 w-4" />
           </Button>

@@ -78,7 +78,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   return (
     <div className="p-4 pb-6">
       <div className="max-w-3xl mx-auto">
-        <div className="relative flex flex-col bg-white/5 rounded-[24px] border border-[#7c3aed]/30 backdrop-blur-[12px] focus-within:shadow-[0_0_20px_rgba(124,58,237,0.15)] focus-within:border-[#7c3aed]/50 transition-all duration-300">
+        <div className="relative flex flex-col bg-card rounded-[12px] border border-border shadow-stripe-ambient focus-within:shadow-stripe-focus focus-within:border-primary transition-all duration-300">
           {/* Textarea */}
           <textarea
             ref={textareaRef}
@@ -88,7 +88,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
             placeholder="Ask Flux anything..."
             rows={1}
             className={cn(
-              "w-full resize-none bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/50 pt-4 pb-2 px-5 max-h-[200px] scrollbar-thin"
+              "w-full resize-none bg-transparent text-[16px] font-light text-foreground outline-none placeholder:text-muted-foreground/60 pt-4 pb-2 px-5 max-h-[200px] scrollbar-thin"
             )}
             disabled={isStreaming}
             id="chat-message-input"
@@ -107,7 +107,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground/60 hover:text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors"
+                className="h-8 w-8 rounded-[6px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 id="file-upload-button"
@@ -126,7 +126,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
               {isStreaming ? (
                 <Button
                   size="icon"
-                  className="h-8 w-8 shrink-0 rounded-full transition-all duration-200 bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                  className="h-8 w-8 shrink-0 rounded-[6px] transition-all duration-200 bg-accent/10 text-accent hover:bg-accent/20"
                   onClick={onStop}
                   id="stop-message-button"
                 >
@@ -136,10 +136,10 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                 <Button
                   size="icon"
                   className={cn(
-                    "h-8 w-8 shrink-0 rounded-full transition-all duration-200",
+                    "h-8 w-8 shrink-0 rounded-[6px] transition-all duration-200",
                     content.trim()
-                      ? "bg-[#c9a84c] text-[#0f0d1a] hover:bg-[#c9a84c]/90"
-                      : "bg-white/5 text-muted-foreground/40"
+                      ? "bg-primary text-white hover:bg-primary/90 shadow-[0_2px_8px_rgba(83,58,253,0.3)]"
+                      : "bg-secondary text-muted-foreground"
                   )}
                   onClick={handleSubmit}
                   disabled={!content.trim()}
@@ -151,7 +151,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
             </div>
           </div>
         </div>
-        <p className="text-[10px] text-muted-foreground/40 text-center mt-3 tracking-tight">
+        <p className="text-[10px] text-muted-foreground text-center mt-3 tracking-tight font-light">
           Shift + Enter for new line
         </p>
       </div>

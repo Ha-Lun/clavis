@@ -70,65 +70,66 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8">
+    <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8 bg-background">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Settings className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-4 mb-10">
+          <div className="h-12 w-12 rounded-[12px] bg-primary/10 flex items-center justify-center shadow-stripe-ambient">
+            <Settings className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Settings</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="text-3xl font-light tracking-tight text-foreground">Settings</h1>
+            <p className="text-muted-foreground font-light text-[15px]">
               Manage your preferences
             </p>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Profile</CardTitle>
-            <CardDescription>
+        <Card className="border-border shadow-stripe-ambient rounded-[16px] overflow-hidden bg-card">
+          <CardHeader className="bg-secondary/30 border-b border-border pb-6">
+            <CardTitle className="text-xl font-light tracking-tight text-foreground">Profile</CardTitle>
+            <CardDescription className="text-muted-foreground font-light text-[14px]">
               Your personal information and preferences
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="settings-email">Email</Label>
+          <CardContent className="space-y-8 pt-6">
+            <div className="space-y-3">
+              <Label htmlFor="settings-email" className="text-foreground font-medium">Email</Label>
               <Input
                 id="settings-email"
                 value={email}
                 disabled
-                className="bg-muted/50"
+                className="bg-secondary/50 border-border text-muted-foreground h-11 px-4 rounded-[8px]"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="settings-display-name">Display Name</Label>
+            <div className="space-y-3">
+              <Label htmlFor="settings-display-name" className="text-foreground font-medium">Display Name</Label>
               <Input
                 id="settings-display-name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Your name"
+                className="bg-background border-border text-foreground focus-visible:ring-primary focus-visible:border-primary h-11 px-4 rounded-[8px]"
               />
             </div>
 
-            <Separator />
+            <Separator className="bg-border" />
 
-            <div className="space-y-2">
-              <Label htmlFor="settings-default-model">Default Model</Label>
-              <p className="text-xs text-muted-foreground">
+            <div className="space-y-3">
+              <Label htmlFor="settings-default-model" className="text-foreground font-medium">Default Model</Label>
+              <p className="text-[13px] text-muted-foreground font-light">
                 This model will be selected by default when creating new chats
               </p>
               <Select
                 value={defaultModel}
                 onValueChange={(value) => setDefaultModel(value as typeof defaultModel)}
               >
-                <SelectTrigger id="settings-default-model" className="w-full">
+                <SelectTrigger id="settings-default-model" className="w-full bg-background border-border text-foreground focus:ring-primary h-11 px-4 rounded-[8px]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-card border-border shadow-stripe-elevated rounded-[8px]">
                   {MODELS.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
+                    <SelectItem key={m.id} value={m.id} className="text-foreground hover:bg-primary/5 focus:bg-primary/5 cursor-pointer">
                       {m.name}
                     </SelectItem>
                   ))}
@@ -136,8 +137,12 @@ export default function SettingsPage() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              <Button onClick={handleSave} disabled={loading}>
+            <div className="flex items-center gap-3 pt-4">
+              <Button 
+                onClick={handleSave} 
+                disabled={loading}
+                className="bg-primary hover:bg-primary/90 text-white shadow-stripe-ambient rounded-[8px] h-10 px-6 font-normal"
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -14,41 +14,41 @@ function getModelThinking(modelId: string): {
   if (modelId.includes("deepseek")) {
     return {
       label: "DeepSeek is thinking...",
-      color: "#06b6d4",
+      color: "#533afd",
       animation: <DeepSeekAnimation />,
     };
   }
   if (modelId.includes("kimi") || modelId.includes("moonshot")) {
     return {
       label: "Kimi is thinking...",
-      color: "#c4b5fd",
+      color: "#ea2261",
       animation: <KimiAnimation />,
     };
   }
   if (modelId.includes("minimax")) {
     return {
       label: "MiniMax is thinking...",
-      color: "#a78bfa",
+      color: "#f96bee",
       animation: <MiniMaxAnimation />,
     };
   }
   if (modelId.includes("glm")) {
     return {
       label: "GLM is thinking...",
-      color: "#c9a84c",
+      color: "var(--foreground)",
       animation: <GLMAnimation />,
     };
   }
   if (modelId.includes("nemotron") || modelId.includes("nvidia")) {
     return {
       label: "Nemotron is thinking...",
-      color: "#22c55e",
+      color: "#15be53",
       animation: <NemotronAnimation />,
     };
   }
   return {
     label: "Thinking...",
-    color: "#c9a84c",
+    color: "var(--primary)",
     animation: <DeepSeekAnimation />,
   };
 }
@@ -60,9 +60,9 @@ function DeepSeekAnimation() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="block h-2.5 w-2.5 rounded-full"
+          className="block h-2 w-2 rounded-full"
           style={{
-            backgroundColor: "#06b6d4",
+            backgroundColor: "var(--primary)",
             animation: "deepseekRipple 0.8s ease-in-out infinite",
             animationDelay: `${i * 120}ms`,
           }}
@@ -76,14 +76,14 @@ function DeepSeekAnimation() {
 function KimiAnimation() {
   return (
     <div
-      className="relative h-6 w-6"
+      className="relative h-5 w-5"
       style={{ animation: "kimiSpin 3s linear infinite" }}
     >
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          background: "radial-gradient(circle at 35% 35%, transparent 40%, #c4b5fd 42%, #c4b5fd 58%, transparent 60%)",
-          filter: "drop-shadow(0 0 6px rgba(196, 181, 253, 0.6))",
+          background: "radial-gradient(circle at 35% 35%, transparent 40%, var(--accent) 42%, var(--accent) 58%, transparent 60%)",
+          filter: "drop-shadow(0 0 4px rgba(234, 34, 97, 0.4))",
         }}
       />
     </div>
@@ -97,9 +97,9 @@ function MiniMaxAnimation() {
       {[0, 1, 2, 3].map((i) => (
         <span
           key={i}
-          className="block h-2.5 w-2.5 rounded-sm"
+          className="block h-2 w-2 rounded-sm"
           style={{
-            backgroundColor: i % 2 === 0 ? "#a78bfa" : "#f5f0ff",
+            backgroundColor: i % 2 === 0 ? "#f96bee" : "var(--border)",
             animation: "minimaxPulse 1.2s ease-in-out infinite",
             animationDelay: `${i * 200}ms`,
           }}
@@ -113,23 +113,23 @@ function MiniMaxAnimation() {
 function GLMAnimation() {
   return (
     <svg
-      width="32"
-      height="16"
+      width="28"
+      height="14"
       viewBox="0 0 32 16"
       fill="none"
       className="overflow-visible"
     >
       <path
         d="M2 14 C8 2, 14 2, 16 8 C18 14, 24 14, 30 2"
-        stroke="#c9a84c"
-        strokeWidth="2"
+        stroke="currentColor"
+        strokeWidth="2.5"
         strokeLinecap="round"
         fill="none"
+        className="text-foreground"
         style={{
           strokeDasharray: 60,
           strokeDashoffset: 0,
           animation: "glmBrush 2.5s ease-in-out infinite",
-          filter: "drop-shadow(0 0 4px rgba(201, 168, 76, 0.5))",
         }}
       />
     </svg>
@@ -142,27 +142,27 @@ function NemotronAnimation() {
     <div className="relative h-6 w-8 flex items-center justify-center">
       {/* Center node */}
       <span
-        className="absolute h-3 w-3 rounded-full"
+        className="absolute h-2.5 w-2.5 rounded-full"
         style={{
-          backgroundColor: "#22c55e",
+          backgroundColor: "#15be53",
           animation: "nemotronPulse 1.5s ease-out infinite",
-          boxShadow: "0 0 8px rgba(34, 197, 94, 0.6)",
+          boxShadow: "0 0 6px rgba(21, 190, 83, 0.4)",
         }}
       />
       {/* Ring 1 */}
       <span
-        className="absolute h-5 w-5 rounded-full border"
+        className="absolute h-4 w-4 rounded-full border"
         style={{
-          borderColor: "#22c55e",
+          borderColor: "#15be53",
           opacity: 0,
           animation: "nemotronRing 1.5s ease-out infinite",
         }}
       />
       {/* Ring 2 */}
       <span
-        className="absolute h-7 w-7 rounded-full border"
+        className="absolute h-6 w-6 rounded-full border"
         style={{
-          borderColor: "#22c55e",
+          borderColor: "#15be53",
           opacity: 0,
           animation: "nemotronRing 1.5s ease-out infinite 0.5s",
         }}
@@ -179,8 +179,8 @@ export function ThinkingIndicator({ modelId }: ThinkingIndicatorProps) {
     <div className="animate-fade-in flex items-center gap-3 py-4 px-1" style={{ minHeight: "60px" }}>
       {animation}
       <span
-        className="text-sm font-light tracking-wide"
-        style={{ color, fontFamily: "var(--font-cormorant), serif" }}
+        className="text-[13px] font-medium tracking-wide"
+        style={{ color }}
       >
         {label}
       </span>

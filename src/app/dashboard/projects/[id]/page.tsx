@@ -55,38 +55,38 @@ export default async function ProjectDetailPage({
   const chats = chatsResult.documents;
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8">
+    <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8 bg-background">
       <div className="max-w-4xl mx-auto">
         <Link
           href="/dashboard/projects"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-primary transition-colors mb-6 font-medium"
         >
           <ArrowLeft className="h-4 w-4" />
           All Projects
         </Link>
 
-        <div className="flex items-start gap-3 mb-8">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <FolderOpen className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-4 mb-10">
+          <div className="h-12 w-12 rounded-[12px] bg-primary/10 flex items-center justify-center shadow-stripe-ambient">
+            <FolderOpen className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{project.name as string}</h1>
+            <h1 className="text-3xl font-light tracking-tight text-foreground">{project.name as string}</h1>
             {project.description && (
-              <p className="text-muted-foreground text-sm mt-1">
+              <p className="text-muted-foreground font-light text-[15px] mt-1">
                 {project.description as string}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Chats in this project</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-light tracking-tight text-foreground">Chats in this project</h2>
         </div>
 
         {chats.length === 0 ? (
-          <div className="text-center py-12 animate-fade-in">
-            <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm">
+          <div className="text-center py-16 animate-fade-in">
+            <MessageSquare className="h-10 w-10 text-muted-foreground/40 mx-auto mb-4" />
+            <p className="text-muted-foreground text-[15px] font-light">
               No chats assigned to this project yet
             </p>
           </div>
@@ -100,20 +100,20 @@ export default async function ProjectDetailPage({
                   href={`/dashboard/chat/${chat.$id}`}
                   className="group"
                 >
-                  <Card className="h-full hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200">
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-base line-clamp-1 group-hover:text-primary transition-colors">
+                  <Card className="h-full bg-card border border-border shadow-stripe-ambient hover:shadow-stripe-elevated hover:border-primary transition-all duration-300 rounded-[16px] overflow-hidden">
+                    <CardHeader className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <CardTitle className="text-lg font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                           {chat.title as string}
                         </CardTitle>
                         <Badge
                           variant="secondary"
-                          className="text-[10px] shrink-0"
+                          className="text-[10px] shrink-0 bg-secondary text-muted-foreground hover:bg-border font-medium tracking-wide rounded-[6px]"
                         >
                           {model.shortName}
                         </Badge>
                       </div>
-                      <CardDescription className="text-xs">
+                      <CardDescription className="text-[13px] text-muted-foreground font-light pt-2">
                         {new Date(chat.$updatedAt as string).toLocaleDateString()}
                       </CardDescription>
                     </CardHeader>

@@ -4,89 +4,85 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 4%;
+    --background: 40 18% 97%; /* #faf9f5 Claude Canvas */
+    --foreground: 213 77% 11%; /* #061b31 Stripe Deep Navy */
+    
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
+    --card-foreground: 213 77% 11%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 4%;
-    --primary: 250 90% 65%;
+    --popover-foreground: 213 77% 11%;
+    
+    --primary: 248 98% 61%; /* #533afd Stripe Purple */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 6% 10%;
+    
+    --secondary: 40 40% 96%; /* #f5f0e8 Claude Surface Soft */
+    --secondary-foreground: 213 77% 11%;
+    
+    --muted: 215 19% 47%; /* #64748d Stripe Slate */
+    --muted-foreground: 215 19% 47%;
+    
+    --accent: 341 83% 53%; /* #ea2261 Stripe Ruby */
+    --accent-foreground: 0 0% 100%;
+    
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 250 90% 65%;
-    --radius: 0.625rem;
+    
+    --border: 210 40% 93%; /* #e5edf5 Stripe Border */
+    --input: 210 40% 93%;
+    --ring: 248 98% 61%; /* #533afd Stripe Purple */
+    --radius: 0.375rem; /* 6px Stripe Conservative Radius */
   }
 
   .dark {
-    --background: 240 10% 4%;
-    --foreground: 0 0% 95%;
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 95%;
-    --popover: 240 10% 8%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 250 90% 65%;
+    --background: 240 10% 4%; /* #0a0a0f Deepest Luxury Navy */
+    --foreground: 240 5% 90%; /* Soft White */
+    
+    --card: 240 10% 7%; /* #0f0d1a Dark Card */
+    --card-foreground: 240 5% 90%;
+    
+    --popover: 240 10% 7%;
+    --popover-foreground: 240 5% 90%;
+    
+    --primary: 248 98% 61%; /* Stripe Purple (same as light) */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 55%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 63% 51%;
+    
+    --secondary: 240 10% 12%; /* Dark Sidebar Surface */
+    --secondary-foreground: 240 5% 90%;
+    
+    --muted: 240 5% 30%;
+    --muted-foreground: 240 5% 65%;
+    
+    --accent: 341 83% 53%; /* Stripe Ruby */
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 250 90% 65%;
+    
+    --border: 240 10% 15%; /* #1e1a2e Subtle Border */
+    --input: 240 10% 15%;
+    --ring: 248 98% 61%;
   }
 }
 
 @layer base {
   * {
-    @apply border-[#1e1a2e];
+    @apply border-border;
   }
 
   body {
-    @apply bg-[#0a0a0f] text-[#f5f0ff];
+    @apply bg-background text-foreground antialiased;
   }
 }
 
-@keyframes gradient-shift {
-  0% {
-    background-color: #0a0a0f;
-  }
-  33% {
-    background-color: #110d24;
-  }
-  66% {
-    background-color: #0d0a1a;
-  }
-  100% {
-    background-color: #0a0a0f;
-  }
-}
-
-.animate-gradient-shift {
-  animation: gradient-shift 25s ease-in-out infinite;
-}
-
-/* Custom scrollbar */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #7c3aed transparent;
+    scrollbar-color: var(--border) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 2px;
+    width: 6px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -94,18 +90,29 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #7c3aed;
-    border-radius: 3px;
+    @apply bg-border;
+    border-radius: 9999px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #a78bfa;
+    @apply bg-muted;
+  }
+
+  /* Stripe-inspired Theme-Aware Shadows */
+  .shadow-stripe-ambient {
+    box-shadow: 0px 15px 35px 0px rgba(0, 0, 0, 0.08);
+  }
+  
+  .shadow-stripe-elevated {
+    box-shadow: 0px 30px 45px -30px rgba(0, 0, 0, 0.3), 0px 18px 36px -18px rgba(0, 0, 0, 0.15);
+  }
+
+  .shadow-stripe-deep {
+    box-shadow: 0px 14px 21px -14px rgba(0, 0, 0, 0.4), 0px 8px 17px -8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .shadow-stripe-focus {
+    box-shadow: 0 0 0 2px hsla(var(--primary), 0.4);
   }
 }
 
-/* Smooth transitions for interactive elements */
-@layer utilities {
-  .transition-default {
-    @apply transition-all duration-200 ease-out;
-  }
-}

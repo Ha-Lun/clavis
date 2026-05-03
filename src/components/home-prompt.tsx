@@ -58,23 +58,23 @@ export function HomePrompt() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full max-w-3xl mx-auto px-4 animate-fade-in">
+    <div className="flex flex-col items-center justify-center h-full w-full max-w-3xl mx-auto px-4 animate-fade-in pb-12">
       {/* Wordmark */}
-      <div className="mb-12 text-center">
-        <h1 className="text-6xl md:text-7xl font-bold text-[#c9a84c] drop-shadow-[0_0_15px_rgba(201,168,76,0.5)] tracking-wide font-serif italic">
+      <div className="mb-16 text-center">
+        <h1 className="text-6xl md:text-[80px] font-light tracking-tighter text-foreground bg-clip-text">
           Flux
         </h1>
       </div>
 
       {/* Main Input Box */}
-      <div className="w-full relative flex flex-col gap-0 bg-white/5 rounded-[24px] border border-[#7c3aed]/30 backdrop-blur-[12px] focus-within:shadow-[0_0_30px_rgba(124,58,237,0.1)] focus-within:border-[#7c3aed]/50 transition-all duration-300">
+      <div className="w-full relative flex flex-col gap-0 bg-card rounded-xl border border-border shadow-stripe-elevated focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all duration-300">
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask anything..."
-          rows={4}
-          className="w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground/30 pt-5 px-6 pb-2 scrollbar-thin font-sans"
+          rows={3}
+          className="w-full resize-none bg-transparent text-[18px] md:text-[20px] font-light leading-relaxed outline-none placeholder:text-muted-foreground/60 pt-6 px-6 pb-2 scrollbar-thin text-foreground"
           disabled={isSubmitting}
         />
         
@@ -84,7 +84,7 @@ export function HomePrompt() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full text-muted-foreground/40 hover:text-[#c9a84c] hover:bg-[#c9a84c]/10"
+              className="h-9 w-9 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
               disabled={isSubmitting}
             >
               <Paperclip className="h-4 w-4" />
@@ -100,10 +100,10 @@ export function HomePrompt() {
             <Button
               size="icon"
               className={cn(
-                "h-9 w-9 shrink-0 rounded-full transition-all duration-300",
+                "h-9 w-9 shrink-0 rounded-md transition-all duration-300",
                 content.trim()
-                  ? "bg-[#c9a84c] text-[#0f0d1a] hover:bg-[#c9a84c]/90 shadow-[0_0_20px_rgba(201,168,76,0.2)]"
-                  : "bg-white/5 text-muted-foreground/20"
+                  ? "bg-primary text-white hover:bg-primary/90 shadow-[0_2px_8px_rgba(83,58,253,0.3)]"
+                  : "bg-secondary text-muted-foreground"
               )}
               onClick={() => handleSubmit()}
               disabled={!content.trim() || isSubmitting}
@@ -115,17 +115,17 @@ export function HomePrompt() {
       </div>
 
       {/* Suggestion Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full mt-12">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full mt-16">
         {SUGGESTIONS.map((s, i) => (
           <button
             key={i}
             onClick={() => handleSubmit(s.label)}
             disabled={isSubmitting}
             style={{ animationDelay: `${i * 50}ms` }}
-            className="flex flex-col items-start gap-2 p-4 text-left bg-white/5 border border-[#1e1a2e] hover:border-[#7c3aed]/40 backdrop-blur-md rounded-2xl transition-all duration-300 hover:bg-[#7c3aed]/10 hover:-translate-y-1 animate-fade-up group"
+            className="flex flex-col items-start gap-3 p-5 text-left bg-card border border-border rounded-[12px] transition-all duration-300 hover:border-primary/50 shadow-stripe-ambient hover:shadow-stripe-elevated hover:-translate-y-1 animate-fade-up group"
           >
-            <s.icon className="h-4 w-4 text-[#c9a84c] group-hover:animate-pulse" />
-            <span className="text-[13px] font-medium text-[#f5f0ff]/60 group-hover:text-[#f5f0ff]">
+            <s.icon className="h-5 w-5 text-primary opacity-80 group-hover:opacity-100 group-hover:animate-pulse" />
+            <span className="text-[15px] font-light text-foreground">
               {s.label}
             </span>
           </button>
