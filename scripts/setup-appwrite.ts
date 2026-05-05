@@ -24,7 +24,7 @@ import {
 } from "node-appwrite";
 
 // Use the existing Appwrite database — do NOT try to create it
-const DATABASE_ID = "69f62a8001dafec8332";
+const DATABASE_ID = "69f62a80001dafec8332";
 const BUCKET_ID = "flux-uploads";
 
 async function main() {
@@ -197,47 +197,47 @@ async function main() {
 
   // ── Projects Collection ──────────────────────────────────
   await createCollection("projects", "Projects");
-  await createStringAttribute("projects", "userId", 36, true);
+  await createStringAttribute("projects", "user_id", 36, true);
   await createStringAttribute("projects", "name", 256, true);
   await createStringAttribute("projects", "description", 2048, false);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("projects", "idx_userId", IndexType.Key, ["userId"]);
+  await createIndex("projects", "idx_user_id", IndexType.Key, ["user_id"]);
 
   // ── Chats Collection ─────────────────────────────────────
   await createCollection("chats", "Chats");
-  await createStringAttribute("chats", "userId", 36, true);
-  await createStringAttribute("chats", "projectId", 36, false);
-  await createStringAttribute("chats", "title", 256, true, "New Chat");
-  await createStringAttribute("chats", "model", 128, true, "deepseek-ai/deepseek-v4-flash");
+  await createStringAttribute("chats", "user_id", 36, true);
+  await createStringAttribute("chats", "project_id", 36, false);
+  await createStringAttribute("chats", "title", 256, true);
+  await createStringAttribute("chats", "model", 128, true);
   await createDatetimeAttribute("chats", "updatedAt", true);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("chats", "idx_userId", IndexType.Key, ["userId"]);
-  await createIndex("chats", "idx_userId_updatedAt", IndexType.Key, ["userId", "updatedAt"], ["asc", "desc"]);
-  await createIndex("chats", "idx_projectId", IndexType.Key, ["projectId"]);
+  await createIndex("chats", "idx_user_id", IndexType.Key, ["user_id"]);
+  await createIndex("chats", "idx_user_id_updatedAt", IndexType.Key, ["user_id", "updatedAt"], ["asc", "desc"]);
+  await createIndex("chats", "idx_project_id", IndexType.Key, ["project_id"]);
 
   // ── Messages Collection ──────────────────────────────────
   await createCollection("messages", "Messages");
-  await createStringAttribute("messages", "chatId", 36, true);
+await createStringAttribute("messages", "chat_id", 36, true);
   await createStringAttribute("messages", "role", 16, true);
   await createStringAttribute("messages", "content", 1000000, true);
-  console.log("   ⏳ Waiting for attributes to sync...");
+  console.log("   Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("messages", "idx_chatId", IndexType.Key, ["chatId"]);
+  await createIndex("messages", "idx_chat_id", IndexType.Key, ["chat_id"]);
 
   // ── Files Collection ─────────────────────────────────────
   await createCollection("files", "Files");
-  await createStringAttribute("files", "userId", 36, true);
-  await createStringAttribute("files", "chatId", 36, true);
+  await createStringAttribute("files", "user_id", 36, true);
+  await createStringAttribute("files", "chat_id", 36, true);
   await createStringAttribute("files", "name", 256, true);
   await createStringAttribute("files", "storagePath", 512, true);
   await createStringAttribute("files", "mimeType", 128, false);
   await createIntegerAttribute("files", "sizeBytes", false);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
-  await createIndex("files", "idx_userId", IndexType.Key, ["userId"]);
-  await createIndex("files", "idx_chatId", IndexType.Key, ["chatId"]);
+  await createIndex("files", "idx_user_id", IndexType.Key, ["user_id"]);
+  await createIndex("files", "idx_chat_id", IndexType.Key, ["chat_id"]);
 
   // ── Storage Bucket ───────────────────────────────────────
   try {
@@ -251,7 +251,7 @@ async function main() {
       ],
       false, // fileSecurity
       undefined, // enabled
-      50 * 1024 * 1024 // maxFileSize: 50MB
+      50000000 // maxFileSize: 50MB
     );
     console.log("\n✅ Storage bucket 'flux-uploads' created");
   } catch (err: unknown) {

@@ -1,10 +1,10 @@
 export type ModelId =
   | "deepseek-ai/deepseek-v4-flash"
   | "deepseek-ai/deepseek-v4-pro"
-  | "z-ai/glm-5.1"
+  | "z-ai/glm5.1"
   | "minimaxai/minimax-m2.7"
-  | "moonshotai/kimi-k2.6"
-  | "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
+  | "moonshotai/kimi-k2-instruct"
+  | "nvidia/nemotron-3-nano-30b-a3b";
 
 export interface ModelInfo {
   id: ModelId;
@@ -14,19 +14,14 @@ export interface ModelInfo {
 
 export const MODELS: ModelInfo[] = [
   {
-    id: "deepseek-ai/deepseek-v4-flash",
-    name: "DeepSeek V4 Flash",
-    shortName: "DS Flash",
+    id: "nvidia/nemotron-3-nano-30b-a3b",
+    name: "Nemotron Nano",
+    shortName: "Nemotron",
   },
   {
-    id: "deepseek-ai/deepseek-v4-pro",
-    name: "DeepSeek V4 Pro",
-    shortName: "DS Pro",
-  },
-  {
-    id: "z-ai/glm-5.1",
-    name: "GLM 5.1",
-    shortName: "GLM",
+    id: "moonshotai/kimi-k2-instruct",
+    name: "Kimi K2",
+    shortName: "Kimi",
   },
   {
     id: "minimaxai/minimax-m2.7",
@@ -34,18 +29,23 @@ export const MODELS: ModelInfo[] = [
     shortName: "MiniMax",
   },
   {
-    id: "moonshotai/kimi-k2.6",
-    name: "Kimi K2.6",
-    shortName: "Kimi",
+    id: "z-ai/glm5.1",
+    name: "GLM 5.1",
+    shortName: "GLM",
   },
   {
-    id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-    name: "Nemotron Nano Omni",
-    shortName: "Nemotron",
+    id: "deepseek-ai/deepseek-v4-pro",
+    name: "DeepSeek V4 Pro",
+    shortName: "DS Pro",
+  },
+  {
+    id: "deepseek-ai/deepseek-v4-flash",
+    name: "DeepSeek V4 Flash",
+    shortName: "DS Flash",
   },
 ];
 
-export const DEFAULT_MODEL: ModelId = "deepseek-ai/deepseek-v4-flash";
+export const DEFAULT_MODEL: ModelId = "nvidia/nemotron-3-nano-30b-a3b";
 
 export function getModelInfo(modelId: string): ModelInfo {
   return (

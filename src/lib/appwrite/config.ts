@@ -1,7 +1,7 @@
 // Appwrite Database & Collection IDs
 // These must match what's created via the setup script or Appwrite Console
 
-export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "69f62a8001dafec8332";
+export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "69f62a80001dafec8332";
 
 export const COLLECTIONS = {
   PROJECTS: "projects",

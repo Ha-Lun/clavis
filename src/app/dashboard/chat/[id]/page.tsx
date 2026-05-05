@@ -6,10 +6,13 @@ import { ChatView } from "@/components/chat/chat-view";
 import type { Chat, Message } from "@/lib/appwrite/types";
 
 interface ChatPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ msg?: string }>;
 }
 
-export default async function ChatPage({ params }: ChatPageProps) {
+export default async function ChatPage({ params, searchParams }: ChatPageProps) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const user = await getUser();
   const client = await createSessionClient();
 
@@ -26,7 +29,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
     chatDoc = await admin.databases.getDocument(
       dbId,
       COLLECTIONS.CHATS,
-      params.id
+      resolvedParams.id
     );
   } catch {
     notFound();
@@ -36,24 +39,29 @@ export default async function ChatPage({ params }: ChatPageProps) {
     notFound();
   }
 
-  // Fetch messages
-  const messagesResult = await admin.databases.listDocuments(
-    dbId,
-    COLLECTIONS.MESSAGES,
-    [
-      Query.equal("chat_id", params.id),
-      Query.orderAsc("$createdAt"),
-      Query.limit(100),
-    ]
-  );
-
-  // Map to our types
+  // Pass initial message to client via URL search params state
   const chat: Chat = {
     ...chatDoc,
     id: chatDoc.$id,
     created_at: chatDoc.$createdAt,
     updated_at: chatDoc.$updatedAt,
   } as unknown as Chat;
+
+  // Fetch existing messages (for subsequent visits)
+  console.log("[DEBUG chat page] Chat ID:", resolvedParams.id);
+  
+  const messagesResult = await admin.databases.listDocuments(
+    dbId,
+    COLLECTIONS.MESSAGES,
+    [
+      Query.equal("chat_id", resolvedParams.id),
+      Query.orderAsc("$createdAt"),
+      Query.limit(100),
+    ]
+  );
+
+  console.log("[DEBUG chat page] Raw messages count:", messagesResult.documents.length);
+  console.log("[DEBUG chat page] First doc keys:", messagesResult.documents[0] ? Object.keys(messagesResult.documents[0]) : "none");
 
   const messages: Message[] = messagesResult.documents.map((doc) => ({
     ...doc,
@@ -62,5 +70,31 @@ export default async function ChatPage({ params }: ChatPageProps) {
     created_at: doc.$createdAt,
   })) as unknown as Message[];
 
-  return <ChatView chat={chat} initialMessages={messages} />;
+  console.log("[DEBUG chat page] Mapped messages:", JSON.stringify(messages, null, 2));
+
+  // Pass initial message from URL to client
+  const initialMessage = resolvedSearchParams.msg ? decodeURIComponent(resolvedSearchParams.msg) : null;
+
+  // Flag to tell ChatView to process initial message
+  const shouldProcessInitial = !!(initialMessage && messages.length === 0);
+
+  // If there's an initial message AND no existing messages, add it to messages
+  // Use spread to create new array reference so React detects the change
+  let allMessages = messages;
+  if (shouldProcessInitial) {
+    const initialUserMessage: Message = {
+      $id: "initial-" + Date.now(),
+      $collectionId: "",
+      $databaseId: "",
+      $createdAt: new Date().toISOString(),
+      $updatedAt: new Date().toISOString(),
+      $permissions: [],
+      chat_id: resolvedParams.id,
+      role: "user",
+      content: initialMessage,
+    };
+    allMessages = [...messages, initialUserMessage];
+  }
+
+  return <ChatView chat={chat} initialMessages={allMessages} processInitial={shouldProcessInitial} />;
 }

@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useChatStore } from "@/stores/chat-store";
+import { useChat } from "@/context/chat-context";
 
 export function NewChatButton() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { chats, setChats } = useChat();
 
   const handleNewChat = async () => {
     setIsLoading(true);
@@ -21,7 +22,7 @@ export function NewChatButton() {
       const { chat } = await res.json();
       if (chat) {
         const chatWithId = { ...chat, id: chat.$id ?? chat.id };
-        useChatStore.getState().setChats([chatWithId, ...useChatStore.getState().chats]);
+        setChats([chatWithId, ...chats]);
         router.push(`/dashboard/chat/${chatWithId.id}`);
       }
     } catch (err) {

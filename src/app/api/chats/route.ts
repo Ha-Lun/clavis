@@ -26,7 +26,9 @@ export async function GET() {
     );
 
     return NextResponse.json({ chats: result.documents });
-  } catch {
+  } catch (err: unknown) {
+    const error = err as { message?: string; code?: number; type?: string };
+    console.error("[GET /api/chats] Error:", error.message, error.code, error.type);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -56,13 +58,16 @@ export async function POST(request: NextRequest) {
         project_id: projectId || null,
         title: "New Chat",
         model: model || DEFAULT_MODEL,
+        updatedAt: new Date().toISOString(),
       }
     );
 
     return NextResponse.json({ chat }, { status: 201 });
-  } catch {
+  } catch (err: unknown) {
+    const error = err as { message?: string; code?: number; type?: string };
+    console.error("[POST /api/chats] Error:", error.message, error.code, error.type);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error.message || "Internal server error" },
       { status: 500 }
     );
   }

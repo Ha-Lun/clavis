@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { logout } from "@/lib/appwrite/auth-actions";
-import { useChatStore } from "@/stores/chat-store";
+import { useChat } from "@/context/chat-context";
 import { useProjectStore } from "@/stores/project-store";
 import { useUIStore } from "@/stores/ui-store";
 import type { Chat, Project } from "@/lib/appwrite/types";
@@ -44,7 +44,7 @@ export function SidebarProvider({
   userEmail,
   userId,
 }: SidebarProviderProps) {
-  const { setChats } = useChatStore();
+  const { setChats } = useChat();
   const { setProjects } = useProjectStore();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -115,7 +115,7 @@ function SidebarContent({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { chats, removeChat } = useChatStore();
+  const { chats, removeChat, setChats } = useChat();
   const { projects } = useProjectStore();
   const [isChatsOpen, setIsChatsOpen] = useState(true);
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
@@ -130,7 +130,7 @@ function SidebarContent({
       const { chat } = await res.json();
       if (chat) {
         const chatWithId = { ...chat, id: chat.$id ?? chat.id };
-        useChatStore.getState().setChats([chatWithId, ...useChatStore.getState().chats]);
+        setChats([chatWithId, ...chats]);
         router.push(`/dashboard/chat/${chatWithId.id}`);
         onClose();
       }

@@ -64,14 +64,24 @@ export async function DELETE(
     const admin = await createAdminClient();
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
+    console.log("[DELETE chat] Starting:", params.id);
+
     // Verify ownership
-    const existing = await admin.databases.getDocument(
-      dbId,
-      COLLECTIONS.CHATS,
-      params.id
-    );
+    let existing;
+    try {
+      existing = await admin.databases.getDocument(
+        dbId,
+        COLLECTIONS.CHATS,
+        params.id
+      );
+    } catch (err: any) {
+      console.log("[DELETE chat] Document not found or error:", err.message);
+      // If document doesn't exist, consider it deleted
+      return NextResponse.json({ success: true, note: "already deleted" });
+    }
 
     if (existing.user_id !== user.$id) {
+      console.log("[DELETE chat] Ownership mismatch:", existing.user_id, "vs", user.$id);
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
@@ -82,12 +92,18 @@ export async function DELETE(
       [Query.equal("chat_id", params.id), Query.limit(100)]
     );
 
+    console.log("[DELETE chat] Found messages:", messages.documents.length);
+
     for (const msg of messages.documents) {
-      await admin.databases.deleteDocument(
-        dbId,
-        COLLECTIONS.MESSAGES,
-        msg.$id
-      );
+      try {
+        await admin.databases.deleteDocument(
+          dbId,
+          COLLECTIONS.MESSAGES,
+          msg.$id
+        );
+      } catch {
+        // Ignore individual delete errors
+      }
     }
 
     // Delete the chat
@@ -97,10 +113,12 @@ export async function DELETE(
       params.id
     );
 
+    console.log("[DELETE chat] Success:", params.id);
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err: any) {
+    console.error("[DELETE chat] Error:", err.message);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: err.message || "Internal server error" },
       { status: 500 }
     );
   }

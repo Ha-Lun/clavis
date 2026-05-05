@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useChatStore } from "@/stores/chat-store";
+import { useChat } from "@/context/chat-context";
 import { DEFAULT_MODEL } from "@/lib/models";
 import { Button } from "@/components/ui/button";
 import { Send, Sparkles, Code, FileText, Lightbulb, Mail, Bug, Paperclip } from "lucide-react";
@@ -23,27 +23,35 @@ export function HomePrompt() {
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { chats, setChats } = useChat();
 
   const handleSubmit = async (text: string = content) => {
     if (!text.trim() || isSubmitting) return;
     setIsSubmitting(true);
 
-    // Save prompt for the chat view to pick up
-    sessionStorage.setItem("pending_prompt", text.trim());
-
     try {
-      const res = await fetch("/api/chats", {
+      // Step 1: Create the chat
+      const createRes = await fetch("/api/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model }),
       });
-      const { chat } = await res.json();
+      const { chat } = await createRes.json();
       
-      if (chat) {
-        const chatWithId = { ...chat, id: chat.$id ?? chat.id };
-        useChatStore.getState().setChats([chatWithId, ...useChatStore.getState().chats]);
-        router.push(`/dashboard/chat/${chatWithId.id}`);
+      if (!chat) {
+        throw new Error("Failed to create chat");
       }
+      
+      const chatId = chat.$id ?? chat.id;
+      
+      console.log("[HomePrompt] Chat created:", chatId);
+      
+      // Update chat list
+      setChats([chat, ...chats]);
+      
+      // Step 2: Navigate with message in URL - chat page will handle it
+      router.push(`/dashboard/chat/${chatId}?msg=${encodeURIComponent(text.trim())}`);
+      
     } catch (err) {
       console.error("Failed to create chat:", err);
       setIsSubmitting(false);

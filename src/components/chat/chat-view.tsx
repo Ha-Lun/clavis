@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
-import { useChatStore } from "@/stores/chat-store";
+import { useChat } from "@/context/chat-context";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
-import { ModelSelector } from "./model-selector";
 import { useSmoothStream } from "@/hooks/use-smooth-stream";
 import type { Chat, Message } from "@/lib/appwrite/types";
 
 interface ChatViewProps {
   chat: Chat;
   initialMessages: Message[];
+  processInitial?: boolean;
 }
 
-export function ChatView({ chat, initialMessages }: ChatViewProps) {
+export function ChatView({ chat, initialMessages, processInitial }: ChatViewProps) {
   const {
     messages,
     setMessages,
@@ -25,10 +25,13 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
     setStreamingContent,
     appendStreamingContent,
     updateChatTitle,
-  } = useChatStore();
+    activeChat,
+  } = useChat();
 
-  const hasGeneratedTitle = useRef(false);
+  const hasGeneratedTitle = useRef(initialMessages.length > 0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const hasProcessedInitial = useRef(false);
+  const prevChatIdRef = useRef<string | null>(null);
 
   const smoothContent = useSmoothStream(streamingContent, isStreaming, 15);
 
@@ -39,32 +42,21 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
     }
   }, []);
 
-  useEffect(() => {
-    setActiveChat(chat);
-    setMessages(initialMessages);
-    hasGeneratedTitle.current = initialMessages.length > 0;
-    return () => {
-      setActiveChat(null);
-      setMessages([]);
-      setStreamingContent("");
-    };
-  }, [chat, initialMessages, setActiveChat, setMessages, setStreamingContent]);
-
   const generateTitle = useCallback(
     async (firstMessage: string) => {
       if (hasGeneratedTitle.current) return;
       hasGeneratedTitle.current = true;
 
-      try {
-        const res = await fetch("/api/chat/title", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chatId: chat.id,
-            firstMessage,
-            model: chat.model,
-          }),
-        });
+       try {
+         const res = await fetch("/api/chat/title", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({
+             chatId: chat.id,
+             firstMessage,
+             model: activeChat?.model || chat.model,
+           }),
+         });
         const data = await res.json();
         if (data.title) {
           updateChatTitle(chat.id, data.title);
@@ -73,28 +65,29 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
         console.error("Title generation failed:", err);
       }
     },
-    [chat.id, chat.model, updateChatTitle]
+    [chat.id, activeChat?.model, updateChatTitle]
   );
 
   const handleSend = useCallback(
-    async (content: string) => {
+    async (content: string, skipUserMessage: boolean = false) => {
       if (!content.trim() || isStreaming) return;
 
-      // Add user message optimistically
-      const userMessage: Message = {
-        $id: crypto.randomUUID(),
-        $collectionId: "",
-        $databaseId: "",
-        $createdAt: new Date().toISOString(),
-        $updatedAt: new Date().toISOString(),
-        $permissions: [],
-        chat_id: chat.id,
-        role: "user",
-        content: content.trim(),
-      };
-      addMessage(userMessage);
+      // Skip adding user message if it's already in initialMessages (to avoid duplicate)
+      if (!skipUserMessage) {
+        const userMessage: Message = {
+          $id: crypto.randomUUID(),
+          $collectionId: "",
+          $databaseId: "",
+          $createdAt: new Date().toISOString(),
+          $updatedAt: new Date().toISOString(),
+          $permissions: [],
+          chat_id: chat.id,
+          role: "user",
+          content: content.trim(),
+        };
+        addMessage(userMessage);
+      }
 
-      // Generate title from first message
       if (messages.length === 0) {
         generateTitle(content.trim());
       }
@@ -109,11 +102,11 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: abortControllerRef.current.signal,
-          body: JSON.stringify({
-            chatId: chat.id,
-            message: content.trim(),
-            model: chat.model,
-          }),
+        body: JSON.stringify({
+             chatId: chat.id,
+             message: content.trim(),
+             model: activeChat?.model || chat.model,
+           }),
         });
 
         if (!res.ok) {
@@ -135,7 +128,6 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
           appendStreamingContent(chunk);
         }
 
-        // Add completed assistant message
         const assistantMessage: Message = {
           $id: crypto.randomUUID(),
           $collectionId: "",
@@ -150,8 +142,7 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
         addMessage(assistantMessage);
       } catch (err: any) {
         if (err.name === "AbortError") {
-          // Save partial message
-          const partialContent = useChatStore.getState().streamingContent;
+          const partialContent = streamingContent;
           if (partialContent) {
             const partialMessage: Message = {
               $id: crypto.randomUUID(),
@@ -176,23 +167,21 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
             $permissions: [],
             chat_id: chat.id,
             role: "assistant",
-            content:
-              err instanceof Error
-                ? `⚠️ ${err.message}`
-                : "⚠️ Something went wrong. Please try again.",
+            content: err instanceof Error ? `⚠️ ${err.message}` : "⚠️ Something went wrong.",
           };
           addMessage(errorMessage);
         }
       } finally {
-        setIsStreaming(false);
-        setStreamingContent("");
+        // Small delay to ensure message renders before clearing streaming state
+        setTimeout(() => {
+          setIsStreaming(false);
+        }, 10);
       }
     },
     [
       chat.id,
-      chat.model,
+      activeChat?.model,
       isStreaming,
-      messages.length,
       addMessage,
       appendStreamingContent,
       generateTitle,
@@ -201,34 +190,48 @@ export function ChatView({ chat, initialMessages }: ChatViewProps) {
     ]
   );
 
+  // Initialize with messages from server - only when switching chats
+  // Direct set on mount/switch - not waiting for useEffect
+  // This ensures MessageList gets the messages immediately
+  if (prevChatIdRef.current !== chat.id) {
+    prevChatIdRef.current = chat.id;
+    setMessages(initialMessages);
+  }
+
+  // Run processInitial in useEffect (for the API call)
   useEffect(() => {
-    const pendingPrompt = sessionStorage.getItem("pending_prompt");
-    if (pendingPrompt && messages.length === 0) {
-      sessionStorage.removeItem("pending_prompt");
-      // Add a slight delay to allow the layout to settle and initialMessages to hydrate
-      const timeout = setTimeout(() => {
-        handleSend(pendingPrompt);
-      }, 100);
-      return () => clearTimeout(timeout);
+    setActiveChat(chat);
+    
+    // If processInitial flag is set, trigger the API call
+    if (processInitial && initialMessages.length > 0 && !hasProcessedInitial.current) {
+      hasProcessedInitial.current = true;
+      const initialContent = initialMessages[0].content;
+      handleSend(initialContent, true);
     }
-  }, [messages.length, handleSend]);
+  }, [chat.id, processInitial, handleSend, setActiveChat]);
+
+  // Cleanup on unmount only
+  useEffect(() => {
+    return () => {
+      setActiveChat(null);
+      setMessages([]);
+      setStreamingContent("");
+    };
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
-      <div key={chat.id} className="flex-1 overflow-hidden flex flex-col animate-fade-in">
+      <div className="flex-1 overflow-hidden flex flex-col animate-fade-in">
         <MessageList
-          messages={messages}
-          isStreaming={isStreaming}
-          streamingContent={smoothContent}
           modelId={chat.model}
         />
       </div>
       <div className="flex flex-col">
-        <ChatInput 
-          onSend={handleSend} 
-          onStop={handleStop} 
-          isStreaming={isStreaming} 
-          chatId={chat.id} 
+        <ChatInput
+          onSend={handleSend}
+          onStop={handleStop}
+          isStreaming={isStreaming}
+          chatId={chat.id}
           currentModel={chat.model}
         />
       </div>

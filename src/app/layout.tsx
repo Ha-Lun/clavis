@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/context/theme-context";
+import { ChatProvider } from "@/context/chat-context";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,7 +28,9 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased min-h-screen font-light`}
       >
         <ThemeProvider>
-          {children}
+          <ChatProvider>
+            {children}
+          </ChatProvider>
         </ThemeProvider>
       </body>
     </html>

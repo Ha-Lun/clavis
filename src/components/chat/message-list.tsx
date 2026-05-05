@@ -1,24 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useChat } from "@/context/chat-context";
 import { MessageBubble } from "./message-bubble";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { getModelInfo } from "@/lib/models";
-import type { Message } from "@/lib/appwrite/types";
 
 interface MessageListProps {
-  messages: Message[];
-  isStreaming: boolean;
-  streamingContent: string;
   modelId: string;
 }
 
-export function MessageList({
-  messages,
-  isStreaming,
-  streamingContent,
-  modelId,
-}: MessageListProps) {
+export function MessageList({ modelId }: MessageListProps) {
+  const { messages, isStreaming, streamingContent } = useChat();
+  
+  console.log("[DEBUG MessageList] messages count:", messages.length);
+  console.log("[DEBUG MessageList] messages:", JSON.stringify(messages));
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const modelName = getModelInfo(modelId).name;

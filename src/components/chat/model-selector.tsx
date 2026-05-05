@@ -1,6 +1,6 @@
 "use client";
 
-import { useChatStore } from "@/stores/chat-store";
+import { useChat } from "@/context/chat-context";
 import { MODELS } from "@/lib/models";
 import {
   Select,
@@ -21,7 +21,7 @@ interface ModelSelectorProps {
 }
 
 export function ModelSelector({ chatId, currentModel, className, onModelChange }: ModelSelectorProps) {
-  const { activeChat, updateChatModel } = useChatStore();
+  const { activeChat, updateChatModel } = useChat();
   const model = activeChat?.model ?? currentModel;
 
   const handleModelChange = async (newModel: string) => {
