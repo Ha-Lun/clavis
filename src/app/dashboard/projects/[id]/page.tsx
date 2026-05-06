@@ -3,15 +3,9 @@ import { COLLECTIONS } from "@/lib/appwrite/config";
 import { Query } from "node-appwrite";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { FolderOpen, MessageSquare, ArrowLeft } from "lucide-react";
-import { getModelInfo } from "@/lib/models";
+import { FolderOpen, ArrowLeft } from "lucide-react";
+import { ProjectTabs } from "@/components/project/project-tabs";
+import type { Chat, Project } from "@/lib/appwrite/types";
 
 interface ProjectDetailPageProps {
   params: { id: string };
@@ -52,7 +46,7 @@ export default async function ProjectDetailPage({
     ]
   );
 
-  const chats = chatsResult.documents;
+  const chats = chatsResult.documents as unknown as Chat[];
 
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8 bg-background">
@@ -79,50 +73,7 @@ export default async function ProjectDetailPage({
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-light tracking-tight text-foreground">Chats in this project</h2>
-        </div>
-
-        {chats.length === 0 ? (
-          <div className="text-center py-16 animate-fade-in">
-            <MessageSquare className="h-10 w-10 text-muted-foreground/40 mx-auto mb-4" />
-            <p className="text-muted-foreground text-[15px] font-light">
-              No chats assigned to this project yet
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {chats.map((chat) => {
-              const model = getModelInfo(chat.model as string);
-              return (
-                <Link
-                  key={chat.$id}
-                  href={`/dashboard/chat/${chat.$id}`}
-                  className="group"
-                >
-                  <Card className="h-full bg-card border border-border shadow-stripe-ambient hover:shadow-stripe-elevated hover:border-primary transition-all duration-300 rounded-[16px] overflow-hidden">
-                    <CardHeader className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <CardTitle className="text-lg font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                          {chat.title as string}
-                        </CardTitle>
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] shrink-0 bg-secondary text-muted-foreground hover:bg-border font-medium tracking-wide rounded-[6px]"
-                        >
-                          {model.shortName}
-                        </Badge>
-                      </div>
-                      <CardDescription className="text-[13px] text-muted-foreground font-light pt-2">
-                        {new Date(chat.$updatedAt as string).toLocaleDateString()}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <ProjectTabs project={project as unknown as Project} chats={chats} />
       </div>
     </div>
   );

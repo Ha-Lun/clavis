@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useChat } from "@/context/chat-context";
 import { DEFAULT_MODEL } from "@/lib/models";
 import { Button } from "@/components/ui/button";
-import { Send, Sparkles, Code, FileText, Lightbulb, Mail, Bug, Paperclip } from "lucide-react";
+import { Send, Sparkles, Code, FileText, Lightbulb, Mail, Bug, Paperclip, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelSelector } from "@/components/chat/model-selector";
+import { useProjectStore } from "@/stores/project-store";
 
 const SUGGESTIONS = [
   { icon: Sparkles, label: "Explain a concept" },
@@ -42,12 +43,13 @@ export function HomePrompt() {
         throw new Error("Failed to create chat");
       }
       
-      const chatId = chat.$id ?? chat.id;
+      const chatWithId = { ...chat, id: chat.$id ?? chat.id };
+      const chatId = chatWithId.id;
       
       console.log("[HomePrompt] Chat created:", chatId);
       
       // Update chat list
-      setChats([chat, ...chats]);
+      setChats([chatWithId, ...chats]);
       
       // Step 2: Navigate with message in URL - chat page will handle it
       router.push(`/dashboard/chat/${chatId}?msg=${encodeURIComponent(text.trim())}`);
@@ -138,6 +140,15 @@ export function HomePrompt() {
             </span>
           </button>
         ))}
+        <button
+          onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
+          className="flex flex-col items-start gap-3 p-5 text-left bg-card border border-border rounded-[12px] transition-all duration-300 hover:border-primary/50 shadow-stripe-ambient hover:shadow-stripe-elevated hover:-translate-y-1 animate-fade-up group border-dashed"
+        >
+          <Plus className="h-5 w-5 text-primary opacity-80 group-hover:opacity-100 group-hover:animate-pulse" />
+          <span className="text-[15px] font-light text-foreground">
+            New Project
+          </span>
+        </button>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { Query } from "node-appwrite";
 import { redirect } from "next/navigation";
 import { SidebarProvider } from "@/components/sidebar";
 import { MobileNav } from "@/components/mobile-nav";
+import { CreateProjectDialog } from "@/components/project/create-project-dialog";
 import type { Chat, Project } from "@/lib/appwrite/types";
 
 export default async function DashboardLayout({
@@ -86,6 +87,7 @@ export default async function DashboardLayout({
         <MobileNav />
         <main className="flex-1 overflow-hidden">{children}</main>
       </div>
+      <CreateProjectDialog />
     </div>
   );
 }

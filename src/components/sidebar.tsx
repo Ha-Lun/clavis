@@ -235,23 +235,25 @@ function SidebarContent({
                     const chatId = chat.$id ?? chat.id;
                     const isActive = pathname === `/dashboard/chat/${chatId}`;
                     return (
-                      <Link
-                        key={chatId}
-                        href={`/dashboard/chat/${chatId}`}
-                        className={cn(
-                          "group flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-[13px] transition-all duration-150 text-muted-foreground hover:bg-primary/5 hover:text-foreground",
-                          isActive && "bg-primary/10 text-foreground font-medium"
-                        )}
-                      >
-                        <MessageSquare className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground/60")} />
-                        <span className="flex-1 truncate">{chat.title}</span>
+                      <div key={chatId} className="flex items-center justify-between w-full group">
+                        <Link
+                          href={`/dashboard/chat/${chatId}`}
+                          className={cn(
+                            "flex-1 flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-[13px] transition-all duration-150 text-muted-foreground hover:bg-primary/5 hover:text-foreground min-w-0",
+                            isActive && "bg-primary/10 text-foreground font-medium"
+                          )}
+                        >
+                          <MessageSquare className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground/60")} />
+                          <span className="flex-1 truncate min-w-0">{chat.title}</span>
+                        </Link>
                         <button
                           onClick={(e) => handleDeleteChat(chatId, e)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-muted-foreground hover:text-accent"
+                          className="p-2 text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0 rounded-md hover:bg-red-500/10 ml-1 relative z-10"
+                          title="Delete chat"
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
-                      </Link>
+                      </div>
                     );
                   })
                 )}
@@ -261,13 +263,23 @@ function SidebarContent({
 
           {/* Projects section */}
           <div>
-            <div className="flex items-center justify-between px-2 mb-2">
+            <div className="flex items-center justify-between px-2 mb-2 group">
               <button 
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
                 className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-[0.05em] hover:text-foreground transition-colors"
               >
                 {isProjectsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                 Projects
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  useProjectStore.getState().setCreateDialogOpen(true);
+                }}
+                className="opacity-60 hover:opacity-100 transition-opacity p-0.5 text-muted-foreground hover:text-primary"
+                title="New project"
+              >
+                <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
             {isProjectsOpen && (

@@ -3,7 +3,7 @@ export type ModelId =
   | "deepseek-ai/deepseek-v4-pro"
   | "z-ai/glm5.1"
   | "minimaxai/minimax-m2.7"
-  | "moonshotai/kimi-k2-instruct"
+  | "moonshotai/kimi-k2.6"
   | "nvidia/nemotron-3-nano-30b-a3b";
 
 export interface ModelInfo {
@@ -19,8 +19,8 @@ export const MODELS: ModelInfo[] = [
     shortName: "Nemotron",
   },
   {
-    id: "moonshotai/kimi-k2-instruct",
-    name: "Kimi K2",
+    id: "moonshotai/kimi-k2.6",
+    name: "Kimi K2.6",
     shortName: "Kimi",
   },
   {

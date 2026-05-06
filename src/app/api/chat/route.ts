@@ -17,6 +17,8 @@ async function callAIWithRetry(
   nvidia: ReturnType<typeof createNvidiaClient>,
   model: string,
   messages: MessageParam[],
+  signal: AbortSignal,
+  systemPrompt: string = FLUX_SYSTEM_PROMPT,
   maxRetries: number = 2,
   timeoutMs: number = 30000,
 ) {
@@ -34,12 +36,12 @@ async function callAIWithRetry(
       const aiPromise = nvidia.chat.completions.create({
         model,
         messages: [
-          { role: "system", content: FLUX_SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           ...messages,
         ],
         stream: true,
         max_tokens: 4096,
-      });
+      }, { signal });
 
       const completion = await Promise.race([aiPromise, timeoutPromise]);
       console.log("[API /chat] AI call succeeded");
@@ -120,6 +122,7 @@ export async function POST(request: NextRequest) {
     console.log("[API /chat] Admin client, dbId:", dbId);
 
     // Verify chat belongs to user
+    let finalSystemPrompt = FLUX_SYSTEM_PROMPT;
     try {
       const chat = await admin.databases.getDocument(
         dbId,
@@ -139,12 +142,29 @@ export async function POST(request: NextRequest) {
           status: 404,
         });
       }
+
+      if (chat.project_id) {
+        try {
+          const project = await admin.databases.getDocument(
+            dbId,
+            COLLECTIONS.PROJECTS,
+            chat.project_id
+          );
+          if (project.instructions) {
+            finalSystemPrompt = `${FLUX_SYSTEM_PROMPT}\n\nProject Instructions:\n${project.instructions}`;
+            console.log("[API /chat] Applied project instructions");
+          }
+        } catch (err) {
+          console.error("[API /chat] Failed to fetch project instructions:", err);
+        }
+      }
     } catch (err) {
       console.log("[API /chat] Chat fetch error:", err);
       return new Response(JSON.stringify({ error: "Chat not found" }), {
         status: 404,
       });
     }
+
 
     // Save user message to DB IMMEDIATELY (before AI call) - ensures persistence on refresh
     console.log("[API /chat] Saving user message to DB first...");
@@ -202,7 +222,7 @@ export async function POST(request: NextRequest) {
     let completion;
     try {
       console.log("[API /chat] Calling NVIDIA API with retry...");
-      completion = await callAIWithRetry(nvidia, model, messages);
+      completion = await callAIWithRetry(nvidia, model, messages, request.signal, finalSystemPrompt);
     } catch (err: any) {
       console.error("[API /chat] NVIDIA API error after retries:", err.message);
       if (err.status === 429 || err.message?.includes("busy")) {
@@ -264,9 +284,31 @@ export async function POST(request: NextRequest) {
           );
 
           controller.close();
-        } catch (err) {
-          console.error("Stream error:", err);
-          controller.error(err);
+        } catch (err: any) {
+          if (err.name === "AbortError" || request.signal.aborted) {
+            console.log("[API /chat] Stream aborted by client. Saving partial response...");
+            if (fullContent) {
+              try {
+                await admin.databases.createDocument(
+                  dbId,
+                  COLLECTIONS.MESSAGES,
+                  ID.unique(),
+                  {
+                    chat_id: chatId,
+                    role: "assistant",
+                    content: fullContent,
+                  },
+                );
+                console.log("[API /chat] Partial response saved.");
+              } catch (dbErr) {
+                console.error("[API /chat] Failed to save partial response:", dbErr);
+              }
+            }
+            controller.close();
+          } else {
+            console.error("Stream error:", err);
+            controller.error(err);
+          }
         }
       },
     });

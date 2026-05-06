@@ -200,6 +200,7 @@ async function main() {
   await createStringAttribute("projects", "user_id", 36, true);
   await createStringAttribute("projects", "name", 256, true);
   await createStringAttribute("projects", "description", 2048, false);
+  await createStringAttribute("projects", "instructions", 100000, false);
   console.log("   ⏳ Waiting for attributes to sync...");
   await wait(3000);
   await createIndex("projects", "idx_user_id", IndexType.Key, ["user_id"]);
@@ -219,7 +220,7 @@ async function main() {
 
   // ── Messages Collection ──────────────────────────────────
   await createCollection("messages", "Messages");
-await createStringAttribute("messages", "chat_id", 36, true);
+  await createStringAttribute("messages", "chat_id", 36, true);
   await createStringAttribute("messages", "role", 16, true);
   await createStringAttribute("messages", "content", 1000000, true);
   console.log("   Waiting for attributes to sync...");
@@ -229,7 +230,8 @@ await createStringAttribute("messages", "chat_id", 36, true);
   // ── Files Collection ─────────────────────────────────────
   await createCollection("files", "Files");
   await createStringAttribute("files", "user_id", 36, true);
-  await createStringAttribute("files", "chat_id", 36, true);
+  await createStringAttribute("files", "chat_id", 36, false);
+  await createStringAttribute("files", "project_id", 36, false);
   await createStringAttribute("files", "name", 256, true);
   await createStringAttribute("files", "storagePath", 512, true);
   await createStringAttribute("files", "mimeType", 128, false);
@@ -238,6 +240,7 @@ await createStringAttribute("messages", "chat_id", 36, true);
   await wait(3000);
   await createIndex("files", "idx_user_id", IndexType.Key, ["user_id"]);
   await createIndex("files", "idx_chat_id", IndexType.Key, ["chat_id"]);
+  await createIndex("files", "idx_project_id", IndexType.Key, ["project_id"]);
 
   // ── Storage Bucket ───────────────────────────────────────
   try {

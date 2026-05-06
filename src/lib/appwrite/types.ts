@@ -7,6 +7,7 @@ export interface Project extends AppwriteDocument {
   user_id: string;
   name: string;
   description: string | null;
+  instructions: string | null;
 }
 
 export interface Chat extends AppwriteDocument {
@@ -25,7 +26,8 @@ export interface Message extends AppwriteDocument {
 
 export interface FileRecord extends AppwriteDocument {
   user_id: string;
-  chat_id: string;
+  chat_id: string | null;
+  project_id: string | null;
   name: string;
   storagePath: string;
   mimeType: string | null;

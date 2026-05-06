@@ -28,7 +28,7 @@ export function ChatView({ chat, initialMessages, processInitial }: ChatViewProp
     activeChat,
   } = useChat();
 
-  const hasGeneratedTitle = useRef(initialMessages.length > 0);
+  const hasGeneratedTitle = useRef(initialMessages.length > 0 && !processInitial);
   const abortControllerRef = useRef<AbortController | null>(null);
   const prevChatIdRef = useRef<string | null>(null);
   const hasTriggeredInitialSend = useRef(false);

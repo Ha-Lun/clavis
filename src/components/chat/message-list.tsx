@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@/context/chat-context";
 import { MessageBubble } from "./message-bubble";
 import { ThinkingIndicator } from "./thinking-indicator";
@@ -20,10 +20,22 @@ export function MessageList({ modelId }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const modelName = getModelInfo(modelId).name;
 
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
+
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    // User is considered at the bottom if they are within 150px
+    const isAtBottom = scrollHeight - scrollTop - clientHeight <= 150;
+    setIsAutoScrollEnabled(isAtBottom);
+  };
+
   // Auto-scroll to bottom
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingContent]);
+    if (isAutoScrollEnabled) {
+      bottomRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages, streamingContent, isAutoScrollEnabled]);
 
   if (messages.length === 0 && !isStreaming) {
     return (
@@ -58,6 +70,7 @@ export function MessageList({ modelId }: MessageListProps) {
     <div
       ref={containerRef}
       className="flex-1 overflow-y-auto scrollbar-thin px-4 py-6"
+      onScroll={handleScroll}
     >
       <div className="max-w-3xl mx-auto space-y-2">
         {messages.map((message, index) => (
