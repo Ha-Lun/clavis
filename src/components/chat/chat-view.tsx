@@ -30,8 +30,8 @@ export function ChatView({ chat, initialMessages, processInitial }: ChatViewProp
 
   const hasGeneratedTitle = useRef(initialMessages.length > 0);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const hasProcessedInitial = useRef(false);
   const prevChatIdRef = useRef<string | null>(null);
+  const hasTriggeredInitialSend = useRef(false);
 
   const smoothContent = useSmoothStream(streamingContent, isStreaming, 15);
 
@@ -88,7 +88,9 @@ export function ChatView({ chat, initialMessages, processInitial }: ChatViewProp
         addMessage(userMessage);
       }
 
-      if (messages.length === 0) {
+      if (messages.length === 0 && !skipUserMessage) {
+        generateTitle(content.trim());
+      } else if (skipUserMessage && initialMessages.length === 1) {
         generateTitle(content.trim());
       }
 
@@ -187,28 +189,29 @@ export function ChatView({ chat, initialMessages, processInitial }: ChatViewProp
       generateTitle,
       setIsStreaming,
       setStreamingContent,
+      initialMessages,
+      messages.length,
     ]
   );
 
-  // Initialize with messages from server - only when switching chats
-  // Direct set on mount/switch - not waiting for useEffect
-  // This ensures MessageList gets the messages immediately
-  if (prevChatIdRef.current !== chat.id) {
-    prevChatIdRef.current = chat.id;
-    setMessages(initialMessages);
-  }
-
-  // Run processInitial in useEffect (for the API call)
+  // Run processInitial and set messages in useEffect safely
   useEffect(() => {
+    if (prevChatIdRef.current !== chat.id) {
+       hasTriggeredInitialSend.current = false;
+       prevChatIdRef.current = chat.id;
+    }
+
+    setMessages(initialMessages);
     setActiveChat(chat);
     
     // If processInitial flag is set, trigger the API call
-    if (processInitial && initialMessages.length > 0 && !hasProcessedInitial.current) {
-      hasProcessedInitial.current = true;
+    if (processInitial && initialMessages.length > 0 && !hasTriggeredInitialSend.current) {
+      hasTriggeredInitialSend.current = true;
       const initialContent = initialMessages[0].content;
       handleSend(initialContent, true);
     }
-  }, [chat.id, processInitial, handleSend, setActiveChat]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.id, initialMessages]);
 
   // Cleanup on unmount only
   useEffect(() => {
