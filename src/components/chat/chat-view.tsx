@@ -13,7 +13,9 @@ interface ChatViewProps {
   processInitial?: boolean;
 }
 
-export function ChatView({ chat, initialMessages, processInitial }: ChatViewProps) {
+  const MAX_MESSAGE_LENGTH = 30000;
+
+  export function ChatView({ chat, initialMessages, processInitial }: ChatViewProps) {
   const {
     messages,
     setMessages,
@@ -70,7 +72,24 @@ export function ChatView({ chat, initialMessages, processInitial }: ChatViewProp
 
   const handleSend = useCallback(
     async (content: string, skipUserMessage: boolean = false) => {
-      if (!content.trim() || isStreaming) return;
+      const trimmedContent = content.trim();
+      if (!trimmedContent || isStreaming) return;
+
+      if (trimmedContent.length > MAX_MESSAGE_LENGTH) {
+        const errorMessage: Message = {
+          $id: crypto.randomUUID(),
+          $collectionId: "",
+          $databaseId: "",
+          $createdAt: new Date().toISOString(),
+          $updatedAt: new Date().toISOString(),
+          $permissions: [],
+          chat_id: chat.id,
+          role: "assistant",
+          content: `⚠️ Message is too long. Maximum length is ${MAX_MESSAGE_LENGTH} characters.`,
+        };
+        addMessage(errorMessage);
+        return;
+      }
 
       // Skip adding user message if it's already in initialMessages (to avoid duplicate)
       if (!skipUserMessage) {
@@ -83,15 +102,15 @@ export function ChatView({ chat, initialMessages, processInitial }: ChatViewProp
           $permissions: [],
           chat_id: chat.id,
           role: "user",
-          content: content.trim(),
+          content: trimmedContent,
         };
         addMessage(userMessage);
       }
 
       if (messages.length === 0 && !skipUserMessage) {
-        generateTitle(content.trim());
+        generateTitle(trimmedContent);
       } else if (skipUserMessage && initialMessages.length === 1) {
-        generateTitle(content.trim());
+        generateTitle(trimmedContent);
       }
 
       setIsStreaming(true);
@@ -106,14 +125,23 @@ export function ChatView({ chat, initialMessages, processInitial }: ChatViewProp
           signal: abortControllerRef.current.signal,
         body: JSON.stringify({
              chatId: chat.id,
-             message: content.trim(),
+             message: trimmedContent,
              model: activeChat?.model || chat.model,
            }),
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Failed to send message");
+          if (res.status === 413) {
+            throw new Error("Message is too large to process. Please try a shorter message.");
+          }
+
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to send message");
+          } else {
+            throw new Error(`Server error: ${res.status} ${res.statusText}`);
+          }
         }
 
         const reader = res.body?.getReader();

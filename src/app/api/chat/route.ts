@@ -197,8 +197,43 @@ export async function POST(request: NextRequest) {
       content: m.content as string,
     }));
 
-    // Add current user message to context (without saving to avoid duplicate)
-    messages.push({ role: "user", content: message });
+    // Add current user message to context
+    let userMessageContent = message;
+
+    // Detect uploaded file links in message (pattern: 📎 filename: url)
+    const fileMatches = userMessageContent.matchAll(/📎\s*([^:\n]+):\s*(https?:\/\/[^\s\n]+)/g);
+    const detectedFiles: { name: string, url: string }[] = [];
+    for (const match of fileMatches) {
+      detectedFiles.push({ name: match[1].trim(), url: match[2].trim() });
+    }
+
+    if (detectedFiles.length > 0) {
+      console.log(`[API /chat] Detected ${detectedFiles.length} uploaded files. Fetching content...`);
+      let combinedFileContent = "";
+
+      for (const file of detectedFiles) {
+        try {
+          // Extract fileId from the URL (URL looks like: .../files/{fileId}/view...)
+          const urlParts = file.url.split("/");
+          const fileId = urlParts[urlParts.length - 3]; // Third from end is fileId
+
+          if (fileId) {
+            console.log(`[API /chat] Fetching content for file ${file.name} (${fileId}) via Admin SDK`);
+            const response = await admin.storage.getFileDownload(BUCKET_ID, fileId);
+            const text = await response.text();
+            combinedFileContent += `\n--- File: ${file.name} ---\n${text}\n`;
+          } else {
+            console.error(`[API /chat] Could not extract fileId from URL: ${file.url}`);
+          }
+        } catch (err) {
+          console.error(`[API /chat] Error fetching file ${file.name}:`, err);
+        }
+      }
+
+      userMessageContent = `Attached Files Content:\n${combinedFileContent}\n\nUser Message:\n${userMessageContent}`;
+    }
+
+    messages.push({ role: "user", content: userMessageContent });
 
     console.log(
       "[API /chat] Messages for AI:",

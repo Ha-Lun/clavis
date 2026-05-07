@@ -2,9 +2,15 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send, Loader2, Square } from "lucide-react";
+import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelSelector } from "./model-selector";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ChatInputProps {
   onSend: (content: string) => void;
@@ -22,6 +28,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
 
   const handleSubmit = useCallback(() => {
     if (!content.trim() || isStreaming) return;
+    if (content.length > 30000) return; // Max length check
     onSend(content);
     setContent("");
     if (textareaRef.current) {
@@ -59,14 +66,18 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
         body: formData,
       });
 
-      if (res.ok) {
-        const { url } = await res.json();
-        setContent((prev) =>
-          prev ? `${prev}\n📎 ${file.name}: ${url}` : `📎 ${file.name}: ${url}`
-        );
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${res.status}`);
       }
-    } catch (err) {
+
+      const { url } = await res.json();
+      setContent((prev) =>
+        prev ? `${prev}\n📎 ${file.name}: ${url}` : `📎 ${file.name}: ${url}`
+      );
+    } catch (err: any) {
       console.error("Upload failed:", err);
+      alert(`Upload failed: ${err.message}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -104,20 +115,40 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                 onChange={handleFileUpload}
                 id="file-upload-input"
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-[6px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                id="file-upload-button"
-              >
-                {uploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Paperclip className="h-4 w-4" />
-                )}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-[6px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    disabled={uploading}
+                    id="file-upload-button"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Paperclip className="h-4 w-4" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-card/90 backdrop-blur-md border-border">
+                  <DropdownMenuItem
+                    onClick={() => fileInputRef.current?.click()}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span>Upload from computer</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer gap-2 opacity-50 pointer-events-none">
+                    <FileText className="h-4 w-4" />
+                    <span>Import from project</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer gap-2 opacity-50 pointer-events-none">
+                    <LinkIcon className="h-4 w-4" />
+                    <span>Link URL</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="flex items-center gap-2">
