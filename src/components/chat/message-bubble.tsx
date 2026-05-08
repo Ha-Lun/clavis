@@ -68,7 +68,7 @@ export function MessageBubble({
         <div
           className={cn(
             "group relative",
-            isUser ? "max-w-[80%] md:max-w-[70%] items-end" : "flex-1 items-start"
+            isUser ? "max-w-[80%] md:max-w-[70%] items-end" : "flex-1 items-start pr-10"
           )}
         >
           {/* Role label */}
