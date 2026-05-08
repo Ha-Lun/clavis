@@ -163,18 +163,18 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full w-full min-w-0 overflow-hidden">
       {/* Header */}
       <div
         className={cn(
-          "p-4 flex items-center justify-between",
+          "p-4 flex items-center justify-between min-w-0 shrink-0",
           isCollapsed && "flex-col gap-4 px-0"
         )}
       >
         <Link
           href="/dashboard"
           className={cn(
-            "flex items-center gap-2 group",
+            "flex items-center gap-2 group min-w-0",
             isCollapsed && "justify-center w-full"
           )}
         >
@@ -182,13 +182,13 @@ function SidebarContent({
             <Zap className="h-4 w-4 text-primary" />
           </div>
           {!isCollapsed && (
-            <span className="text-xl font-light tracking-tight text-foreground">
+            <span className="text-xl font-light tracking-tight text-foreground truncate">
               Flux
             </span>
           )}
         </Link>
 
-        <div className={cn("flex items-center gap-1", isCollapsed && "flex-col")}>
+        <div className={cn("flex items-center gap-1 shrink-0", isCollapsed && "flex-col")}>
           <ThemeToggle className="h-8 w-8" />
           {toggleCollapse && (
             <Button
@@ -209,7 +209,7 @@ function SidebarContent({
       </div>
 
       {/* New Chat Button */}
-      <div className={cn("px-4 mb-4", isCollapsed && "px-2")}>
+      <div className={cn("px-4 mb-4 shrink-0", isCollapsed && "px-2")}>
         <Button
           type="button"
           onClick={handleNewChat}
@@ -219,22 +219,22 @@ function SidebarContent({
           )}
         >
           <Plus className="h-4 w-4 text-primary" />
-          {!isCollapsed && <span>New Chat</span>}
+          {!isCollapsed && <span className="truncate">New Chat</span>}
         </Button>
       </div>
 
-      {!isCollapsed && <Separator className="bg-border" />}
+      {!isCollapsed && <Separator className="bg-border shrink-0" />}
 
       {/* Main Content */}
-      <ScrollArea className={cn("flex-1 px-3", isCollapsed && "hidden")}>
-        <div className="py-4">
+      <ScrollArea className={cn("flex-1 w-full min-w-0", isCollapsed && "hidden")}>
+        <div className="py-4 px-3 w-full min-w-0 flex flex-col gap-6 overflow-x-hidden">
           {/* Chats section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between px-2 mb-2 group gap-2">
+          <div className="w-full min-w-0">
+            <div className="px-2 mb-2">
               <button
                 type="button"
                 onClick={() => setIsChatsOpen(!isChatsOpen)}
-                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-[0.05em] hover:text-foreground transition-colors min-w-0"
+                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-[0.05em] hover:text-foreground transition-colors w-full min-w-0"
               >
                 {isChatsOpen ? (
                   <ChevronDown className="h-3 w-3 shrink-0" />
@@ -246,7 +246,7 @@ function SidebarContent({
             </div>
 
             {isChatsOpen && (
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 w-full min-w-0">
                 {chats.length === 0 ? (
                   <p className="px-2 text-xs text-muted-foreground/60 italic">No history</p>
                 ) : (
@@ -255,13 +255,16 @@ function SidebarContent({
                     const isActive = pathname === `/dashboard/chat/${chatId}`;
 
                     return (
-                      <div key={chatId} className="group relative w-full min-w-0">
+                      <div
+                        key={chatId}
+                        className={cn(
+                          "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[6px] transition-colors duration-150 hover:bg-primary/5 pr-1",
+                          isActive && "bg-primary/10"
+                        )}
+                      >
                         <Link
                           href={`/dashboard/chat/${chatId}`}
-                          className={cn(
-                            "flex min-w-0 items-center gap-2 px-2 py-1.5 pr-10 rounded-[6px] text-[13px] text-muted-foreground transition-colors duration-150 hover:bg-primary/5 hover:text-foreground",
-                            isActive && "bg-primary/10 text-foreground font-medium"
-                          )}
+                          className="flex min-w-0 items-center gap-2 px-2 py-1.5 rounded-[6px] w-full"
                         >
                           <MessageSquare
                             className={cn(
@@ -269,20 +272,25 @@ function SidebarContent({
                               isActive ? "text-primary" : "text-muted-foreground/60"
                             )}
                           />
-                          <span className="truncate">{chat.title}</span>
+                          <span
+                            className={cn(
+                              "truncate text-[13px] text-muted-foreground group-hover:text-foreground transition-colors",
+                              isActive && "text-foreground font-medium"
+                            )}
+                          >
+                            {chat.title}
+                          </span>
                         </Link>
 
-                        <div className="absolute inset-y-0 right-1 z-30 flex items-center">
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteChat(chatId, e)}
-                            className="rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity duration-150 hover:bg-red-500/10 hover:text-red-500 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
-                            title="Delete chat"
-                            aria-label="Delete chat"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteChat(chatId, e)}
+                          className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
+                          title="Delete chat"
+                          aria-label="Delete chat"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     );
                   })
@@ -292,12 +300,12 @@ function SidebarContent({
           </div>
 
           {/* Projects section */}
-          <div>
-            <div className="flex items-center justify-between px-2 mb-2 group gap-2">
+          <div className="w-full min-w-0">
+            <div className="flex items-center justify-between px-2 mb-2 group gap-2 min-w-0">
               <button
                 type="button"
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-[0.05em] hover:text-foreground transition-colors min-w-0"
+                className="flex-1 flex items-center gap-1 text-[11px] font-medium text-muted-foreground uppercase tracking-[0.05em] hover:text-foreground transition-colors min-w-0"
               >
                 {isProjectsOpen ? (
                   <ChevronDown className="h-3 w-3 shrink-0" />
@@ -313,7 +321,7 @@ function SidebarContent({
                   e.stopPropagation();
                   useProjectStore.getState().setCreateDialogOpen(true);
                 }}
-                className="p-0.5 text-muted-foreground opacity-0 transition-opacity duration-150 shrink-0 hover:text-primary pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                className="p-1 text-muted-foreground opacity-40 transition-all duration-150 shrink-0 hover:text-primary hover:opacity-100 group-hover:opacity-100"
                 title="New project"
                 aria-label="New project"
               >
@@ -322,7 +330,7 @@ function SidebarContent({
             </div>
 
             {isProjectsOpen && (
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 w-full min-w-0">
                 {projects.length === 0 ? (
                   <p className="px-2 text-xs text-muted-foreground/60 italic">No projects</p>
                 ) : (
@@ -335,7 +343,7 @@ function SidebarContent({
                         key={projectId}
                         href={`/dashboard/projects/${projectId}`}
                         className={cn(
-                          "flex items-center gap-2 px-2 py-1.5 rounded-[6px] text-[13px] transition-all duration-150 text-muted-foreground hover:bg-primary/5 hover:text-foreground min-w-0",
+                          "flex items-center gap-2 px-2 py-1.5 rounded-[6px] transition-all duration-150 text-muted-foreground hover:bg-primary/5 hover:text-foreground min-w-0 w-full",
                           isActive && "bg-primary/10 text-foreground font-medium"
                         )}
                       >
@@ -345,7 +353,7 @@ function SidebarContent({
                             isActive ? "text-primary" : "text-muted-foreground/60"
                           )}
                         />
-                        <span className="truncate flex-1">{project.name}</span>
+                        <span className="truncate text-[13px] flex-1 min-w-0">{project.name}</span>
                       </Link>
                     );
                   })
@@ -357,8 +365,8 @@ function SidebarContent({
       </ScrollArea>
 
       {/* Footer */}
-      <div className={cn("p-4 border-t border-border mt-auto", isCollapsed && "px-2")}>
-        <div className={cn("flex items-center gap-3", isCollapsed && "flex-col")}>
+      <div className={cn("p-4 border-t border-border mt-auto shrink-0", isCollapsed && "px-2")}>
+        <div className={cn("flex items-center gap-3 w-full min-w-0", isCollapsed && "flex-col")}>
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
             {userEmail.charAt(0).toUpperCase()}
           </div>
@@ -375,7 +383,7 @@ function SidebarContent({
             size="icon"
             onClick={handleLogout}
             className={cn(
-              "h-8 w-8 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors rounded-full",
+              "h-8 w-8 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors rounded-full shrink-0",
               isCollapsed && "h-10 w-10"
             )}
           >
