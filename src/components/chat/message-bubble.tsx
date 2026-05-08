@@ -4,11 +4,12 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Zap, User } from "lucide-react";
+import { Copy, Check, Zap, User, FileText, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { Message } from "@/lib/appwrite/types";
+import { extractAttachments } from "@/lib/utils";
 
 interface MessageBubbleProps {
   message: Message;
@@ -25,6 +26,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
+  const { attachments, cleanContent } = extractAttachments(message.content);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -86,10 +88,29 @@ export function MessageBubble({
               isStreaming && !isUser && "border-transparent"
             )}
           >
+            {isUser && attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {attachments.map((file, i) => (
+                  <a
+                    key={i}
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-[8px] px-3 py-1.5 transition-colors group/file"
+                  >
+                    <FileText className="h-4 w-4 text-white/70" />
+                    <span className="text-[13px] font-medium max-w-[150px] truncate">
+                      {file.name}
+                    </span>
+                    <ExternalLink className="h-3 w-3 opacity-0 group-hover/file:opacity-100 transition-opacity" />
+                  </a>
+                ))}
+              </div>
+            )}
             <div className="break-words">
               {isUser ? (
                 <div className="whitespace-pre-wrap">
-                  {message.content}
+                  {cleanContent}
                 </div>
               ) : (
                 <>

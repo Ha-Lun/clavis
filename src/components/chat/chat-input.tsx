@@ -2,8 +2,8 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X } from "lucide-react";
+import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "./model-selector";
 import {
   DropdownMenu,
@@ -23,18 +23,33 @@ interface ChatInputProps {
 export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }: ChatInputProps) {
   const [content, setContent] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = useCallback(() => {
-    if (!content.trim() || isStreaming) return;
+    const trimmedContent = content.trim();
+    if (!trimmedContent && attachments.length === 0) return;
+    if (isStreaming) return;
     if (content.length > 30000) return; // Max length check
-    onSend(content);
+
+    let finalContent = trimmedContent;
+    if (attachments.length > 0) {
+      const attachmentString = attachments
+        .map((a) => `📎 ${a.name}: ${a.url}`)
+        .join("\n");
+      finalContent = finalContent
+        ? `${finalContent}\n${attachmentString}`
+        : attachmentString;
+    }
+
+    onSend(finalContent);
     setContent("");
+    setAttachments([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [content, isStreaming, onSend]);
+  }, [content, isStreaming, onSend, attachments]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -72,9 +87,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
       }
 
       const { url } = await res.json();
-      setContent((prev) =>
-        prev ? `${prev}\n📎 ${file.name}: ${url}` : `📎 ${file.name}: ${url}`
-      );
+      setAttachments((prev) => [...prev, { name: file.name, url }]);
     } catch (err: any) {
       console.error("Upload failed:", err);
       alert(`Upload failed: ${err.message}`);
@@ -86,10 +99,37 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
     }
   };
 
+  const removeAttachment = (url: string) => {
+    setAttachments((prev) => prev.filter((a) => a.url !== url));
+  };
+
   return (
     <div className="p-4 pb-6">
       <div className="max-w-3xl mx-auto">
         <div className="relative flex flex-col bg-card rounded-[12px] border border-border shadow-stripe-ambient focus-within:shadow-stripe-focus focus-within:border-primary transition-all duration-300">
+          {/* File Attachments Preview */}
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-4 pt-4 pb-1">
+              {attachments.map((file, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 bg-secondary/50 border border-border rounded-[8px] px-3 py-1.5 animate-fade-in group/chip"
+                >
+                  <FileText className="h-4 w-4 text-primary opacity-70" />
+                  <span className="text-[13px] font-medium text-foreground max-w-[150px] truncate">
+                    {file.name}
+                  </span>
+                  <button
+                    onClick={() => removeAttachment(file.url)}
+                    className="p-0.5 hover:bg-border rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Textarea */}
           <textarea
             ref={textareaRef}
@@ -118,6 +158,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-[6px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
@@ -125,9 +166,9 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                     id="file-upload-button"
                   >
                     {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin pointer-events-none" />
                     ) : (
-                      <Paperclip className="h-4 w-4" />
+                      <Paperclip className="h-4 w-4 pointer-events-none" />
                     )}
                   </Button>
                 </DropdownMenuTrigger>

@@ -1,6 +1,6 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
 import { createNvidiaClient } from "@/lib/nvidia";
-import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
+import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { FLUX_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest } from "next/server";
 import { ID, Query } from "node-appwrite";
@@ -215,12 +215,23 @@ export async function POST(request: NextRequest) {
         try {
           // Extract fileId from the URL (URL looks like: .../files/{fileId}/view...)
           const urlParts = file.url.split("/");
-          const fileId = urlParts[urlParts.length - 3]; // Third from end is fileId
+          const fileId = urlParts[urlParts.length - 2]; // Second from end is fileId
 
           if (fileId) {
             console.log(`[API /chat] Fetching content for file ${file.name} (${fileId}) via Admin SDK`);
-            const response = await admin.storage.getFileDownload(BUCKET_ID, fileId);
-            const text = await response.text();
+            const arrayBuffer = await admin.storage.getFileDownload(BUCKET_ID, fileId);
+            const buffer = Buffer.from(arrayBuffer);
+            
+            let text = "";
+            if (file.name.toLowerCase().endsWith(".pdf")) {
+              console.log(`[API /chat] Parsing PDF content for ${file.name}`);
+              const pdf = (await import('pdf-parse')).default;
+              const data = await pdf(buffer);
+              text = data.text;
+            } else {
+              text = buffer.toString('utf-8');
+            }
+            
             combinedFileContent += `\n--- File: ${file.name} ---\n${text}\n`;
           } else {
             console.error(`[API /chat] Could not extract fileId from URL: ${file.url}`);

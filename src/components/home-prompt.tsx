@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useChat } from "@/context/chat-context";
 import { DEFAULT_MODEL } from "@/lib/models";
 import { Button } from "@/components/ui/button";
-import { Send, Sparkles, Code, FileText, Lightbulb, Mail, Bug, Paperclip, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Send, Sparkles, Code, FileText, Lightbulb, Mail, Bug, Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X } from "lucide-react";
+import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "@/components/chat/model-selector";
 import { useProjectStore } from "@/stores/project-store";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const SUGGESTIONS = [
   { icon: Sparkles, label: "Explain a concept" },
@@ -23,11 +29,56 @@ export function HomePrompt() {
   const [content, setContent] = useState("");
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { chats, setChats } = useChat();
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      // We don't have a chatId yet, but the API expects one.
+      // Let's pass a placeholder since the API uses it for storage path but HomePrompt
+      // will create a NEW chat and then navigate.
+      formData.append("chatId", "new-chat");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${res.status}`);
+      }
+
+      const { url } = await res.json();
+      setAttachments((prev) => [...prev, { name: file.name, url }]);
+    } catch (err: any) {
+      console.error("Upload failed:", err);
+      alert(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeAttachment = (url: string) => {
+    setAttachments((prev) => prev.filter((a) => a.url !== url));
+  };
+
   const handleSubmit = async (text: string = content) => {
-    if (!text.trim() || isSubmitting) return;
+    const trimmedContent = text.trim();
+    if (!trimmedContent && attachments.length === 0) return;
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
@@ -51,8 +102,19 @@ export function HomePrompt() {
       // Update chat list
       setChats([chatWithId, ...chats]);
       
+      // Bundle attachments into the message
+      let finalContent = trimmedContent;
+      if (attachments.length > 0) {
+        const attachmentString = attachments
+          .map((a) => `📎 ${a.name}: ${a.url}`)
+          .join("\n");
+        finalContent = finalContent
+          ? `${finalContent}\n${attachmentString}`
+          : attachmentString;
+      }
+
       // Step 2: Navigate with message in URL - chat page will handle it
-      router.push(`/dashboard/chat/${chatId}?msg=${encodeURIComponent(text.trim())}`);
+      router.push(`/dashboard/chat/${chatId}?msg=${encodeURIComponent(finalContent)}`);
       
     } catch (err) {
       console.error("Failed to create chat:", err);
@@ -78,6 +140,29 @@ export function HomePrompt() {
 
       {/* Main Input Box */}
       <div className="w-full relative flex flex-col gap-0 bg-card rounded-xl border border-border shadow-stripe-elevated focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all duration-300">
+        {/* File Attachments Preview */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-6 pt-6 pb-1">
+            {attachments.map((file, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 bg-secondary/50 border border-border rounded-[8px] px-3 py-1.5 animate-fade-in group/chip"
+              >
+                <FileText className="h-4 w-4 text-primary opacity-70" />
+                <span className="text-[14px] font-medium text-foreground max-w-[200px] truncate">
+                  {file.name}
+                </span>
+                <button
+                  onClick={() => removeAttachment(file.url)}
+                  className="p-0.5 hover:bg-border rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -90,15 +175,47 @@ export function HomePrompt() {
         
         {/* Bottom Bar */}
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
-              disabled={isSubmitting}
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  disabled={uploading || isSubmitting}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin pointer-events-none" />
+                  ) : (
+                    <Paperclip className="h-4 w-4 pointer-events-none" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-card/90 backdrop-blur-md border-border">
+                <DropdownMenuItem
+                  onClick={() => fileInputRef.current?.click()}
+                  className="cursor-pointer gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Upload from computer</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer gap-2 opacity-50 pointer-events-none">
+                  <FileText className="h-4 w-4" />
+                  <span>Import from project</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer gap-2 opacity-50 pointer-events-none">
+                  <LinkIcon className="h-4 w-4" />
+                  <span>Link URL</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="flex items-center gap-3">

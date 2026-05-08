@@ -25,6 +25,7 @@
     "next": "^14.2.35",
     "node-appwrite": "^14.0.0",
     "openai": "^4.77.0",
+    "pdf-parse": "^2.4.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.1.0",
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18.3.14",
     "@types/react-dom": "^18.3.5",
     "@types/react-syntax-highlighter": "^15.5.11",

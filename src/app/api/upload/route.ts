@@ -2,6 +2,7 @@ import { createAdminClient, createSessionClient } from "@/lib/appwrite/server";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
 import { ID } from "node-appwrite";
+import { InputFile } from "node-appwrite/file";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,10 +16,11 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const chatId = formData.get("chatId") as string | null;
+    const projectId = formData.get("projectId") as string | null;
 
-    if (!file || !chatId) {
+    if (!file || (!chatId && !projectId)) {
       return NextResponse.json(
-        { error: "Missing file or chatId" },
+        { error: "Missing file and either chatId or projectId" },
         { status: 400 }
       );
     }
@@ -28,15 +30,29 @@ export async function POST(request: NextRequest) {
 
     // Upload to storage
     const fileId = ID.unique();
-    await admin.storage.createFile(BUCKET_ID, fileId, file);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const inputFile = InputFile.fromBuffer(buffer, file.name);
+    await admin.storage.createFile(BUCKET_ID, fileId, inputFile);
 
     // Build file URL
     const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!;
-    const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!;
-    const fileUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${fileId}/view?project=${projectId}`;
+    const projectIdEnv = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!;
+    const fileUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${fileId}/view?project=${projectIdEnv}`;
+
+    // PDF Parsing
+    let extractedText = null;
+    if (file.type === "application/pdf") {
+      try {
+        const pdf = (await import('pdf-parse')).default;
+        const data = await pdf(buffer);
+        extractedText = data.text;
+      } catch (parseErr) {
+        console.error("PDF parsing error:", parseErr);
+      }
+    }
 
     // Save file record
-    const storagePath = `${user.$id}/${chatId}/${fileId}`;
+    const storagePath = `${user.$id}/${chatId || projectId}/${fileId}`;
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
     const fileRecord = await admin.databases.createDocument(
@@ -46,18 +62,21 @@ export async function POST(request: NextRequest) {
       {
         user_id: user.$id,
         chat_id: chatId,
+        project_id: projectId,
+        file_id: fileId,
         name: file.name,
         storagePath,
         mimeType: file.type || null,
         sizeBytes: file.size || null,
+        content: extractedText,
       }
     );
 
     return NextResponse.json({ file: fileRecord, url: fileUrl });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Upload API error:", err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: err.message || "Internal server error" },
       { status: 500 }
     );
   }
