@@ -219,17 +219,48 @@ export async function POST(request: NextRequest) {
 
           if (fileId) {
             console.log(`[API /chat] Fetching content for file ${file.name} (${fileId}) via Admin SDK`);
-            const arrayBuffer = await admin.storage.getFileDownload(BUCKET_ID, fileId);
-            const buffer = Buffer.from(arrayBuffer);
             
             let text = "";
-            if (file.name.toLowerCase().endsWith(".pdf")) {
-              console.log(`[API /chat] Parsing PDF content for ${file.name}`);
-              const pdf = (await import('pdf-parse')).default;
-              const data = await pdf(buffer);
-              text = data.text;
-            } else {
-              text = buffer.toString('utf-8');
+            let fetchedFromDb = false;
+
+            // First, try to get it from the database where it was extracted during upload
+            try {
+              const fileRecords = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [
+                Query.equal("file_id", fileId),
+                Query.limit(1)
+              ]);
+              if (fileRecords.documents.length > 0 && fileRecords.documents[0].content) {
+                text = fileRecords.documents[0].content;
+                fetchedFromDb = true;
+                console.log(`[API /chat] Successfully retrieved content from DB for ${file.name}`);
+              }
+            } catch (dbErr) {
+              console.error(`[API /chat] Failed to fetch file content from DB:`, dbErr);
+            }
+
+            // Fallback: download and parse it on the fly
+            if (!fetchedFromDb) {
+              console.log(`[API /chat] Content not in DB, downloading and parsing on the fly...`);
+              const arrayBuffer = await admin.storage.getFileDownload(BUCKET_ID, fileId);
+              const buffer = Buffer.from(arrayBuffer);
+              
+              if (file.name.toLowerCase().endsWith(".pdf")) {
+                console.log(`[API /chat] Parsing PDF content for ${file.name}`);
+                try {
+                  const pdfParseModule: any = await import('pdf-parse');
+                  const PDFParseClass = pdfParseModule.PDFParse || (pdfParseModule.default && pdfParseModule.default.PDFParse);
+                  if (!PDFParseClass) throw new Error("Could not find PDFParse constructor in module");
+                  
+                  const parser = new PDFParseClass({ data: buffer });
+                  const data = await parser.getText();
+                  text = data.text;
+                } catch (parseErr: any) {
+                  console.error(`[API /chat] PDFParse Error:`, parseErr);
+                  text = `[Error parsing PDF: ${parseErr.message}]`;
+                }
+              } else {
+                text = buffer.toString('utf-8');
+              }
             }
             
             combinedFileContent += `\n--- File: ${file.name} ---\n${text}\n`;
@@ -241,7 +272,17 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      userMessageContent = `Attached Files Content:\n${combinedFileContent}\n\nUser Message:\n${userMessageContent}`;
+      userMessageContent = `<system_instruction>
+The user has attached files to this message. Their extracted text content is provided below in the <attached_files> block. 
+Do NOT attempt to fetch or download the URLs in the user's message. You already have the full text.
+</system_instruction>
+
+<attached_files>
+${combinedFileContent}
+</attached_files>
+
+User Message:
+${userMessageContent}`;
     }
 
     messages.push({ role: "user", content: userMessageContent });

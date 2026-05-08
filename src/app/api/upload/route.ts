@@ -43,8 +43,12 @@ export async function POST(request: NextRequest) {
     let extractedText = null;
     if (file.type === "application/pdf") {
       try {
-        const pdf = (await import('pdf-parse')).default;
-        const data = await pdf(buffer);
+        const pdfParseModule: any = await import('pdf-parse');
+        const PDFParseClass = pdfParseModule.PDFParse || (pdfParseModule.default && pdfParseModule.default.PDFParse);
+        if (!PDFParseClass) throw new Error("Could not find PDFParse constructor in module");
+
+        const parser = new PDFParseClass({ data: buffer });
+        const data = await parser.getText();
         extractedText = data.text;
       } catch (parseErr) {
         console.error("PDF parsing error:", parseErr);

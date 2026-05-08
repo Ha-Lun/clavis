@@ -17,7 +17,7 @@ async function migrate() {
 
     // Fetch existing attributes to avoid duplicates
     const attributesResult = await admin.databases.listAttributes(dbId, collectionId);
-    const existingAttributes = attributesResult.attributes.map(attr => attr.key);
+    const existingAttributes = attributesResult.attributes.map((attr: any) => attr.key);
     console.log("Existing attributes:", existingAttributes);
 
     const attributesToCreate = [
