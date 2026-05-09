@@ -33,6 +33,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { motion, LayoutGroup } from "framer-motion";
 
 interface SidebarProviderProps {
   initialChats: Chat[];
@@ -75,7 +76,7 @@ export function SidebarProvider({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex border-r border-border bg-secondary flex-col transition-all duration-200 ease-in-out z-20",
+          "hidden lg:flex border-r border-glass-border bg-secondary/45 backdrop-blur-xl flex-col transition-all duration-200 ease-in-out z-20 shadow-velvet-ambient",
           isCollapsed ? "w-[60px]" : "w-72"
         )}
       >
@@ -90,7 +91,7 @@ export function SidebarProvider({
 
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-secondary border-r border-border">
+        <SheetContent side="left" className="w-72 p-0 bg-secondary/70 backdrop-blur-xl border-r border-glass-border">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarContent
             userEmail={userEmail}
@@ -311,78 +312,86 @@ function SidebarContent({
             </div>
 
             {isChatsOpen && (
-              <div className="space-y-0.5 w-full min-w-0">
-                {chats.length === 0 ? (
-                  <p className="px-2 text-xs text-muted-foreground/60 italic">No history</p>
-                ) : (
-                  [...chats]
-                    .sort((a, b) => {
-                      if (a.isPinned && !b.isPinned) return -1;
-                      if (!a.isPinned && b.isPinned) return 1;
-                      return new Date((b.$updatedAt || b.updatedAt) as string).getTime() - 
-                             new Date((a.$updatedAt || a.updatedAt) as string).getTime();
-                    })
-                    .map((chat) => {
-                      const chatId = chat.$id ?? chat.id;
-                      const isActive = pathname === `/dashboard/chat/${chatId}`;
+              <LayoutGroup id="sidebar-chats">
+                <div className="space-y-0.5 w-full min-w-0">
+                  {chats.length === 0 ? (
+                    <p className="px-2 text-xs text-muted-foreground/60 italic">No history</p>
+                  ) : (
+                    [...chats]
+                      .sort((a, b) => {
+                        if (a.isPinned && !b.isPinned) return -1;
+                        if (!a.isPinned && b.isPinned) return 1;
+                        return new Date((b.$updatedAt || b.updatedAt) as string).getTime() - 
+                               new Date((a.$updatedAt || a.updatedAt) as string).getTime();
+                      })
+                      .map((chat) => {
+                        const chatId = chat.$id ?? chat.id;
+                        const isActive = pathname === `/dashboard/chat/${chatId}`;
 
-                      return (
-                        <div
-                          key={chatId}
-                          className={cn(
-                            "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[6px] transition-colors duration-150 hover:bg-primary/5 pr-1",
-                            isActive && "bg-primary/10"
-                          )}
-                        >
-                          <Link
-                            href={`/dashboard/chat/${chatId}`}
-                            className="flex min-w-0 items-center gap-2 px-2 py-1.5 rounded-[6px] w-full"
+                        return (
+                          <div
+                            key={chatId}
+                            className={cn(
+                              "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[8px] transition-all duration-300 hover:bg-primary/5 pr-1 relative overflow-hidden"
+                            )}
                           >
-                            <MessageSquare
-                              className={cn(
-                                "h-3.5 w-3.5 shrink-0",
-                                isActive ? "text-primary" : "text-muted-foreground/60"
-                              )}
-                            />
-                            <span
-                              className={cn(
-                                "truncate text-[13px] text-muted-foreground group-hover:text-foreground transition-colors",
-                                isActive && "text-foreground font-medium"
-                              )}
+                            {isActive && (
+                              <motion.div
+                                layoutId="active-chat-pill"
+                                className="absolute inset-0 bg-primary/10 border-l-2 border-primary rounded-[8px]"
+                                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                              />
+                            )}
+                            <Link
+                              href={`/dashboard/chat/${chatId}`}
+                              className="relative z-10 flex min-w-0 items-center gap-2 px-2 py-2 rounded-[8px] w-full"
                             >
-                              {chat.title}
-                            </span>
-                          </Link>
+                              <MessageSquare
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0 transition-colors duration-200",
+                                  isActive ? "text-primary" : "text-muted-foreground/50"
+                                )}
+                              />
+                              <span
+                                className={cn(
+                                  "truncate text-[13px] text-muted-foreground group-hover:text-foreground transition-colors duration-200",
+                                  isActive && "text-foreground font-medium"
+                                )}
+                              >
+                                {chat.title}
+                              </span>
+                            </Link>
 
-                          <div className="flex items-center">
-                            <button
-                              type="button"
-                              onClick={(e) => handlePinChat(chatId, !chat.isPinned, e)}
-                              className={cn(
-                                "shrink-0 rounded-md p-1.5 transition-all duration-150",
-                                chat.isPinned 
-                                  ? "text-primary opacity-100" 
-                                  : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10"
-                              )}
-                              title={chat.isPinned ? "Unpin chat" : "Pin chat"}
-                            >
-                              {chat.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleDeleteChat(chatId, e)}
-                              className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
-                              title="Delete chat"
-                              aria-label="Delete chat"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
+                            <div className="relative z-10 flex items-center">
+                              <button
+                                type="button"
+                                onClick={(e) => handlePinChat(chatId, !chat.isPinned, e)}
+                                className={cn(
+                                  "shrink-0 rounded-md p-1.5 transition-all duration-150",
+                                  chat.isPinned 
+                                    ? "text-primary opacity-100" 
+                                    : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10"
+                                )}
+                                title={chat.isPinned ? "Unpin chat" : "Pin chat"}
+                              >
+                                {chat.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteChat(chatId, e)}
+                                className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
+                                title="Delete chat"
+                                aria-label="Delete chat"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
+                        );
+                      })
+                  )}
+                </div>
+              </LayoutGroup>
             )}
           </div>
 
@@ -417,62 +426,76 @@ function SidebarContent({
             </div>
 
             {isProjectsOpen && (
-              <div className="space-y-0.5 w-full min-w-0">
-                {projects.length === 0 ? (
-                  <p className="px-2 text-xs text-muted-foreground/60 italic">No projects</p>
-                ) : (
-                  [...projects]
-                    .sort((a, b) => {
-                      if (a.isPinned && !b.isPinned) return -1;
-                      if (!a.isPinned && b.isPinned) return 1;
-                      return a.name.localeCompare(b.name);
-                    })
-                    .map((project) => {
-                      const projectId = project.$id ?? project.id;
-                      const isActive = pathname === `/dashboard/projects/${projectId}`;
+              <LayoutGroup id="sidebar-projects">
+                <div className="space-y-0.5 w-full min-w-0">
+                  {projects.length === 0 ? (
+                    <p className="px-2 text-xs text-muted-foreground/60 italic">No projects</p>
+                  ) : (
+                    [...projects]
+                      .sort((a, b) => {
+                        if (a.isPinned && !b.isPinned) return -1;
+                        if (!a.isPinned && b.isPinned) return 1;
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((project) => {
+                        const projectId = project.$id ?? project.id;
+                        const isActive = pathname === `/dashboard/projects/${projectId}`;
 
-                      return (
-                        <div
-                          key={projectId}
-                          className={cn(
-                            "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[6px] transition-colors duration-150 hover:bg-primary/5 pr-1",
-                            isActive && "bg-primary/10"
-                          )}
-                        >
-                          <Link
-                            href={`/dashboard/projects/${projectId}`}
+                        return (
+                          <div
+                            key={projectId}
                             className={cn(
-                              "flex items-center gap-2 px-2 py-1.5 rounded-[6px] transition-all duration-150 text-muted-foreground hover:text-foreground min-w-0 w-full",
-                              isActive && "bg-primary/10 text-foreground font-medium"
+                              "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[8px] transition-all duration-300 hover:bg-primary/5 pr-1 relative overflow-hidden"
                             )}
                           >
-                            <FolderOpen
+                            {isActive && (
+                              <motion.div
+                                layoutId="active-project-pill"
+                                className="absolute inset-0 bg-primary/10 border-l-2 border-primary rounded-[8px]"
+                                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                              />
+                            )}
+                            <Link
+                              href={`/dashboard/projects/${projectId}`}
                               className={cn(
-                                "h-3.5 w-3.5 shrink-0",
-                                isActive ? "text-primary" : "text-muted-foreground/60"
+                                "relative z-10 flex items-center gap-2 px-2 py-2 rounded-[8px] transition-all duration-150 text-muted-foreground hover:text-foreground min-w-0 w-full"
                               )}
-                            />
-                            <span className="truncate text-[13px] flex-1 min-w-0">{project.name}</span>
-                          </Link>
+                            >
+                              <FolderOpen
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0 transition-colors duration-200",
+                                  isActive ? "text-primary" : "text-muted-foreground/50"
+                                )}
+                              />
+                              <span
+                                className={cn(
+                                  "truncate text-[13px] flex-1 min-w-0",
+                                  isActive && "text-foreground font-medium"
+                                )}
+                              >
+                                {project.name}
+                              </span>
+                            </Link>
 
-                          <button
-                            type="button"
-                            onClick={(e) => handlePinProject(projectId, !project.isPinned, e)}
-                            className={cn(
-                              "shrink-0 rounded-md p-1.5 transition-all duration-150",
-                              project.isPinned 
-                                ? "text-primary opacity-100" 
-                                : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10"
-                            )}
-                            title={project.isPinned ? "Unpin project" : "Pin project"}
-                          >
-                            {project.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
-                          </button>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
+                            <button
+                              type="button"
+                              onClick={(e) => handlePinProject(projectId, !project.isPinned, e)}
+                              className={cn(
+                                "relative z-10 shrink-0 rounded-md p-1.5 transition-all duration-150",
+                                project.isPinned 
+                                  ? "text-primary opacity-100" 
+                                  : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10"
+                              )}
+                              title={project.isPinned ? "Unpin project" : "Pin project"}
+                            >
+                              {project.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                            </button>
+                          </div>
+                        );
+                      })
+                  )}
+                </div>
+              </LayoutGroup>
             )}
           </div>
         </div>

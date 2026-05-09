@@ -40,10 +40,11 @@ export function MessageList({ modelId }: MessageListProps) {
   if (messages.length === 0 && !isStreaming) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center animate-fade-in">
-          <div className="h-16 w-16 rounded-2xl bg-[#533afd]/10 flex items-center justify-center mx-auto mb-4">
+        <div className="text-center animate-fade-in relative">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-ambient-glow-gold rounded-full filter blur-[35px] opacity-20 pointer-events-none" />
+          <div className="h-16 w-16 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4 border border-gold/25 shadow-gold-glow">
             <svg
-              className="h-8 w-8 text-[#533afd]"
+              className="h-8 w-8 text-gold"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -56,8 +57,8 @@ export function MessageList({ modelId }: MessageListProps) {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-light tracking-tight mb-2 text-[#061b31]">Start a conversation</h2>
-          <p className="text-[#64748d] text-[15px] font-light max-w-sm">
+          <h2 className="text-2xl font-serif font-light tracking-wide mb-3 text-foreground mt-6">Start a conversation</h2>
+          <p className="text-muted-foreground/80 text-[15px] font-light max-w-sm leading-relaxed">
             Send a message to begin chatting with the AI. You can switch models
             at any time using the selector below.
           </p>

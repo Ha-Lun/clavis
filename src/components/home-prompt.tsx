@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { motion, AnimatePresence, useMotionValue, useMotionTemplate } from "framer-motion";
 
 const SUGGESTIONS = [
   { icon: Sparkles, label: "Explain a concept" },
@@ -24,6 +25,69 @@ const SUGGESTIONS = [
   { icon: Mail, label: "Draft an email" },
   { icon: Bug, label: "Debug my code" },
 ];
+
+function FluidCard({
+  children,
+  onClick,
+  className,
+  disabled,
+  ...props
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  return (
+    <motion.button
+      onMouseMove={handleMouseMove}
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "relative group overflow-hidden flex flex-col items-start gap-4 p-5 text-left glass-card border border-glass-border rounded-luxury-md transition-all duration-300 outline-none w-full cursor-pointer select-none",
+        className
+      )}
+      whileHover={{ y: -4, scale: 1.02, borderColor: "rgba(197, 160, 89, 0.4)", boxShadow: "0 12px 24px -10px rgba(197, 160, 89, 0.08)" }}
+      whileTap={{ scale: 0.98 }}
+      {...props}
+    >
+      {/* Wave glow background that tracks mouse */}
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-luxury-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              160px circle at ${mouseX}px ${mouseY}px,
+              rgba(197, 160, 89, 0.08) 0%,
+              rgba(83, 58, 253, 0.03) 60%,
+              transparent 100%
+            )
+          `,
+        }}
+      />
+      
+      {/* Animated fluid wave contour line inside card */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+        <svg className="w-full h-full fill-gold/15 animate-wave-flow" viewBox="0 0 100 10" preserveAspectRatio="none">
+          <path d="M0,5 C30,8 70,2 100,5 L100,10 L0,10 Z" />
+        </svg>
+      </div>
+
+      <div className="relative z-10 flex flex-col gap-3 w-full h-full">
+        {children}
+      </div>
+    </motion.button>
+  );
+}
 
 export function HomePrompt() {
   const [content, setContent] = useState("");
@@ -130,36 +194,60 @@ export function HomePrompt() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full max-w-3xl mx-auto px-4 animate-fade-in pb-12">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center h-full w-full max-w-3xl mx-auto px-4 pb-12"
+    >
       {/* Wordmark */}
-      <div className="mb-16 text-center">
-        <h1 className="text-6xl md:text-[80px] font-light tracking-tighter text-foreground bg-clip-text">
-          Flux
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        className="mb-14 text-center select-none relative"
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-ambient-glow-gold rounded-full filter blur-[45px] opacity-40 pointer-events-none" />
+        <h1 className="text-7xl md:text-[90px] font-serif font-light tracking-[0.1em] text-gold-shimmer text-transparent bg-clip-text select-none">
+          FLUX
         </h1>
-      </div>
+        <p className="text-[11px] font-medium tracking-[0.25em] uppercase text-muted-foreground/50 mt-3">
+          AI Luxury Experience
+        </p>
+      </motion.div>
 
       {/* Main Input Box */}
-      <div className="w-full relative flex flex-col gap-0 bg-card rounded-xl border border-border shadow-stripe-elevated focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all duration-300">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full relative flex flex-col gap-0 glass-panel rounded-luxury-lg border border-glass-border shadow-velvet-elevated focus-within:border-gold-accent/40 focus-within:shadow-gold-aura transition-all duration-300"
+      >
         {/* File Attachments Preview */}
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 px-6 pt-6 pb-1">
-            {attachments.map((file, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 bg-secondary/50 border border-border rounded-[8px] px-3 py-1.5 animate-fade-in group/chip"
-              >
-                <FileText className="h-4 w-4 text-primary opacity-70" />
-                <span className="text-[14px] font-medium text-foreground max-w-[200px] truncate">
-                  {file.name}
-                </span>
-                <button
-                  onClick={() => removeAttachment(file.url)}
-                  className="p-0.5 hover:bg-border rounded-full transition-colors text-muted-foreground hover:text-foreground"
+            <AnimatePresence>
+              {attachments.map((file, i) => (
+                <motion.div
+                  key={file.url}
+                  initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  className="flex items-center gap-2 bg-secondary/30 border border-glass-border rounded-luxury-sm px-3 py-1.5 group/chip relative overflow-hidden"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
+                  <FileText className="h-4 w-4 text-primary opacity-70" />
+                  <span className="text-[14px] font-medium text-foreground max-w-[200px] truncate">
+                    {file.name}
+                  </span>
+                  <button
+                    onClick={() => removeAttachment(file.url)}
+                    className="p-0.5 hover:bg-glass-highlight rounded-full transition-colors text-muted-foreground hover:text-foreground relative z-10"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
 
@@ -229,7 +317,7 @@ export function HomePrompt() {
               className={cn(
                 "h-9 w-9 shrink-0 rounded-md transition-all duration-300",
                 content.trim()
-                  ? "bg-primary text-white hover:bg-primary/90 shadow-[0_2px_8px_rgba(83,58,253,0.3)]"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_2px_12px_rgba(197,160,89,0.3)]"
                   : "bg-secondary text-muted-foreground"
               )}
               onClick={() => handleSubmit()}
@@ -239,34 +327,60 @@ export function HomePrompt() {
             </Button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Suggestion Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full mt-16">
+      <motion.div
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.04,
+              delayChildren: 0.3,
+            }
+          }
+        }}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full mt-16"
+      >
         {SUGGESTIONS.map((s, i) => (
-          <button
+          <motion.div
             key={i}
-            onClick={() => handleSubmit(s.label)}
-            disabled={isSubmitting}
-            style={{ animationDelay: `${i * 50}ms` }}
-            className="flex flex-col items-start gap-3 p-5 text-left bg-card border border-border rounded-[12px] transition-all duration-300 hover:border-primary/50 shadow-stripe-ambient hover:shadow-stripe-elevated hover:-translate-y-1 animate-fade-up group"
+            variants={{
+              hidden: { opacity: 0, y: 15, scale: 0.98 },
+              show: { opacity: 1, y: 0, scale: 1 }
+            }}
           >
-            <s.icon className="h-5 w-5 text-primary opacity-80 group-hover:opacity-100 group-hover:animate-pulse" />
-            <span className="text-[15px] font-light text-foreground">
-              {s.label}
-            </span>
-          </button>
+            <FluidCard
+              onClick={() => handleSubmit(s.label)}
+              disabled={isSubmitting}
+            >
+              <s.icon className="h-5 w-5 text-primary opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="text-[15px] font-light text-foreground/80 group-hover:text-foreground transition-colors duration-300">
+                {s.label}
+              </span>
+            </FluidCard>
+          </motion.div>
         ))}
-        <button
-          onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
-          className="flex flex-col items-start gap-3 p-5 text-left bg-card border border-border rounded-[12px] transition-all duration-300 hover:border-primary/50 shadow-stripe-ambient hover:shadow-stripe-elevated hover:-translate-y-1 animate-fade-up group border-dashed"
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 15, scale: 0.98 },
+            show: { opacity: 1, y: 0, scale: 1 }
+          }}
         >
-          <Plus className="h-5 w-5 text-primary opacity-80 group-hover:opacity-100 group-hover:animate-pulse" />
-          <span className="text-[15px] font-light text-foreground">
-            New Project
-          </span>
-        </button>
-      </div>
-    </div>
+          <FluidCard
+            onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
+            className="border-dashed border-muted/40"
+          >
+            <Plus className="h-5 w-5 text-primary opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+            <span className="text-[15px] font-light text-foreground/80 group-hover:text-foreground transition-colors duration-300">
+              New Project
+            </span>
+          </FluidCard>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

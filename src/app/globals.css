@@ -35,33 +35,34 @@
   }
 
   .dark {
-    --background: 240 10% 4%; /* #0a0a0f Deepest Luxury Navy */
-    --foreground: 240 5% 90%; /* Soft White */
+    --background: 240 10% 3.5%; /* #060609 Void Surface */
+    --foreground: 240 5% 92%; /* Warm off-white */
     
-    --card: 240 10% 7%; /* #0f0d1a Dark Card */
-    --card-foreground: 240 5% 90%;
+    --card: 240 10% 4.5%; /* #08080c Surface Velvet */
+    --card-foreground: 240 5% 92%;
     
-    --popover: 240 10% 7%;
-    --popover-foreground: 240 5% 90%;
+    --popover: 240 10% 4.5%;
+    --popover-foreground: 240 5% 92%;
     
-    --primary: 248 98% 61%; /* Stripe Purple (same as light) */
-    --primary-foreground: 0 0% 100%;
+    --primary: 39 52% 56%; /* Gold: #C5A059 */
+    --primary-foreground: 240 10% 3%; /* Deep pitch black text on gold */
     
-    --secondary: 240 10% 12%; /* Dark Sidebar Surface */
-    --secondary-foreground: 240 5% 90%;
+    --secondary: 240 10% 4.5%; /* Surface Velvet */
+    --secondary-foreground: 240 5% 92%;
     
-    --muted: 240 5% 30%;
+    --muted: 240 5% 35%;
     --muted-foreground: 240 5% 65%;
     
-    --accent: 341 83% 53%; /* Stripe Ruby */
-    --accent-foreground: 0 0% 100%;
+    --accent: 39 52% 56%; /* Gold accent */
+    --accent-foreground: 240 10% 3%;
     
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 240 10% 15%; /* #1e1a2e Subtle Border */
-    --input: 240 10% 15%;
-    --ring: 248 98% 61%;
+    --border: 240 10% 7.5%; /* #101015 Subtle Border */
+    --input: 240 10% 7.5%;
+    --ring: 39 52% 56%;
+    --radius: 1rem; /* Premium 16px radius */
   }
 }
 
@@ -113,6 +114,49 @@
   
   .shadow-stripe-focus {
     box-shadow: 0 0 0 2px hsla(var(--primary), 0.4);
+  }
+
+  /* Ultra-Premium Dark Luxury Glassmorphism Utilities */
+  .glass-panel {
+    background: rgba(8, 8, 12, 0.4) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 16px 48px -16px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.03) !important;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.03) !important;
+  }
+
+  .text-gold-shimmer {
+    background: linear-gradient(135deg, #FFF 0%, #E6C892 40%, #C5A059 80%, #8B6B32 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-ambient-glow-gold {
+    background: radial-gradient(circle, rgba(197, 160, 89, 0.05) 0%, rgba(0,0,0,0) 70%);
+  }
+
+  .bg-ambient-glow-indigo {
+    background: radial-gradient(circle, rgba(83, 58, 253, 0.04) 0%, rgba(0,0,0,0) 70%);
+  }
+
+  /* Fluid Wave Animation Utility */
+  .animate-wave-flow {
+    animation: waveFlow 4s ease-in-out infinite;
+  }
+
+  @keyframes waveFlow {
+    0% { transform: translateX(0) translateZ(0) scaleY(1); }
+    50% { transform: translateX(-15%) translateZ(0) scaleY(0.75) skewY(1deg); }
+    100% { transform: translateX(0) translateZ(0) scaleY(1); }
   }
 }
 

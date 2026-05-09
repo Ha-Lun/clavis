@@ -1,0 +1,12 @@
+{
+  "skills": {
+    "disabled": [
+      "generate",
+      "fix",
+      "review",
+      "report",
+      "coverage",
+      "migrate"
+    ]
+  }
+}

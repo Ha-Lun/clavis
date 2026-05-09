@@ -10,6 +10,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { Message } from "@/lib/appwrite/types";
 import { extractAttachments, extractFileRefs } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface MessageBubbleProps {
   message: Message;
@@ -38,32 +39,37 @@ export function MessageBubble({
   };
 
   return (
-    <div
-      className="animate-fade-up"
-      style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: Math.min(index * 0.04, 0.25) }}
     >
       {/* Subtle divider between messages */}
       {index > 0 && (
-        <div className="border-t border-border mb-6" />
+        <div className="border-t border-glass-border my-8" />
       )}
 
       <div
         className={cn(
-          "flex gap-3",
+          "flex gap-4.5",
           isUser ? "flex-row-reverse" : "flex-row"
         )}
       >
         {/* Avatar */}
-        <Avatar className="h-7 w-7 shrink-0 mt-1">
+        <Avatar className="h-8 w-8 shrink-0 mt-0.5 relative overflow-hidden">
           <AvatarFallback
             className={cn(
-              "text-xs",
+              "text-xs transition-all duration-300",
               isUser
-                ? "bg-primary text-white shadow-stripe-ambient"
-                : "bg-secondary text-foreground"
+                ? "bg-secondary/80 text-foreground border border-glass-border shadow-velvet-ambient"
+                : "bg-gold/10 text-gold border border-gold/25 shadow-gold-glow"
             )}
           >
-            {isUser ? <User className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
+            {isUser ? (
+              <User className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <Zap className="h-4 w-4 text-gold fill-gold/20" />
+            )}
           </AvatarFallback>
         </Avatar>
 
@@ -76,17 +82,17 @@ export function MessageBubble({
         >
           {/* Role label */}
           <p className={cn(
-            "text-xs font-medium mb-1.5 tracking-wide",
-            isUser ? "text-primary text-right" : "text-muted-foreground"
+            "text-[11px] font-medium mb-1.5 tracking-widest uppercase text-muted-foreground/45",
+            isUser ? "text-right" : "text-left"
           )}>
             {isUser ? "You" : "Flux"}
           </p>
 
           <div
             className={cn(
-              "text-[16px] leading-relaxed font-light",
+              "text-[15.5px] leading-relaxed font-light",
               isUser
-                ? "bg-primary text-white rounded-[16px_16px_4px_16px] px-4 py-3 shadow-stripe-ambient"
+                ? "bg-primary/10 border border-primary/25 text-foreground rounded-[16px_16px_4px_16px] px-4.5 py-3.5 shadow-velvet-ambient"
                 : "text-foreground",
               isStreaming && !isUser && "border-transparent"
             )}
@@ -99,10 +105,10 @@ export function MessageBubble({
                     href={file.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-[8px] px-3 py-1.5 transition-colors group/file"
+                    className="flex items-center gap-2 bg-secondary/30 hover:bg-glass-highlight border border-glass-border rounded-luxury-sm px-3 py-1.5 transition-all group/file"
                   >
-                    <FileText className="h-4 w-4 text-white/70" />
-                    <span className="text-[13px] font-medium max-w-[150px] truncate">
+                    <FileText className="h-4 w-4 text-gold/80" />
+                    <span className="text-[13px] font-medium max-w-[150px] truncate text-foreground/80">
                       {file.name}
                     </span>
                     <ExternalLink className="h-3 w-3 opacity-0 group-hover/file:opacity-100 transition-opacity" />
@@ -112,7 +118,7 @@ export function MessageBubble({
             )}
             <div className="break-words">
               {isUser ? (
-                <div className="whitespace-pre-wrap">
+                <div className="whitespace-pre-wrap font-sans">
                   {displayContent}
                 </div>
               ) : (
@@ -122,9 +128,9 @@ export function MessageBubble({
                       {fileRefs.map((fileName, i) => (
                         <div 
                           key={i}
-                          className="flex items-center gap-1.5 bg-primary/5 border border-primary/10 rounded-[6px] px-2 py-1 text-[11px] text-primary/80 font-medium shadow-stripe-ambient"
+                          className="flex items-center gap-1.5 bg-primary/5 border border-primary/10 rounded-luxury-sm px-2.5 py-1 text-[11px] text-primary/80 font-medium shadow-stripe-ambient"
                         >
-                          <FileText className="h-3 w-3" />
+                          <FileText className="h-3 w-3 text-gold" />
                           <span>{fileName}</span>
                         </div>
                       ))}
@@ -136,8 +142,8 @@ export function MessageBubble({
                       code({ node, inline, className, children, ...props }: any) {
                         const match = /language-(\w+)/.exec(className || "");
                         return !inline && match ? (
-                          <div className="rounded-xl overflow-hidden my-4 border border-border shadow-stripe-ambient">
-                            <div className="bg-secondary px-4 py-2 text-xs font-sans text-muted-foreground border-b border-border flex items-center justify-between">
+                          <div className="rounded-xl overflow-hidden my-4 border border-glass-border shadow-velvet-ambient">
+                            <div className="bg-void-elevated px-4 py-2.5 text-xs font-sans text-muted-foreground border-b border-glass-border flex items-center justify-between">
                               <span>{match[1]}</span>
                             </div>
                             <SyntaxHighlighter
@@ -147,8 +153,8 @@ export function MessageBubble({
                               PreTag="div"
                               customStyle={{
                                 margin: 0,
-                                padding: "1rem",
-                                backgroundColor: "#061b31",
+                                padding: "1.25rem",
+                                backgroundColor: "#08080c",
                                 fontSize: "0.875rem",
                                 fontFamily: "monospace",
                               }}
@@ -159,7 +165,7 @@ export function MessageBubble({
                         ) : (
                           <code
                             className={cn(
-                              "bg-secondary/50 text-accent rounded-md px-1.5 py-0.5 font-mono text-[0.85em]",
+                              "bg-secondary/50 text-gold rounded-md px-1.5 py-0.5 font-mono text-[0.85em] border border-glass-border",
                               className
                             )}
                             {...props}
@@ -168,11 +174,11 @@ export function MessageBubble({
                           </code>
                         );
                       },
-                      p: ({ children }) => <p className="mb-3 last:mb-0 font-light">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>,
-                      li: ({ children }) => <li className="mb-1">{children}</li>,
-                      h1: ({ children }) => <h1 className="text-2xl font-light tracking-tight mb-3 mt-5 text-foreground">{children}</h1>,
+                      p: ({ children }) => <p className="mb-4 last:mb-0 font-light text-foreground/90">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc pl-5 mb-5 space-y-1.5">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal pl-5 mb-5 space-y-1.5">{children}</ol>,
+                      li: ({ children }) => <li className="mb-1 text-foreground/90">{children}</li>,
+                      h1: ({ children }) => <h1 className="text-2xl font-light tracking-tight mb-3 mt-6 text-foreground">{children}</h1>,
                       h2: ({ children }) => <h2 className="text-xl font-light tracking-tight mb-3 mt-5 text-foreground">{children}</h2>,
                       h3: ({ children }) => <h3 className="text-lg font-light tracking-tight mb-2 mt-4 text-foreground">{children}</h3>,
                       a: ({ children, href }) => <a href={href} className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors">{children}</a>,
@@ -184,7 +190,7 @@ export function MessageBubble({
                   </ReactMarkdown>
                   
                   {!isStreaming && modelName && (
-                    <p className="mt-4 text-[10px] text-muted-foreground/50 font-medium uppercase tracking-widest">
+                    <p className="mt-4 text-[10px] text-muted-foreground/35 font-medium uppercase tracking-widest">
                       Prepared using {modelName}
                     </p>
                   )}
@@ -199,7 +205,7 @@ export function MessageBubble({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 gap-1.5"
+                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 gap-1.5 rounded-full border border-transparent hover:border-glass-border"
                 onClick={handleCopy}
               >
                 {copied ? (
@@ -218,6 +224,6 @@ export function MessageBubble({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} font-sans antialiased min-h-screen font-light`}
+        className={`${inter.variable} font-sans antialiased min-h-screen font-light bg-background`}
       >
         <ThemeProvider>
           <ChatProvider>
