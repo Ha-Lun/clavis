@@ -11,7 +11,12 @@ import type {
 
 export const dynamic = "force-dynamic";
 
-type MessageParam = { role: "system" | "user" | "assistant"; content: string };
+type MessageParam = { 
+  role: "system" | "user" | "assistant" | "tool"; 
+  content: string;
+  tool_calls?: any[];
+  tool_call_id?: string;
+};
 
 async function callAIWithRetry(
   nvidia: ReturnType<typeof createNvidiaClient>,
@@ -38,6 +43,22 @@ async function callAIWithRetry(
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
+        ] as any[],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "web_search",
+              description: "Search the web for current, up-to-date information",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: { type: "string", description: "The search query" }
+                },
+                required: ["query"]
+              }
+            }
+          }
         ],
         stream: true,
         max_tokens: 4096,
@@ -122,7 +143,8 @@ export async function POST(request: NextRequest) {
     console.log("[API /chat] Admin client, dbId:", dbId);
 
     // Verify chat belongs to user
-    let finalSystemPrompt = FLUX_SYSTEM_PROMPT;
+    const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    let finalSystemPrompt = `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${FLUX_SYSTEM_PROMPT}`;
     try {
       const chat = await admin.databases.getDocument(
         dbId,
@@ -238,7 +260,7 @@ export async function POST(request: NextRequest) {
     // Build message list - ONLY previous messages (not current)
     // Current message is already in UI and will be included via chat context if needed
     const messages: MessageParam[] = history.documents.map((m) => ({
-      role: m.role as "system" | "user" | "assistant",
+      role: m.role as "system" | "user" | "assistant" | "tool",
       content: m.content as string,
     }));
 
@@ -341,7 +363,7 @@ ${userMessageContent}`;
     // Call NVIDIA NIM with retry
     console.log("[API /chat] Creating NVIDIA client, model:", model);
 
-    let nvidia;
+    let nvidia: ReturnType<typeof createNvidiaClient>;
     try {
       nvidia = createNvidiaClient();
     } catch (err: any) {
@@ -384,64 +406,149 @@ ${userMessageContent}`;
 
     const stream = new ReadableStream({
       async start(controller) {
-        try {
-          console.log("[API /chat] Starting stream...");
-          const streamingCompletion =
-            completion as AsyncIterable<ChatCompletionChunk>;
-          for await (const chunk of streamingCompletion) {
-            const content = chunk.choices[0]?.delta?.content ?? "";
-            if (content) {
-              chunkCount++;
-              fullContent += content;
-              controller.enqueue(new TextEncoder().encode(content));
-            }
-          }
-          console.log(
-            "[API /chat] Stream done, chunks:",
-            chunkCount,
-            "content length:",
-            fullContent.length,
-          );
+        async function processStream(currentCompletion: any) {
+          try {
+            console.log("[API /chat] Starting stream process...");
+            const streamingCompletion = currentCompletion as AsyncIterable<ChatCompletionChunk>;
+            
+            let toolCalls: any[] = [];
 
-          // Save complete assistant message
-          await admin.databases.createDocument(
-            dbId,
-            COLLECTIONS.MESSAGES,
-            ID.unique(),
-            {
-              chat_id: chatId,
-              role: "assistant",
-              content: fullContent,
-            },
-          );
+            for await (const chunk of streamingCompletion) {
+              const delta = chunk.choices[0]?.delta;
+              
+              if (delta?.tool_calls) {
+                for (const toolCall of delta.tool_calls) {
+                  const index = toolCall.index;
+                  if (!toolCalls[index]) {
+                    toolCalls[index] = {
+                      id: toolCall.id,
+                      type: toolCall.type,
+                      function: { name: toolCall.function?.name || "", arguments: "" }
+                    };
+                  }
+                  if (toolCall.function?.arguments) {
+                    toolCalls[index].function.arguments += toolCall.function.arguments;
+                  }
+                }
+                continue;
+              }
 
-          controller.close();
-        } catch (err: any) {
-          if (err.name === "AbortError" || request.signal.aborted) {
-            console.log("[API /chat] Stream aborted by client. Saving partial response...");
-            if (fullContent) {
-              try {
-                await admin.databases.createDocument(
-                  dbId,
-                  COLLECTIONS.MESSAGES,
-                  ID.unique(),
-                  {
-                    chat_id: chatId,
-                    role: "assistant",
-                    content: fullContent,
-                  },
-                );
-                console.log("[API /chat] Partial response saved.");
-              } catch (dbErr) {
-                console.error("[API /chat] Failed to save partial response:", dbErr);
+              const content = delta?.content ?? "";
+              if (content) {
+                chunkCount++;
+                fullContent += content;
+                controller.enqueue(new TextEncoder().encode(content));
               }
             }
+            
+            // Stream finished for this chunk. Check if there were tool calls.
+            if (toolCalls.length > 0) {
+              console.log("[API /chat] Tool calls detected:", JSON.stringify(toolCalls));
+              
+              messages.push({
+                role: "assistant",
+                content: "",
+                tool_calls: toolCalls
+              });
+
+              for (const tc of toolCalls) {
+                if (tc.function.name === "web_search") {
+                  try {
+                    const args = JSON.parse(tc.function.arguments);
+                    console.log("[API /chat] Executing web_search for:", args.query);
+                    
+                    const searchRes = await fetch("https://api.tavily.com/search", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${process.env.TAVILY_API_KEY || ""}`
+                      },
+                      body: JSON.stringify({
+                        query: args.query,
+                        search_depth: "basic",
+                        max_results: 5
+                      })
+                    });
+                    
+                    if (!searchRes.ok) throw new Error(`Search API failed with status ${searchRes.status}`);
+                    const searchData = await searchRes.json();
+                    
+                    const formattedResults = searchData.results
+                      .map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}`)
+                      .join("\n\n");
+                      
+                    messages.push({
+                      role: "tool",
+                      tool_call_id: tc.id,
+                      content: `Search Results for "${args.query}":\n\n${formattedResults}`
+                    });
+                    
+                  } catch (err: any) {
+                    console.error("[API /chat] Tool execution failed:", err);
+                    messages.push({
+                      role: "tool",
+                      tool_call_id: tc.id,
+                      content: `Error performing search: ${err.message}`
+                    });
+                  }
+                }
+              }
+
+              console.log("[API /chat] Calling AI again with tool results...");
+              const nextCompletion = await callAIWithRetry(nvidia, model, messages, request.signal, finalSystemPrompt);
+              await processStream(nextCompletion);
+              return;
+            }
+
+            console.log(
+              "[API /chat] Stream done, chunks:",
+              chunkCount,
+              "content length:",
+              fullContent.length,
+            );
+
+            // Save complete assistant message
+            await admin.databases.createDocument(
+              dbId,
+              COLLECTIONS.MESSAGES,
+              ID.unique(),
+              {
+                chat_id: chatId,
+                role: "assistant",
+                content: fullContent,
+              },
+            );
+
             controller.close();
-          } else {
-            console.error("Stream error:", err);
-            controller.error(err);
+          } catch (err: any) {
+            if (err.name === "AbortError" || request.signal.aborted) {
+              console.log("[API /chat] Stream aborted by client. Saving partial response...");
+              if (fullContent) {
+                try {
+                  await admin.databases.createDocument(
+                    dbId,
+                    COLLECTIONS.MESSAGES,
+                    ID.unique(),
+                    {
+                      chat_id: chatId,
+                      role: "assistant",
+                      content: fullContent,
+                    },
+                  );
+                  console.log("[API /chat] Partial response saved.");
+                } catch (dbErr) {
+                  console.error("[API /chat] Failed to save partial response:", dbErr);
+                }
+              }
+              controller.close();
+            } else {
+              console.error("Stream error:", err);
+              controller.error(err);
+            }
           }
         }
+
+        await processStream(completion);
       },
     });
 
