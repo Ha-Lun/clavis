@@ -9,7 +9,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { Message } from "@/lib/appwrite/types";
-import { extractAttachments } from "@/lib/utils";
+import { extractAttachments, extractFileRefs } from "@/lib/utils";
 
 interface MessageBubbleProps {
   message: Message;
@@ -26,7 +26,10 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
-  const { attachments, cleanContent } = extractAttachments(message.content);
+  
+  // Extract all metadata and clean content sequentially
+  const { attachments, cleanContent: contentWithoutAttachments } = extractAttachments(message.content);
+  const { fileRefs, cleanContent: displayContent } = extractFileRefs(contentWithoutAttachments);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -110,10 +113,23 @@ export function MessageBubble({
             <div className="break-words">
               {isUser ? (
                 <div className="whitespace-pre-wrap">
-                  {cleanContent}
+                  {displayContent}
                 </div>
               ) : (
                 <>
+                  {fileRefs.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4 animate-fade-in">
+                      {fileRefs.map((fileName, i) => (
+                        <div 
+                          key={i}
+                          className="flex items-center gap-1.5 bg-primary/5 border border-primary/10 rounded-[6px] px-2 py-1 text-[11px] text-primary/80 font-medium shadow-stripe-ambient"
+                        >
+                          <FileText className="h-3 w-3" />
+                          <span>{fileName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <ReactMarkdown
                     className="prose prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0 prose-pre:bg-transparent font-sans"
                     components={{
@@ -164,7 +180,7 @@ export function MessageBubble({
                       blockquote: ({ children }) => <blockquote className="border-l-2 border-primary pl-4 italic text-muted-foreground my-4">{children}</blockquote>,
                     }}
                   >
-                    {message.content + (isStreaming ? " ▍" : "")}
+                    {displayContent + (isStreaming ? " ▍" : "")}
                   </ReactMarkdown>
                   
                   {!isStreaming && modelName && (

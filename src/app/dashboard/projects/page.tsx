@@ -33,11 +33,20 @@ export default function ProjectsPage() {
   }, [setProjects]);
 
   const handleDelete = async (projectId: string) => {
+    // 1. Optimistically remove from UI
+    const projectToDelete = projects.find((p) => (p.$id ?? p.id) === projectId);
+    if (!projectToDelete) return;
+
+    removeProject(projectId);
+
     try {
-      await fetch(`/api/projects/${projectId}`, { method: "DELETE" });
-      removeProject(projectId);
+      const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete project on server");
     } catch (err) {
       console.error("Failed to delete project:", err);
+      // 2. Rollback if server delete fails
+      setProjects([projectToDelete, ...projects]);
+      alert("Failed to delete project. Please check your connection.");
     }
   };
 

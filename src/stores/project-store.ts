@@ -9,6 +9,7 @@ interface ProjectState {
   setProjects: (projects: Project[]) => void;
   addProject: (project: Project) => void;
   removeProject: (projectId: string) => void;
+  toggleProjectPin: (projectId: string, isPinned: boolean) => void;
   setCreateDialogOpen: (isOpen: boolean) => void;
 }
 
@@ -21,6 +22,13 @@ export const useProjectStore = create<ProjectState>((set) => ({
   removeProject: (projectId) =>
     set((state) => ({
       projects: state.projects.filter((p) => (p.$id || p.id) !== projectId),
+    })),
+  toggleProjectPin: (projectId, isPinned) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        const id = p.$id || p.id;
+        return id === projectId ? { ...p, isPinned } : p;
+      }),
     })),
   setCreateDialogOpen: (isOpen) => set({ isCreateDialogOpen: isOpen }),
 }));

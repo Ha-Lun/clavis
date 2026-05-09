@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
     const projectIdEnv = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!;
     const fileUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${fileId}/view?project=${projectIdEnv}`;
 
-    // PDF Parsing
+    // Text Extraction
     let extractedText = null;
+    
     if (file.type === "application/pdf") {
       try {
         const pdfParseModule: any = await import('pdf-parse');
@@ -52,6 +53,21 @@ export async function POST(request: NextRequest) {
         extractedText = data.text;
       } catch (parseErr) {
         console.error("PDF parsing error:", parseErr);
+      }
+    } else if (
+      file.type.startsWith("text/") || 
+      file.name.endsWith(".md") || 
+      file.name.endsWith(".py") || 
+      file.name.endsWith(".js") || 
+      file.name.endsWith(".ts") || 
+      file.name.endsWith(".tsx") || 
+      file.name.endsWith(".css") || 
+      file.name.endsWith(".json")
+    ) {
+      try {
+        extractedText = buffer.toString('utf-8');
+      } catch (err) {
+        console.error("Text extraction error:", err);
       }
     }
 
@@ -65,8 +81,8 @@ export async function POST(request: NextRequest) {
       ID.unique(),
       {
         user_id: user.$id,
-        chat_id: chatId,
-        project_id: projectId,
+        chat_id: chatId || null,
+        project_id: projectId || null,
         file_id: fileId,
         name: file.name,
         storagePath,

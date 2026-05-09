@@ -33,6 +33,7 @@ export async function PATCH(
     if (body.instructions !== undefined) updateData.instructions = body.instructions;
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined) updateData.description = body.description;
+    if (body.isPinned !== undefined) updateData.isPinned = body.isPinned;
 
     const updated = await admin.databases.updateDocument(
       dbId,

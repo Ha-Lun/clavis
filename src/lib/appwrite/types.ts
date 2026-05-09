@@ -8,6 +8,7 @@ export interface Project extends AppwriteDocument {
   name: string;
   description: string | null;
   instructions: string | null;
+  isPinned: boolean;
 }
 
 export interface Chat extends AppwriteDocument {
@@ -15,7 +16,7 @@ export interface Chat extends AppwriteDocument {
   project_id: string | null;
   title: string;
   model: string;
-
+  isPinned: boolean;
 }
 
 export interface Message extends AppwriteDocument {

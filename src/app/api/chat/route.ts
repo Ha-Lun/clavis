@@ -158,6 +158,51 @@ export async function POST(request: NextRequest) {
           console.error("[API /chat] Failed to fetch project instructions:", err);
         }
       }
+
+      // Fetch all relevant files for context (project level + chat level)
+      try {
+        console.log(`[API /chat] Fetching context files for chat: ${chatId}, project: ${chat.project_id}`);
+        
+        let allFiles: any[] = [];
+        if (chat.project_id) {
+          const [chatFiles, projectFiles] = await Promise.all([
+            admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId)]),
+            admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("project_id", chat.project_id)])
+          ]);
+          console.log(`[API /chat] Found ${chatFiles.documents.length} chat files and ${projectFiles.documents.length} project files`);
+          allFiles = [...chatFiles.documents, ...projectFiles.documents];
+        } else {
+          const chatFiles = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId)]);
+          console.log(`[API /chat] Found ${chatFiles.documents.length} chat files`);
+          allFiles = chatFiles.documents;
+        }
+        
+        if (allFiles.length > 0) {
+          // Deduplicate by $id
+          const uniqueFiles = Array.from(new Map(allFiles.map(f => [f.$id, f])).values());
+          const fileNames = uniqueFiles.map(f => f.name).join(", ");
+          
+          let filesContext = `The following files are available in this project context: ${fileNames}\n\n`;
+          
+          const filesWithContent = uniqueFiles.filter(f => f.content);
+          console.log(`[API /chat] Total unique files: ${uniqueFiles.length}, files with readable content: ${filesWithContent.length}`);
+
+          if (filesWithContent.length > 0) {
+            const contentBlocks = filesWithContent
+              .map(f => `--- START FILE: ${f.name} ---\n${f.content}\n--- END FILE: ${f.name} ---`)
+              .join("\n\n");
+            
+            filesContext += `File Contents:\n${contentBlocks}`;
+          } else {
+            filesContext += "Note: No readable text content was extracted from these files yet.";
+          }
+          
+          finalSystemPrompt += `\n\nProject/Chat Files Context:\n${filesContext}`;
+          console.log(`[API /chat] Applied context from ${uniqueFiles.length} files. Prompt length: ${finalSystemPrompt.length}`);
+        }
+      } catch (err) {
+        console.error("[API /chat] Failed to fetch files for context:", err);
+      }
     } catch (err) {
       console.log("[API /chat] Chat fetch error:", err);
       return new Response(JSON.stringify({ error: "Chat not found" }), {

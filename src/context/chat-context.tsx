@@ -18,6 +18,7 @@ interface ChatContextType {
   appendStreamingContent: (chunk: string) => void;
   updateChatTitle: (chatId: string, title: string) => void;
   updateChatModel: (chatId: string, model: string) => void;
+  toggleChatPin: (chatId: string, isPinned: boolean) => void;
   removeChat: (chatId: string) => void;
 }
 
@@ -70,6 +71,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const toggleChatPin = useCallback((chatId: string, isPinned: boolean) => {
+    setChats((prev) =>
+      prev.map((c) => {
+        const id = c.$id ?? c.id;
+        return id === chatId ? { ...c, isPinned } : c;
+      })
+    );
+    setActiveChat((prev) => {
+      const id = prev?.$id ?? prev?.id;
+      return id === chatId ? { ...prev!, isPinned } : prev;
+    });
+  }, []);
+
   const removeChat = useCallback((chatId: string) => {
     setChats((prev) => prev.filter((c) => c.id !== chatId));
     setActiveChat((prev) => (prev?.id === chatId ? null : prev));
@@ -92,6 +106,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         appendStreamingContent,
         updateChatTitle,
         updateChatModel,
+        toggleChatPin,
         removeChat,
       }}
     >

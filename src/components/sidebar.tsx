@@ -22,6 +22,9 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
+  Loader2,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -116,12 +119,56 @@ function SidebarContent({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { chats, removeChat, setChats } = useChat();
-  const { projects } = useProjectStore();
+  const { chats, removeChat, setChats, toggleChatPin } = useChat();
+  const { projects, toggleProjectPin } = useProjectStore();
   const [isChatsOpen, setIsChatsOpen] = useState(true);
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
 
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+
+  const handlePinChat = async (chatId: string, isPinned: boolean, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Optimistic update
+    toggleChatPin(chatId, isPinned);
+
+    try {
+      const res = await fetch(`/api/chats/${chatId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPinned }),
+      });
+      if (!res.ok) throw new Error("Failed to pin chat");
+    } catch (err) {
+      console.error("Pin error:", err);
+      toggleChatPin(chatId, !isPinned); // Rollback
+    }
+  };
+
+  const handlePinProject = async (projectId: string, isPinned: boolean, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Optimistic update
+    toggleProjectPin(projectId, isPinned);
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPinned }),
+      });
+      if (!res.ok) throw new Error("Failed to pin project");
+    } catch (err) {
+      console.error("Pin error:", err);
+      toggleProjectPin(projectId, !isPinned); // Rollback
+    }
+  };
+
   const handleNewChat = async () => {
+    if (isCreatingChat) return;
+    setIsCreatingChat(true);
     try {
       const res = await fetch("/api/chats", {
         method: "POST",
@@ -139,6 +186,8 @@ function SidebarContent({
       }
     } catch (err) {
       console.error("Failed to create chat:", err);
+    } finally {
+      setIsCreatingChat(false);
     }
   };
 
@@ -146,15 +195,26 @@ function SidebarContent({
     e.preventDefault();
     e.stopPropagation();
 
-    try {
-      await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
-      removeChat(chatId);
+    // Store a copy for potential rollback if the request fails
+    const chatToDelete = chats.find((c) => (c.$id ?? c.id) === chatId);
+    if (!chatToDelete) return;
 
-      if (pathname === `/dashboard/chat/${chatId}`) {
-        router.push("/dashboard");
-      }
+    // 1. Optimistically remove from UI immediately
+    removeChat(chatId);
+
+    // 2. If we're currently viewing this chat, redirect to dashboard instantly
+    if (pathname === `/dashboard/chat/${chatId}`) {
+      router.push("/dashboard");
+    }
+
+    try {
+      const res = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete chat on server");
     } catch (err) {
       console.error("Failed to delete chat:", err);
+      // 3. Rollback: Add the chat back if the server delete failed
+      setChats([chatToDelete, ...chats]);
+      alert("Failed to delete chat. Please check your connection.");
     }
   };
 
@@ -213,13 +273,18 @@ function SidebarContent({
         <Button
           type="button"
           onClick={handleNewChat}
+          disabled={isCreatingChat}
           className={cn(
             "w-full justify-start gap-2 bg-card text-foreground border border-border hover:border-primary shadow-stripe-ambient hover:shadow-stripe-elevated transition-all duration-300 rounded-[8px] font-normal",
             isCollapsed && "justify-center px-0 h-10"
           )}
         >
-          <Plus className="h-4 w-4 text-primary" />
-          {!isCollapsed && <span className="truncate">New Chat</span>}
+          {isCreatingChat ? (
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          ) : (
+            <Plus className="h-4 w-4 text-primary" />
+          )}
+          {!isCollapsed && <span className="truncate">{isCreatingChat ? "Creating..." : "New Chat"}</span>}
         </Button>
       </div>
 
@@ -250,50 +315,72 @@ function SidebarContent({
                 {chats.length === 0 ? (
                   <p className="px-2 text-xs text-muted-foreground/60 italic">No history</p>
                 ) : (
-                  chats.map((chat) => {
-                    const chatId = chat.$id ?? chat.id;
-                    const isActive = pathname === `/dashboard/chat/${chatId}`;
+                  [...chats]
+                    .sort((a, b) => {
+                      if (a.isPinned && !b.isPinned) return -1;
+                      if (!a.isPinned && b.isPinned) return 1;
+                      return new Date((b.$updatedAt || b.updatedAt) as string).getTime() - 
+                             new Date((a.$updatedAt || a.updatedAt) as string).getTime();
+                    })
+                    .map((chat) => {
+                      const chatId = chat.$id ?? chat.id;
+                      const isActive = pathname === `/dashboard/chat/${chatId}`;
 
-                    return (
-                      <div
-                        key={chatId}
-                        className={cn(
-                          "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[6px] transition-colors duration-150 hover:bg-primary/5 pr-1",
-                          isActive && "bg-primary/10"
-                        )}
-                      >
-                        <Link
-                          href={`/dashboard/chat/${chatId}`}
-                          className="flex min-w-0 items-center gap-2 px-2 py-1.5 rounded-[6px] w-full"
+                      return (
+                        <div
+                          key={chatId}
+                          className={cn(
+                            "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[6px] transition-colors duration-150 hover:bg-primary/5 pr-1",
+                            isActive && "bg-primary/10"
+                          )}
                         >
-                          <MessageSquare
-                            className={cn(
-                              "h-3.5 w-3.5 shrink-0",
-                              isActive ? "text-primary" : "text-muted-foreground/60"
-                            )}
-                          />
-                          <span
-                            className={cn(
-                              "truncate text-[13px] text-muted-foreground group-hover:text-foreground transition-colors",
-                              isActive && "text-foreground font-medium"
-                            )}
+                          <Link
+                            href={`/dashboard/chat/${chatId}`}
+                            className="flex min-w-0 items-center gap-2 px-2 py-1.5 rounded-[6px] w-full"
                           >
-                            {chat.title}
-                          </span>
-                        </Link>
+                            <MessageSquare
+                              className={cn(
+                                "h-3.5 w-3.5 shrink-0",
+                                isActive ? "text-primary" : "text-muted-foreground/60"
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "truncate text-[13px] text-muted-foreground group-hover:text-foreground transition-colors",
+                                isActive && "text-foreground font-medium"
+                              )}
+                            >
+                              {chat.title}
+                            </span>
+                          </Link>
 
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteChat(chatId, e)}
-                          className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
-                          title="Delete chat"
-                          aria-label="Delete chat"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    );
-                  })
+                          <div className="flex items-center">
+                            <button
+                              type="button"
+                              onClick={(e) => handlePinChat(chatId, !chat.isPinned, e)}
+                              className={cn(
+                                "shrink-0 rounded-md p-1.5 transition-all duration-150",
+                                chat.isPinned 
+                                  ? "text-primary opacity-100" 
+                                  : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10"
+                              )}
+                              title={chat.isPinned ? "Unpin chat" : "Pin chat"}
+                            >
+                              {chat.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteChat(chatId, e)}
+                              className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
+                              title="Delete chat"
+                              aria-label="Delete chat"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
                 )}
               </div>
             )}
@@ -334,29 +421,56 @@ function SidebarContent({
                 {projects.length === 0 ? (
                   <p className="px-2 text-xs text-muted-foreground/60 italic">No projects</p>
                 ) : (
-                  projects.map((project) => {
-                    const projectId = project.$id ?? project.id;
-                    const isActive = pathname === `/dashboard/projects/${projectId}`;
+                  [...projects]
+                    .sort((a, b) => {
+                      if (a.isPinned && !b.isPinned) return -1;
+                      if (!a.isPinned && b.isPinned) return 1;
+                      return a.name.localeCompare(b.name);
+                    })
+                    .map((project) => {
+                      const projectId = project.$id ?? project.id;
+                      const isActive = pathname === `/dashboard/projects/${projectId}`;
 
-                    return (
-                      <Link
-                        key={projectId}
-                        href={`/dashboard/projects/${projectId}`}
-                        className={cn(
-                          "flex items-center gap-2 px-2 py-1.5 rounded-[6px] transition-all duration-150 text-muted-foreground hover:bg-primary/5 hover:text-foreground min-w-0 w-full",
-                          isActive && "bg-primary/10 text-foreground font-medium"
-                        )}
-                      >
-                        <FolderOpen
+                      return (
+                        <div
+                          key={projectId}
                           className={cn(
-                            "h-3.5 w-3.5 shrink-0",
-                            isActive ? "text-primary" : "text-muted-foreground/60"
+                            "group grid grid-cols-[1fr_auto] items-center w-full min-w-0 rounded-[6px] transition-colors duration-150 hover:bg-primary/5 pr-1",
+                            isActive && "bg-primary/10"
                           )}
-                        />
-                        <span className="truncate text-[13px] flex-1 min-w-0">{project.name}</span>
-                      </Link>
-                    );
-                  })
+                        >
+                          <Link
+                            href={`/dashboard/projects/${projectId}`}
+                            className={cn(
+                              "flex items-center gap-2 px-2 py-1.5 rounded-[6px] transition-all duration-150 text-muted-foreground hover:text-foreground min-w-0 w-full",
+                              isActive && "bg-primary/10 text-foreground font-medium"
+                            )}
+                          >
+                            <FolderOpen
+                              className={cn(
+                                "h-3.5 w-3.5 shrink-0",
+                                isActive ? "text-primary" : "text-muted-foreground/60"
+                              )}
+                            />
+                            <span className="truncate text-[13px] flex-1 min-w-0">{project.name}</span>
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handlePinProject(projectId, !project.isPinned, e)}
+                            className={cn(
+                              "shrink-0 rounded-md p-1.5 transition-all duration-150",
+                              project.isPinned 
+                                ? "text-primary opacity-100" 
+                                : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary hover:bg-primary/10"
+                            )}
+                            title={project.isPinned ? "Unpin project" : "Pin project"}
+                          >
+                            {project.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                          </button>
+                        </div>
+                      );
+                    })
                 )}
               </div>
             )}

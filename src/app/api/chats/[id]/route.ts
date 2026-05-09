@@ -29,10 +29,11 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const updates: Record<string, string> = {};
+    const updates: Record<string, any> = {};
 
     if (body.title !== undefined) updates.title = body.title;
     if (body.model !== undefined) updates.model = body.model;
+    if (body.isPinned !== undefined) updates.isPinned = body.isPinned;
 
     const chat = await admin.databases.updateDocument(
       dbId,
