@@ -62,9 +62,9 @@ export function CreateProjectDialog() {
 
   return (
     <Dialog open={isCreateDialogOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="bg-card border-border rounded-[16px] shadow-stripe-elevated sm:max-w-[425px]">
+      <DialogContent className="bg-card border-border rounded-xl sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-light tracking-tight text-foreground">Create Project</DialogTitle>
+          <DialogTitle className="text-[18px] font-medium tracking-tight text-foreground">New project</DialogTitle>
           <DialogDescription className="text-muted-foreground font-light">
             Projects help you organize related chats together.
           </DialogDescription>
@@ -77,7 +77,7 @@ export function CreateProjectDialog() {
               placeholder="My Project"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-background border-border text-foreground focus-visible:ring-primary focus-visible:border-primary h-11 px-4 rounded-[8px]"
+              className="h-10 bg-background border-border text-foreground text-[14px] font-light rounded-md focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
             />
           </div>
           <div className="space-y-3">
@@ -90,7 +90,7 @@ export function CreateProjectDialog() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="bg-background border-border text-foreground focus-visible:ring-primary focus-visible:border-primary px-4 py-3 rounded-[8px] resize-none"
+              className="bg-background border-border text-foreground text-[14px] font-light rounded-md resize-none focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
             />
           </div>
         </div>
@@ -98,14 +98,14 @@ export function CreateProjectDialog() {
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
-            className="bg-card border-border text-foreground hover:bg-secondary rounded-[8px] font-normal"
+            className="bg-card border-border text-foreground hover:bg-secondary rounded-md text-[13px] cursor-pointer"
           >
             Cancel
           </Button>
           <Button
             onClick={handleCreate}
             disabled={!name.trim() || creating}
-            className="bg-primary hover:bg-primary/90 text-white shadow-stripe-ambient rounded-[8px] font-normal"
+            className="bg-primary hover:bg-primary/90 text-white rounded-md text-[13px] cursor-pointer"
           >
             {creating ? (
               <>

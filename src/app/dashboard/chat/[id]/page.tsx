@@ -23,14 +23,21 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
   const admin = await createAdminClient();
   const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
-  // Fetch chat
+  // Fetch chat and messages concurrently for faster navigation
   let chatDoc;
+  let messagesResult;
+
   try {
-    chatDoc = await admin.databases.getDocument(
-      dbId,
-      COLLECTIONS.CHATS,
-      resolvedParams.id
-    );
+    const [chatRes, msgsRes] = await Promise.all([
+      admin.databases.getDocument(dbId, COLLECTIONS.CHATS, resolvedParams.id),
+      admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
+        Query.equal("chat_id", resolvedParams.id),
+        Query.orderAsc("$createdAt"),
+        Query.limit(100),
+      ]),
+    ]);
+    chatDoc = chatRes;
+    messagesResult = msgsRes;
   } catch {
     notFound();
   }
@@ -38,6 +45,9 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
   if (chatDoc.user_id !== user.$id) {
     notFound();
   }
+
+  console.log("[DEBUG chat page] Raw messages count:", messagesResult.documents.length);
+  console.log("[DEBUG chat page] First doc keys:", messagesResult.documents[0] ? Object.keys(messagesResult.documents[0]) : "none");
 
   // Pass initial message to client via URL search params state
   const chat: Chat = {
@@ -47,30 +57,12 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
     updated_at: chatDoc.$updatedAt,
   } as unknown as Chat;
 
-  // Fetch existing messages (for subsequent visits)
-  console.log("[DEBUG chat page] Chat ID:", resolvedParams.id);
-  
-  const messagesResult = await admin.databases.listDocuments(
-    dbId,
-    COLLECTIONS.MESSAGES,
-    [
-      Query.equal("chat_id", resolvedParams.id),
-      Query.orderAsc("$createdAt"),
-      Query.limit(100),
-    ]
-  );
-
-  console.log("[DEBUG chat page] Raw messages count:", messagesResult.documents.length);
-  console.log("[DEBUG chat page] First doc keys:", messagesResult.documents[0] ? Object.keys(messagesResult.documents[0]) : "none");
-
   const messages: Message[] = messagesResult.documents.map((doc) => ({
     ...doc,
     id: doc.$id,
     chat_id: doc.chat_id,
     created_at: doc.$createdAt,
   })) as unknown as Message[];
-
-  console.log("[DEBUG chat page] Mapped messages:", JSON.stringify(messages, null, 2));
 
   // Pass initial message from URL to client
   const initialMessage = resolvedSearchParams.msg ? decodeURIComponent(resolvedSearchParams.msg) : null;

@@ -23,28 +23,25 @@ export default async function ProjectDetailPage({
   const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
   let project;
+  let chatsResult;
+
   try {
-    project = await admin.databases.getDocument(
-      dbId,
-      COLLECTIONS.PROJECTS,
-      params.id
-    );
+    const [projectRes, chatsRes] = await Promise.all([
+      admin.databases.getDocument(dbId, COLLECTIONS.PROJECTS, params.id),
+      admin.databases.listDocuments(dbId, COLLECTIONS.CHATS, [
+        Query.equal("project_id", params.id),
+        Query.equal("user_id", user.$id),
+        Query.orderDesc("$updatedAt"),
+        Query.limit(50),
+      ]),
+    ]);
+    project = projectRes;
+    chatsResult = chatsRes;
   } catch {
     notFound();
   }
 
   if (project.user_id !== user.$id) notFound();
-
-  const chatsResult = await admin.databases.listDocuments(
-    dbId,
-    COLLECTIONS.CHATS,
-    [
-      Query.equal("project_id", params.id),
-      Query.equal("user_id", user.$id),
-      Query.orderDesc("$updatedAt"),
-      Query.limit(50),
-    ]
-  );
 
   const chats = chatsResult.documents as unknown as Chat[];
 

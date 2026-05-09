@@ -209,17 +209,17 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
   return (
     <div className="relative w-full">
       <Tabs defaultValue="chats" className="w-full">
-        <TabsList className="mb-6 bg-secondary/50 border border-border p-1 w-full sm:w-auto inline-flex h-auto rounded-[12px]">
-          <TabsTrigger value="chats" className="flex items-center gap-2 py-2 px-4 rounded-[8px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+        <TabsList className="mb-6 bg-secondary border border-border p-1 w-full sm:w-auto inline-flex h-auto rounded-lg">
+          <TabsTrigger value="chats" className="flex items-center gap-2 py-1.5 px-3.5 rounded-md text-[13px] data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground">
             <MessageSquare className="h-4 w-4" />
             Chats
           </TabsTrigger>
-          <TabsTrigger value="files" className="flex items-center gap-2 py-2 px-4 rounded-[8px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <FileText className="h-4 w-4" />
+          <TabsTrigger value="files" className="flex items-center gap-2 py-1.5 px-3.5 rounded-md text-[13px] data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground">
+            <FileText className="h-3.5 w-3.5" />
             Files
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2 py-2 px-4 rounded-[8px] data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <Settings className="h-4 w-4" />
+          <TabsTrigger value="settings" className="flex items-center gap-2 py-1.5 px-3.5 rounded-md text-[13px] data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground">
+            <Settings className="h-3.5 w-3.5" />
             Settings
           </TabsTrigger>
         </TabsList>
@@ -231,7 +231,7 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
             <Button
               onClick={handleNewProjectChat}
               disabled={isCreatingChat}
-              className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200 text-white font-medium rounded-[8px] h-9"
+              className="gap-2 bg-primary hover:bg-primary/90 transition-colors text-white text-[13px] rounded-md h-8 cursor-pointer"
             >
               {isCreatingChat ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               New Chat
@@ -256,10 +256,10 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
                     href={`/dashboard/chat/${chatId}`}
                     className="group"
                   >
-                    <Card className="h-full bg-card border border-border shadow-stripe-ambient hover:shadow-stripe-elevated hover:border-primary transition-all duration-300 rounded-[16px] overflow-hidden relative">
+                    <Card className="h-full bg-card border border-border hover:border-primary/30 transition-colors duration-100 rounded-xl overflow-hidden relative cursor-pointer">
                       <CardHeader className="p-5">
                         <div className="flex items-start justify-between gap-3">
-                          <CardTitle className="text-lg font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors pr-6">
+                          <CardTitle className="text-[15px] font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors pr-6">
                             {chat.title as string}
                           </CardTitle>
                           <Badge
@@ -273,7 +273,7 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
                           <span>{new Date((chat.$updatedAt || chat.updatedAt) as string).toLocaleDateString()}</span>
                           <button
                             onClick={(e) => handleDeleteChat(chatId, e)}
-                            className="p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all duration-200 opacity-0 group-hover:opacity-100"
+                            className="p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all duration-100 opacity-0 group-hover:opacity-100"
                             title="Delete Chat"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -328,7 +328,7 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {files.map((file) => (
-                <Card key={file.id} className="bg-card border border-border shadow-stripe-ambient hover:border-primary transition-all duration-300 rounded-[16px] overflow-hidden">
+                <Card key={file.id} className="bg-card border border-border hover:border-primary/30 transition-colors duration-100 rounded-xl overflow-hidden">
                   <CardHeader className="p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 overflow-hidden">
@@ -399,11 +399,11 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
       {/* Undo Popup */}
       <div 
         className={cn(
-          "fixed bottom-8 left-8 z-50 transition-all duration-300 transform",
+          "fixed bottom-8 left-8 z-50 transition-all duration-100 transform",
           showUndo ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0 pointer-events-none"
         )}
       >
-        <div className="bg-[#1a1a23] border border-border shadow-2xl rounded-[12px] p-4 flex items-center gap-4 min-w-[300px]">
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 min-w-[300px] shadow-lg-dark">
           <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
             <Trash2 className="h-5 w-5 text-destructive" />
           </div>

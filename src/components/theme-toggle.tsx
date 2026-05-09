@@ -2,39 +2,49 @@
 
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "@/context/theme-context";
-import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
+      type="button"
       onClick={toggleTheme}
       className={cn(
-        "h-9 w-9 rounded-[8px] transition-all duration-300",
-        "text-muted-foreground hover:text-foreground hover:bg-secondary",
+        "relative flex items-center justify-center rounded-md",
+        "text-muted-foreground hover:text-foreground",
+        "hover:bg-white/[0.05] transition-colors cursor-pointer",
+        "h-7 w-7",
         className
       )}
       title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
     >
-      <div className="relative h-5 w-5">
-        <Sun
-          className={cn(
-            "h-5 w-5 absolute inset-0 transition-all duration-500 transform",
-            theme === "dark" ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"
-          )}
-        />
-        <Moon
-          className={cn(
-            "h-5 w-5 absolute inset-0 transition-all duration-500 transform",
-            theme === "light" ? "scale-0 -rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100"
-          )}
-        />
-      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {theme === "dark" ? (
+          <motion.div
+            key="moon"
+            initial={{ scale: 0, rotate: -90, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            exit={{ scale: 0, rotate: 90, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20, duration: 0.2 }}
+          >
+            <Moon className="h-3.5 w-3.5" />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="sun"
+            initial={{ scale: 0, rotate: 90, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            exit={{ scale: 0, rotate: -90, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20, duration: 0.2 }}
+          >
+            <Sun className="h-3.5 w-3.5" />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <span className="sr-only">Toggle theme</span>
-    </Button>
+    </button>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X } from "lucide-react";
+import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X, ArrowUp } from "lucide-react";
 import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "./model-selector";
 import {
@@ -24,14 +25,17 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   const [content, setContent] = useState("");
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const hasContent = content.trim().length > 0 || attachments.length > 0;
 
   const handleSubmit = useCallback(() => {
     const trimmedContent = content.trim();
     if (!trimmedContent && attachments.length === 0) return;
     if (isStreaming) return;
-    if (content.length > 30000) return; // Max length check
+    if (content.length > 30000) return;
 
     let finalContent = trimmedContent;
     if (attachments.length > 0) {
@@ -60,7 +64,6 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
-    // Auto-resize
     const textarea = e.target;
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
@@ -104,31 +107,68 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   };
 
   return (
-    <div className="p-4 pb-6">
+    <div className="px-4 pb-6 pt-2">
       <div className="max-w-3xl mx-auto">
-        <div className="relative flex flex-col bg-card rounded-[12px] border border-border shadow-stripe-ambient focus-within:shadow-stripe-focus focus-within:border-primary transition-all duration-300">
-          {/* File Attachments Preview */}
-          {attachments.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-4 pt-4 pb-1">
-              {attachments.map((file, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 bg-secondary/50 border border-border rounded-[8px] px-3 py-1.5 animate-fade-in group/chip"
-                >
-                  <FileText className="h-4 w-4 text-primary opacity-70" />
-                  <span className="text-[13px] font-medium text-foreground max-w-[150px] truncate">
-                    {file.name}
-                  </span>
-                  <button
-                    onClick={() => removeAttachment(file.url)}
-                    className="p-0.5 hover:bg-border rounded-full transition-colors text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
+        {/* Main input container */}
+        <motion.div
+          animate={{
+            boxShadow: isStreaming
+              ? [
+                  "0 0 0 1px rgba(99,102,241,0.15), 0 0 0px rgba(99,102,241,0)",
+                  "0 0 0 2px rgba(99,102,241,0.5), 0 0 20px rgba(99,102,241,0.2)",
+                  "0 0 0 1px rgba(99,102,241,0.15), 0 0 0px rgba(99,102,241,0)"
+                ]
+              : isFocused
+                ? "0 0 0 1px rgba(99,102,241,0.35), 0 0 20px rgba(99,102,241,0.08)"
+                : "0 0 0 1px rgba(255,255,255,0.0), 0 0 0px rgba(99,102,241,0.0)",
+          }}
+          transition={{
+            boxShadow: isStreaming
+              ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
+              : { type: "spring", stiffness: 400, damping: 25 },
+          }}
+          className={cn(
+            "relative flex flex-col rounded-xl transition-colors duration-100",
+            "bg-card border",
+            isStreaming ? "border-transparent" : isFocused ? "border-primary/40" : "border-border"
           )}
+        >
+
+          {/* Attachments */}
+          <AnimatePresence>
+            {attachments.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap gap-2 px-4 pt-3 pb-1">
+                  {attachments.map((file, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.9, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="flex items-center gap-1.5 bg-secondary border border-border rounded-md px-2.5 py-1"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-[12px] font-medium text-foreground max-w-[140px] truncate">
+                        {file.name}
+                      </span>
+                      <button
+                        onClick={() => removeAttachment(file.url)}
+                        className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Textarea */}
           <textarea
@@ -136,17 +176,25 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
             value={content}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Flux anything..."
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="Ask anything…"
             rows={1}
             className={cn(
-              "w-full resize-none bg-transparent text-[16px] font-light text-foreground outline-none placeholder:text-muted-foreground/60 pt-4 pb-2 px-5 max-h-[200px] scrollbar-thin"
+              "w-full resize-none bg-transparent",
+              "text-[15px] font-light text-foreground",
+              "outline-none placeholder:text-muted-foreground/40",
+              "pt-4 pb-2 px-5",
+              "max-h-[200px] scrollbar-thin",
+              "transition-all duration-100"
             )}
             disabled={isStreaming}
             id="chat-message-input"
           />
 
-          {/* Bottom Toolbar */}
-          <div className="flex items-center justify-between px-3 py-2">
+          {/* Bottom toolbar */}
+          <div className="flex items-center justify-between px-3 pb-3">
+            {/* Left: attachment */}
             <div className="flex items-center gap-1">
               <input
                 ref={fileInputRef}
@@ -157,73 +205,83 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-[6px] text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    className={cn(
+                      "h-7 w-7 flex items-center justify-center rounded-md",
+                      "text-muted-foreground/60 hover:text-muted-foreground",
+                      "hover:bg-white/[0.05] transition-colors cursor-pointer"
+                    )}
                     disabled={uploading}
                     id="file-upload-button"
                   >
                     {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin pointer-events-none" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Paperclip className="h-4 w-4 pointer-events-none" />
+                      <Paperclip className="h-3.5 w-3.5" />
                     )}
-                  </Button>
+                  </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-card/90 backdrop-blur-md border-border">
+                <DropdownMenuContent align="start" className="bg-popover border-border">
                   <DropdownMenuItem
                     onClick={() => fileInputRef.current?.click()}
-                    className="cursor-pointer gap-2"
+                    className="cursor-pointer gap-2 text-[13px]"
                   >
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-3.5 w-3.5" />
                     <span>Upload from computer</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer gap-2 opacity-50 pointer-events-none">
-                    <FileText className="h-4 w-4" />
+                  <DropdownMenuItem className="cursor-pointer gap-2 text-[13px] opacity-40 pointer-events-none">
+                    <FileText className="h-3.5 w-3.5" />
                     <span>Import from project</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer gap-2 opacity-50 pointer-events-none">
-                    <LinkIcon className="h-4 w-4" />
+                  <DropdownMenuItem className="cursor-pointer gap-2 text-[13px] opacity-40 pointer-events-none">
+                    <LinkIcon className="h-3.5 w-3.5" />
                     <span>Link URL</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
+            {/* Right: model selector + send/stop */}
             <div className="flex items-center gap-2">
               <ModelSelector chatId={chatId} currentModel={currentModel} />
-              
+
               {isStreaming ? (
-                <Button
-                  size="icon"
-                  className="h-8 w-8 shrink-0 rounded-[6px] transition-all duration-200 bg-accent/10 text-accent hover:bg-accent/20"
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  className={cn(
+                    "h-7 w-7 flex items-center justify-center rounded-md",
+                    "bg-muted text-muted-foreground",
+                    "hover:bg-muted/80 transition-colors cursor-pointer"
+                  )}
                   onClick={onStop}
                   id="stop-message-button"
                 >
-                  <Square className="h-3.5 w-3.5 fill-current" />
-                </Button>
+                  <Square className="h-3 w-3 fill-current" />
+                </motion.button>
               ) : (
-                <Button
-                  size="icon"
+                <motion.button
+                  whileHover={hasContent ? { scale: 1.05 } : {}}
+                  whileTap={hasContent ? { scale: 0.92 } : {}}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
                   className={cn(
-                    "h-8 w-8 shrink-0 rounded-[6px] transition-all duration-200",
-                    content.trim()
-                      ? "bg-primary text-white hover:bg-primary/90 shadow-[0_2px_8px_rgba(83,58,253,0.3)]"
-                      : "bg-secondary text-muted-foreground"
+                    "h-7 w-7 flex items-center justify-center rounded-md transition-all duration-100",
+                    hasContent
+                      ? "bg-primary text-white shadow-glow cursor-pointer"
+                      : "bg-secondary text-muted-foreground/40 cursor-default"
                   )}
                   onClick={handleSubmit}
-                  disabled={!content.trim()}
+                  disabled={!hasContent}
                   id="send-message-button"
                 >
-                  <Send className="h-3.5 w-3.5" />
-                </Button>
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </motion.button>
               )}
             </div>
           </div>
-        </div>
-        <p className="text-[10px] text-muted-foreground text-center mt-3 tracking-tight font-light">
+        </motion.div>
+
+        <p className="text-[11px] text-muted-foreground/30 text-center mt-2.5 tracking-tight">
           Shift + Enter for new line
         </p>
       </div>

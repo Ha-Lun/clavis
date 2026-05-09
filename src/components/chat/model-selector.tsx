@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModelIcon } from "./model-icon";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ModelSelectorProps {
@@ -42,7 +41,6 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
       });
     } catch (err) {
       console.error("Failed to update model:", err);
-      // Revert on error
       updateChatModel(chatId, currentModel);
     }
   };
@@ -50,21 +48,39 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
   return (
     <div className={cn("flex items-center", className)}>
       <Select value={model} onValueChange={handleModelChange}>
-        <SelectTrigger 
-          className="h-8 min-w-[140px] gap-2 px-3 text-[12px] font-medium border border-border bg-card hover:bg-secondary text-foreground rounded-[6px] transition-all duration-200 shadow-sm focus:ring-primary focus:border-primary"
+        <SelectTrigger
+          className={cn(
+            "h-7 min-w-[130px] max-w-[180px] gap-1.5 px-2.5",
+            "text-[11px] font-medium text-muted-foreground",
+            "border border-border bg-transparent",
+            "hover:bg-white/[0.04] hover:text-foreground hover:border-white/[0.10]",
+            "rounded-md transition-all duration-150",
+            "focus:ring-0 focus:ring-offset-0 focus:border-primary/40",
+            "shadow-none cursor-pointer"
+          )}
           id="model-selector-trigger"
         >
           <SelectValue placeholder="Select model" />
         </SelectTrigger>
-        <SelectContent className="bg-card border-border text-foreground min-w-[200px] shadow-stripe-elevated rounded-[8px]">
+        <SelectContent
+          className={cn(
+            "bg-popover border-border",
+            "min-w-[200px] rounded-lg shadow-md-dark",
+            "overflow-hidden"
+          )}
+        >
           {MODELS.map((m) => (
-            <SelectItem 
-              key={m.id} 
-              value={m.id} 
-              className="text-[13px] font-light text-muted-foreground hover:bg-primary/5 focus:bg-primary/5 focus:text-foreground rounded-[6px] py-2 transition-colors cursor-pointer"
+            <SelectItem
+              key={m.id}
+              value={m.id}
+              className={cn(
+                "text-[13px] font-light text-muted-foreground",
+                "hover:bg-white/[0.04] focus:bg-white/[0.04] focus:text-foreground",
+                "rounded-md py-2 transition-colors cursor-pointer"
+              )}
             >
               <div className="flex items-center gap-2">
-                <ModelIcon modelId={m.id} className="h-4 w-4 opacity-70" />
+                <ModelIcon modelId={m.id} className="h-3.5 w-3.5 opacity-60" />
                 <span>{m.name}</span>
               </div>
             </SelectItem>

@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import { Plus, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useChat } from "@/context/chat-context";
+import { cn } from "@/lib/utils";
 
 export function NewChatButton() {
   const router = useRouter();
@@ -33,13 +34,19 @@ export function NewChatButton() {
   };
 
   return (
-    <Button 
-      onClick={handleNewChat} 
-      disabled={isLoading} 
-      className="gap-2 bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] border border-transparent hover:border-[#c9a84c] transition-all duration-200 text-[#f5f0ff]"
+    <motion.button
+      onClick={handleNewChat}
+      disabled={isLoading}
+      whileTap={{ scale: 0.97 }}
+      className={cn(
+        "flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-medium",
+        "bg-primary text-white hover:bg-primary/90",
+        "transition-colors duration-150 cursor-pointer",
+        "disabled:opacity-50 disabled:cursor-not-allowed"
+      )}
     >
-      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+      {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
       New Chat
-    </Button>
+    </motion.button>
   );
 }

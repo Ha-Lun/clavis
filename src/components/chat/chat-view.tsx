@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import { useChat } from "@/context/chat-context";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
@@ -251,8 +252,13 @@ interface ChatViewProps {
   }, []);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-hidden flex flex-col animate-fade-in">
+    <motion.div
+      className="flex flex-col h-full"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
+      <div className="flex-1 overflow-hidden flex flex-col">
         <MessageList
           modelId={chat.model}
         />
@@ -266,6 +272,6 @@ interface ChatViewProps {
           currentModel={chat.model}
         />
       </div>
-    </div>
+    </motion.div>
   );
 }

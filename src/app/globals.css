@@ -4,64 +4,76 @@
 
 @layer base {
   :root {
-    --background: 40 18% 97%; /* #faf9f5 Claude Canvas */
-    --foreground: 213 77% 11%; /* #061b31 Stripe Deep Navy */
-    
-    --card: 0 0% 100%;
-    --card-foreground: 213 77% 11%;
-    
-    --popover: 0 0% 100%;
-    --popover-foreground: 213 77% 11%;
-    
-    --primary: 248 98% 61%; /* #533afd Stripe Purple */
+    /* ─── Light Mode ─────────────────────────────── */
+    --background:        0 0% 98%;       /* #fafafa */
+    --foreground:        0 0% 4%;        /* #0a0a0a */
+
+    --card:              0 0% 100%;      /* #ffffff */
+    --card-foreground:   0 0% 4%;
+
+    --popover:           0 0% 100%;
+    --popover-foreground: 0 0% 4%;
+
+    --primary:           243 75% 59%;   /* #6366f1 indigo-500 */
     --primary-foreground: 0 0% 100%;
-    
-    --secondary: 40 40% 96%; /* #f5f0e8 Claude Surface Soft */
-    --secondary-foreground: 213 77% 11%;
-    
-    --muted: 215 19% 47%; /* #64748d Stripe Slate */
-    --muted-foreground: 215 19% 47%;
-    
-    --accent: 341 83% 53%; /* #ea2261 Stripe Ruby */
+
+    --secondary:         0 0% 96%;      /* #f5f5f5 */
+    --secondary-foreground: 0 0% 4%;
+
+    --muted:             0 0% 96%;
+    --muted-foreground:  0 0% 32%;      /* #525252 */
+
+    --accent:            243 75% 59%;   /* same as primary */
     --accent-foreground: 0 0% 100%;
-    
-    --destructive: 0 84% 60%;
+
+    --destructive:       0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    
-    --border: 210 40% 93%; /* #e5edf5 Stripe Border */
-    --input: 210 40% 93%;
-    --ring: 248 98% 61%; /* #533afd Stripe Purple */
-    --radius: 0.375rem; /* 6px Stripe Conservative Radius */
+
+    --border:            0 0% 90%;      /* #e5e5e5 */
+    --input:             0 0% 90%;
+    --ring:              243 75% 59%;
+    --radius:            0.375rem;
+
+    /* Surface elevation tokens */
+    --surface-0:         0 0% 100%;
+    --surface-1:         0 0% 96%;
+    --surface-2:         0 0% 94%;
   }
 
   .dark {
-    --background: 240 10% 4%; /* #0a0a0f Deepest Luxury Navy */
-    --foreground: 240 5% 90%; /* Soft White */
-    
-    --card: 240 10% 7%; /* #0f0d1a Dark Card */
-    --card-foreground: 240 5% 90%;
-    
-    --popover: 240 10% 7%;
-    --popover-foreground: 240 5% 90%;
-    
-    --primary: 248 98% 61%; /* Stripe Purple (same as light) */
+    /* ─── Dark Mode ─────────────────────────────── */
+    --background:        0 0% 4%;        /* #0a0a0a */
+    --foreground:        0 0% 93%;       /* #eeeeee */
+
+    --card:              0 0% 7%;        /* #111111 */
+    --card-foreground:   0 0% 93%;
+
+    --popover:           0 0% 10%;       /* #191919 */
+    --popover-foreground: 0 0% 93%;
+
+    --primary:           243 75% 59%;   /* #6366f1 */
     --primary-foreground: 0 0% 100%;
-    
-    --secondary: 240 10% 12%; /* Dark Sidebar Surface */
-    --secondary-foreground: 240 5% 90%;
-    
-    --muted: 240 5% 30%;
-    --muted-foreground: 240 5% 65%;
-    
-    --accent: 341 83% 53%; /* Stripe Ruby */
+
+    --secondary:         0 0% 10%;       /* #191919 */
+    --secondary-foreground: 0 0% 93%;
+
+    --muted:             0 0% 10%;
+    --muted-foreground:  0 0% 63%;       /* #a0a0a0 */
+
+    --accent:            243 75% 59%;
     --accent-foreground: 0 0% 100%;
-    
-    --destructive: 0 62.8% 30.6%;
+
+    --destructive:       0 62% 30%;
     --destructive-foreground: 0 0% 98%;
-    
-    --border: 240 10% 15%; /* #1e1a2e Subtle Border */
-    --input: 240 10% 15%;
-    --ring: 248 98% 61%;
+
+    --border:            0 0% 14%;       /* ~#242424 */
+    --input:             0 0% 14%;
+    --ring:              243 75% 59%;
+
+    /* Surface elevation tokens */
+    --surface-0:         0 0% 7%;        /* #111111 */
+    --surface-1:         0 0% 10%;       /* #191919 */
+    --surface-2:         0 0% 13%;       /* #222222 */
   }
 }
 
@@ -72,17 +84,28 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Smooth default transitions for color-scheme changes */
+  *, *::before, *::after {
+    @media (prefers-reduced-motion: no-preference) {
+      transition-property: background-color, border-color, color;
+      transition-duration: 150ms;
+      transition-timing-function: ease;
+    }
   }
 }
 
 @layer utilities {
+  /* ─── Scrollbar ─────────────────────────────── */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
+    width: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -90,29 +113,137 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-border;
+    background: rgba(255,255,255,0.08);
     border-radius: 9999px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted;
+    background: rgba(255,255,255,0.15);
   }
 
-  /* Stripe-inspired Theme-Aware Shadows */
-  .shadow-stripe-ambient {
-    box-shadow: 0px 15px 35px 0px rgba(0, 0, 0, 0.08);
+  /* Light mode scrollbar */
+  :root .scrollbar-thin {
+    scrollbar-color: rgba(0,0,0,0.1) transparent;
   }
-  
+
+  :root .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+  }
+
+  :root .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.18);
+  }
+
+  /* ─── Shadows ─────────────────────────────── */
+  .shadow-sm-dark {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  .shadow-md-dark {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  .shadow-lg-dark {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+
+  /* Accent glow for focus states */
+  .shadow-glow {
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.25), 0 0 16px rgba(99,102,241,0.1);
+  }
+
+  .shadow-glow-lg {
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.3), 0 0 24px rgba(99,102,241,0.15);
+  }
+
+  /* Legacy compat — keep for any missed references */
+  .shadow-stripe-ambient {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+  }
+
   .shadow-stripe-elevated {
-    box-shadow: 0px 30px 45px -30px rgba(0, 0, 0, 0.3), 0px 18px 36px -18px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.1);
   }
 
   .shadow-stripe-deep {
-    box-shadow: 0px 14px 21px -14px rgba(0, 0, 0, 0.4), 0px 8px 17px -8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   }
-  
+
   .shadow-stripe-focus {
-    box-shadow: 0 0 0 2px hsla(var(--primary), 0.4);
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.4);
   }
 }
 
+/* ─── Animation Keyframes ─────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.75); }
+  40%           { opacity: 1;   transform: scale(1);    }
+}
+
+@keyframes thinking-dot {
+  0%, 100% { opacity: 0.25; transform: scale(0.7); }
+  50%      { opacity: 0.7;  transform: scale(1);   }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── Shimmer utility for skeletons ─────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--secondary)) 25%,
+    hsl(var(--muted) / 0.6) 50%,
+    hsl(var(--secondary)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ─── Streaming border shimmer ─────────────── */
+.streaming-border {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--border)),
+    hsl(var(--primary) / 0.5),
+    hsl(var(--border))
+  );
+  background-size: 300% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ─── Reduced motion overrides ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .shimmer,
+  .streaming-border {
+    animation: none;
+  }
+
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

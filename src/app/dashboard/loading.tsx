@@ -1,12 +1,17 @@
-import { Zap } from "lucide-react";
-
 export default function DashboardLoading() {
   return (
-    <div className="h-full flex items-center justify-center p-6 lg:p-8 animate-fade-in">
-      <div className="flex flex-col items-center justify-center gap-4 animate-pulse">
-        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Zap className="h-6 w-6 text-primary" />
-        </div>
+    <div className="h-full flex items-center justify-center">
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="block h-1.5 w-1.5 rounded-full bg-muted-foreground/30"
+            style={{
+              animation: "thinking-dot 1.2s ease-in-out infinite",
+              animationDelay: `${i * 180}ms`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );

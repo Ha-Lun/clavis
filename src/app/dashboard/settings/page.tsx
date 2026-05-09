@@ -1,16 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -20,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { MODELS, DEFAULT_MODEL } from "@/lib/models";
-import { Settings, Loader2, Check } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
@@ -30,7 +25,6 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    // Fetch user info from a lightweight endpoint
     const fetchUser = async () => {
       try {
         const res = await fetch("/api/user");
@@ -50,15 +44,11 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setLoading(true);
     setSaved(false);
-
     try {
       await fetch("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: displayName,
-          prefs: { defaultModel },
-        }),
+        body: JSON.stringify({ name: displayName, prefs: { defaultModel } }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -70,96 +60,138 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8 bg-background">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-4 mb-10">
-          <div className="h-12 w-12 rounded-[12px] bg-primary/10 flex items-center justify-center shadow-stripe-ambient">
-            <Settings className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-light tracking-tight text-foreground">Settings</h1>
-            <p className="text-muted-foreground font-light text-[15px]">
-              Manage your preferences
-            </p>
-          </div>
-        </div>
+    <div className="h-full overflow-y-auto scrollbar-thin">
+      <div className="max-w-xl mx-auto px-6 py-10 lg:py-14">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="mb-10"
+        >
+          <h1 className="text-[28px] font-light tracking-tight text-foreground">
+            Settings
+          </h1>
+          <p className="mt-1 text-[14px] text-muted-foreground font-light">
+            Manage your account preferences
+          </p>
+        </motion.div>
 
-        <Card className="border-border shadow-stripe-ambient rounded-[16px] overflow-hidden bg-card">
-          <CardHeader className="bg-secondary/30 border-b border-border pb-6">
-            <CardTitle className="text-xl font-light tracking-tight text-foreground">Profile</CardTitle>
-            <CardDescription className="text-muted-foreground font-light text-[14px]">
-              Your personal information and preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-8 pt-6">
-            <div className="space-y-3">
-              <Label htmlFor="settings-email" className="text-foreground font-medium">Email</Label>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.06, ease: "easeOut" }}
+          className="space-y-8"
+        >
+          {/* Profile section */}
+          <div className="space-y-1 pb-2">
+            <h2 className="text-[12px] font-medium text-muted-foreground/60 uppercase tracking-widest">
+              Profile
+            </h2>
+          </div>
+
+          <div className="space-y-5 p-5 rounded-lg border border-border bg-card">
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-email" className="text-[13px] font-medium text-muted-foreground">
+                Email
+              </Label>
               <Input
                 id="settings-email"
                 value={email}
                 disabled
-                className="bg-secondary/50 border-border text-muted-foreground h-11 px-4 rounded-[8px]"
+                className="h-10 bg-secondary/50 border-border text-muted-foreground text-[14px] font-light rounded-md"
               />
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="settings-display-name" className="text-foreground font-medium">Display Name</Label>
+            {/* Display name */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-display-name" className="text-[13px] font-medium text-foreground">
+                Display Name
+              </Label>
               <Input
                 id="settings-display-name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Your name"
-                className="bg-background border-border text-foreground focus-visible:ring-primary focus-visible:border-primary h-11 px-4 rounded-[8px]"
+                className={cn(
+                  "h-10 bg-background border-border text-foreground text-[14px] font-light rounded-md",
+                  "focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
+                )}
               />
             </div>
+          </div>
 
-            <Separator className="bg-border" />
+          <Separator className="bg-border" />
 
-            <div className="space-y-3">
-              <Label htmlFor="settings-default-model" className="text-foreground font-medium">Default Model</Label>
-              <p className="text-[13px] text-muted-foreground font-light">
-                This model will be selected by default when creating new chats
+          {/* AI preferences */}
+          <div className="space-y-1 pb-2">
+            <h2 className="text-[12px] font-medium text-muted-foreground/60 uppercase tracking-widest">
+              AI Preferences
+            </h2>
+          </div>
+
+          <div className="space-y-5 p-5 rounded-lg border border-border bg-card">
+            <div className="space-y-2">
+              <Label htmlFor="settings-default-model" className="text-[13px] font-medium text-foreground">
+                Default Model
+              </Label>
+              <p className="text-[12px] text-muted-foreground font-light">
+                Selected by default when creating new chats
               </p>
               <Select
                 value={defaultModel}
                 onValueChange={(value) => setDefaultModel(value as typeof defaultModel)}
               >
-                <SelectTrigger id="settings-default-model" className="w-full bg-background border-border text-foreground focus:ring-primary h-11 px-4 rounded-[8px]">
+                <SelectTrigger
+                  id="settings-default-model"
+                  className="w-full h-10 bg-background border-border text-foreground text-[14px] rounded-md focus:ring-1 focus:ring-primary/40"
+                >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border shadow-stripe-elevated rounded-[8px]">
+                <SelectContent className="bg-popover border-border rounded-lg">
                   {MODELS.map((m) => (
-                    <SelectItem key={m.id} value={m.id} className="text-foreground hover:bg-primary/5 focus:bg-primary/5 cursor-pointer">
+                    <SelectItem
+                      key={m.id}
+                      value={m.id}
+                      className="text-foreground text-[13px] font-light hover:bg-white/[0.04] focus:bg-white/[0.04] cursor-pointer rounded-md"
+                    >
                       {m.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3 pt-4">
-              <Button 
-                onClick={handleSave} 
+          {/* Save */}
+          <div className="flex items-center gap-3 pt-2">
+            <motion.div whileTap={{ scale: 0.97 }}>
+              <Button
+                onClick={handleSave}
                 disabled={loading}
-                className="bg-primary hover:bg-primary/90 text-white shadow-stripe-ambient rounded-[8px] h-10 px-6 font-normal"
+                className={cn(
+                  "h-9 px-5 text-[13px] font-medium rounded-md transition-all duration-200",
+                  "bg-primary text-white hover:bg-primary/90 cursor-pointer"
+                )}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    Saving…
                   </>
                 ) : saved ? (
                   <>
-                    <Check className="mr-2 h-4 w-4" />
+                    <Check className="mr-2 h-3.5 w-3.5 text-green-400" />
                     Saved
                   </>
                 ) : (
                   "Save changes"
                 )}
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </motion.div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -4,36 +4,32 @@ interface ThinkingIndicatorProps {
   modelId: string;
 }
 
-export function ThinkingIndicator({ modelId }: ThinkingIndicatorProps) {
+export function ThinkingIndicator({ modelId: _modelId }: ThinkingIndicatorProps) {
   return (
-    <div className="animate-fade-in flex items-center gap-3 py-4 px-1" style={{ minHeight: "60px" }}>
-      <div className="flex items-center gap-1.5">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="block h-2 w-2 rounded-full"
-            style={{
-              backgroundColor: "#c9a84c",
-              animation: "fluxRipple 0.8s ease-in-out infinite",
-              animationDelay: `${i * 120}ms`,
-              boxShadow: "0 0 8px rgba(201, 168, 76, 0.4)",
-            }}
-          />
-        ))}
-      </div>
-      <span
-        className="text-[13px] font-medium tracking-wide"
-        style={{ color: "#c9a84c" }}
-      >
-        Flux is thinking...
-      </span>
-
-      <style jsx>{`
-        @keyframes fluxRipple {
-          0%, 100% { transform: scale(0.6); opacity: 0.4; }
-          50% { transform: scale(1.2); opacity: 1; }
+    <div className="flex items-center gap-2 py-2 px-1 text-primary">
+      <style>{`
+        @keyframes spin-triangle {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 1; }
         }
       `}</style>
+      <svg
+        viewBox="0 0 20 20"
+        style={{ width: "1.25em", height: "1.25em" }}
+        className="shrink-0"
+      >
+        <g style={{ animation: "spin-triangle 1.6s linear infinite", transformOrigin: "10px 10px" }}>
+          <circle cx="10" cy="3" r="2" fill="currentColor" style={{ animation: "pulse-dot 1.6s ease-in-out infinite 0s" }} />
+          <circle cx="15.66" cy="13" r="2" fill="currentColor" style={{ animation: "pulse-dot 1.6s ease-in-out infinite 0.4s" }} />
+          <circle cx="4.34" cy="13" r="2" fill="currentColor" style={{ animation: "pulse-dot 1.6s ease-in-out infinite 0.8s" }} />
+        </g>
+      </svg>
+      <span className="text-[12px] font-medium tracking-wide opacity-80 mt-px">
+        Thinking…
+      </span>
     </div>
   );
 }
