@@ -10,6 +10,7 @@ import type {
 } from "openai/resources/index.mjs";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type MessageParam = { 
   role: "system" | "user" | "assistant" | "tool"; 
@@ -61,7 +62,7 @@ async function callAIWithRetry(
           }
         ],
         stream: true,
-        max_tokens: 4096,
+        max_tokens: 8192,
       }, { signal });
 
       const completion = await Promise.race([aiPromise, timeoutPromise]);

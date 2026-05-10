@@ -8,6 +8,7 @@ import { Copy, Check, FileText, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+
 import type { Message } from "@/lib/appwrite/types";
 import { extractAttachments, extractFileRefs } from "@/lib/utils";
 
@@ -125,45 +126,55 @@ export function MessageBubble({
                 components={{
                   code({ node, inline, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || "");
-                    const isBlock = !inline && (match || String(children).includes("\n"));
+                    const lang = match ? match[1] : "";
+                    const isBlock = !inline && (lang || String(children).includes("\n"));
                     
-                    return isBlock ? (
-                      <div className="rounded-lg overflow-hidden my-3.5 border border-border bg-[#0a0a0f] not-prose">
-                        {/* Code block header */}
-                        <div className="flex items-center justify-between bg-secondary px-4 py-2 border-b border-border">
-                          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                            {match ? match[1] : "text"}
-                          </span>
-                          <CopyCodeButton code={String(children).replace(/\n$/, "")} />
+                    if (isBlock) {
+                      const config = getLanguageConfig(lang || "text");
+                      return (
+                        <div className="rounded-lg overflow-hidden my-3.5 border border-border bg-[#0a0a0f] not-prose">
+                          {/* Code block header */}
+                          <div className="flex items-center justify-between bg-secondary/80 px-4 py-2 border-b border-border">
+                            <div className="flex items-center gap-2">
+                              <span className={cn(
+                                "text-[10px] font-semibold px-2 py-0.5 rounded border uppercase tracking-wider",
+                                config.color,
+                                config.bg,
+                                config.border
+                              )}>
+                                {config.name}
+                              </span>
+                            </div>
+                            <CopyCodeButton code={String(children).replace(/\n$/, "")} />
+                          </div>
+                          <SyntaxHighlighter
+                            {...props}
+                            style={oneDark}
+                            language={lang || "text"}
+                            PreTag="div"
+                            customStyle={{
+                              margin: 0,
+                              padding: "1rem",
+                              background: "transparent",
+                              fontSize: "0.8125rem",
+                              lineHeight: "1.6",
+                              fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+                            }}
+                          >
+                            {String(children).replace(/\n$/, "")}
+                          </SyntaxHighlighter>
                         </div>
-                        <SyntaxHighlighter
+                      );
+                    } else {
+                      return (
+                        <code
+                          className="bg-secondary text-foreground/90 rounded px-1.5 py-0.5 text-[0.82em] font-mono"
                           {...props}
-                          style={oneDark}
-                          language={match ? match[1] : "text"}
-                          PreTag="div"
-                          customStyle={{
-                            margin: 0,
-                            padding: "1rem",
-                            background: "transparent",
-                            fontSize: "0.8125rem",
-                            lineHeight: "1.6",
-                            fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
-                          }}
                         >
-                          {String(children).replace(/\n$/, "")}
-                        </SyntaxHighlighter>
-                      </div>
-                    ) : (
-                      <code
-                        className={cn(
-                          "bg-secondary text-foreground/90 rounded px-1.5 py-0.5 text-[0.82em] font-mono",
-                          className
-                        )}
-                        {...props}
-                      >
-                        {children}
-                      </code>
-                    );
+                          {children}
+                        </code>
+                      );
+                    }
                   },
                   p: ({ children }) => (
                     <p className="mb-3 last:mb-0 font-light text-[15px] leading-[1.75]">{children}</p>
@@ -300,4 +311,59 @@ function CopyCodeButton({ code }: { code: string }) {
       )}
     </button>
   );
+}
+
+interface LanguageConfig {
+  name: string;
+  color: string;
+  bg: string;
+  border: string;
+}
+
+function getLanguageConfig(lang: string): LanguageConfig {
+  const l = lang.toLowerCase();
+  switch (l) {
+    case "typescript":
+    case "ts":
+    case "tsx":
+      return { name: "TypeScript", color: "text-[#3178c6] dark:text-[#58a6ff]", bg: "bg-[#3178c6]/10", border: "border-[#3178c6]/20" };
+    case "javascript":
+    case "js":
+    case "jsx":
+      return { name: "JavaScript", color: "text-[#f7df1e] dark:text-[#f1e05a]", bg: "bg-[#f7df1e]/10", border: "border-[#f7df1e]/20" };
+    case "python":
+    case "py":
+      return { name: "Python", color: "text-[#3776ab] dark:text-[#4584b6]", bg: "bg-[#3776ab]/10", border: "border-[#3776ab]/20" };
+    case "rust":
+    case "rs":
+      return { name: "Rust", color: "text-[#dea584] dark:text-[#e07a5f]", bg: "bg-[#dea584]/10", border: "border-[#dea584]/20" };
+    case "go":
+    case "golang":
+      return { name: "Go", color: "text-[#00add8]", bg: "bg-[#00add8]/10", border: "border-[#00add8]/20" };
+    case "html":
+      return { name: "HTML", color: "text-[#e34f26]", bg: "bg-[#e34f26]/10", border: "border-[#e34f26]/20" };
+    case "css":
+      return { name: "CSS", color: "text-[#1572b6] dark:text-[#563d7c]", bg: "bg-[#1572b6]/10", border: "border-[#1572b6]/20" };
+    case "bash":
+    case "sh":
+    case "shell":
+    case "zsh":
+      return { name: "Shell", color: "text-[#4ebd4f] dark:text-[#89e051]", bg: "bg-[#4ebd4f]/10", border: "border-[#4ebd4f]/20" };
+    case "json":
+      return { name: "JSON", color: "text-[#a371f7]", bg: "bg-[#a371f7]/10", border: "border-[#a371f7]/20" };
+    case "markdown":
+    case "md":
+      return { name: "Markdown", color: "text-[#083fa6] dark:text-[#c9a84c]", bg: "bg-[#083fa6]/10", border: "border-[#083fa6]/20" };
+    case "sql":
+      return { name: "SQL", color: "text-[#e38c00]", bg: "bg-[#e38c00]/10", border: "border-[#e38c00]/20" };
+    case "cpp":
+    case "c++":
+      return { name: "C++", color: "text-[#00599c] dark:text-[#f34b7d]", bg: "bg-[#00599c]/10", border: "border-[#00599c]/20" };
+    case "c":
+      return { name: "C", color: "text-[#a8b9cc] dark:text-[#555555]", bg: "bg-[#a8b9cc]/10", border: "border-[#a8b9cc]/20" };
+    case "java":
+      return { name: "Java", color: "text-[#ea2d2e] dark:text-[#b07219]", bg: "bg-[#ea2d2e]/10", border: "border-[#ea2d2e]/20" };
+    default:
+      return { name: lang.toUpperCase() || "Text", color: "text-muted-foreground", bg: "bg-secondary", border: "border-border" };
+  }
 }
