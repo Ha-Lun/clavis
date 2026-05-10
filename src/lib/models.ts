@@ -1,7 +1,7 @@
 export type ModelId =
   | "deepseek-ai/deepseek-v4-flash"
   | "deepseek-ai/deepseek-v4-pro"
-  | "meta/llama-3.3-70b-instruct"
+  | "z-ai/glm5.1"
   | "minimaxai/minimax-m2.7"
   | "moonshotai/kimi-k2.6"
   | "nvidia/nemotron-3-nano-30b-a3b";
@@ -29,9 +29,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "MiniMax",
   },
   {
-    id: "meta/llama-3.3-70b-instruct",
-    name: "Llama 3.3 70B",
-    shortName: "Llama",
+    id: "z-ai/glm5.1",
+    name: "GLM 5.1",
+    shortName: "GLM",
   },
   {
     id: "deepseek-ai/deepseek-v4-pro",
