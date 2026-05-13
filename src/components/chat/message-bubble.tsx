@@ -10,6 +10,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { Message } from "@/lib/appwrite/types";
 import { extractAttachments, extractFileRefs } from "@/lib/utils";
+import { getRoutingLabel } from "@/lib/modelRouter";
 
 interface MessageBubbleProps {
   message: Message;
@@ -28,7 +29,25 @@ export function MessageBubble({
   const isUser = message.role === "user";
 
   const { attachments, cleanContent: contentWithoutAttachments } = extractAttachments(message.content);
-  const { fileRefs, cleanContent: displayContent } = extractFileRefs(contentWithoutAttachments);
+  const { fileRefs, cleanContent } = extractFileRefs(contentWithoutAttachments);
+
+  // Handle <think> tags that some reasoning models stream in their content
+  let displayContent = cleanContent;
+  if (displayContent.includes('<think>')) {
+    displayContent = displayContent.replace(/<think>\n?/g, '```reasoning\n');
+    displayContent = displayContent.replace(/<\/think>\n?/g, '\n```\n\n');
+  } else if (displayContent.includes('</think>')) {
+     displayContent = displayContent.replace(/<\/think>\n?/g, '\n```\n\n');
+  }
+  
+  // Automatically close unclosed think blocks while streaming to ensure markdown renders correctly
+  if (isStreaming && displayContent.includes('```reasoning')) {
+    const openCount = (displayContent.match(/```reasoning/g) || []).length;
+    const closeCount = (displayContent.match(/\n```(\n|$)/g) || []).length;
+    if (openCount > closeCount) {
+      displayContent += '\n```';
+    }
+  }
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -127,6 +146,20 @@ export function MessageBubble({
                     const match = /language-(\w+)/.exec(className || "");
                     const isBlock = !inline && (match || String(children).includes("\n"));
                     
+                    if (match && match[1] === "reasoning") {
+                      return (
+                        <div className="my-3 border-l-2 border-primary/30 pl-4 py-1 bg-primary/[0.02] rounded-r-lg">
+                          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />
+                            Thinking Process
+                          </div>
+                          <div className="text-muted-foreground/80 font-light text-[14px] leading-relaxed whitespace-pre-wrap font-sans italic">
+                            {children}
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return isBlock ? (
                       <div className="rounded-lg overflow-hidden my-3.5 border border-border bg-[#0a0a0f] not-prose">
                         {/* Code block header */}
@@ -234,9 +267,16 @@ export function MessageBubble({
 
               {/* Model attribution */}
               {!isStreaming && modelName && (
-                <p className="mt-3 text-[10px] text-muted-foreground/30 font-medium uppercase tracking-widest">
-                  {modelName}
-                </p>
+                <div className="mt-3 flex flex-col items-start gap-0.5">
+                  <p className="text-[10px] text-muted-foreground/30 font-medium uppercase tracking-widest">
+                    {modelName}
+                  </p>
+                  {modelName === "Auto" && (message as any).model && (
+                    <p className="text-[10px] text-muted-foreground/50 font-light italic">
+                      Auto → {getRoutingLabel((message as any).model)}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}

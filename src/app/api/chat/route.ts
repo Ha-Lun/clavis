@@ -4,6 +4,7 @@ import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { FLUX_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest } from "next/server";
 import { ID, Query } from "node-appwrite";
+import { routeModel } from "@/lib/modelRouter";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -363,6 +364,12 @@ ${userMessageContent}`;
     // Call NVIDIA NIM with retry
     console.log("[API /chat] Creating NVIDIA client, model:", model);
 
+    let finalModelId = model;
+    if (model === "auto") {
+      finalModelId = routeModel(messages);
+      console.log(`[API /chat] Auto-routed to model: ${finalModelId}`);
+    }
+
     let nvidia: ReturnType<typeof createNvidiaClient>;
     try {
       nvidia = createNvidiaClient();
@@ -376,7 +383,7 @@ ${userMessageContent}`;
     let completion;
     try {
       console.log("[API /chat] Calling NVIDIA API with retry...");
-      completion = await callAIWithRetry(nvidia, model, messages, request.signal, finalSystemPrompt);
+      completion = await callAIWithRetry(nvidia, finalModelId, messages, request.signal, finalSystemPrompt);
     } catch (err: any) {
       console.error("[API /chat] NVIDIA API error after retries:", err.message);
       if (err.status === 429 || err.message?.includes("busy")) {
@@ -412,11 +419,12 @@ ${userMessageContent}`;
             const streamingCompletion = currentCompletion as AsyncIterable<ChatCompletionChunk>;
             
             let toolCalls: any[] = [];
+            let isThinking = false;
 
             for await (const chunk of streamingCompletion) {
               const delta = chunk.choices[0]?.delta;
               
-              if (delta?.tool_calls) {
+              if (delta?.tool_calls && delta.tool_calls.length > 0) {
                 for (const toolCall of delta.tool_calls) {
                   const index = toolCall.index;
                   if (!toolCalls[index]) {
@@ -433,14 +441,41 @@ ${userMessageContent}`;
                 continue;
               }
 
+              // Handle Reasoning Content (Chain of Thought)
+              const reasoningContent = (delta as any)?.reasoning_content ?? "";
+              if (reasoningContent) {
+                if (!isThinking) {
+                  isThinking = true;
+                  const startTag = "<think>\n";
+                  fullContent += startTag;
+                  controller.enqueue(new TextEncoder().encode(startTag));
+                }
+                fullContent += reasoningContent;
+                controller.enqueue(new TextEncoder().encode(reasoningContent));
+              }
+
               const content = delta?.content ?? "";
               if (content) {
+                if (isThinking) {
+                  isThinking = false;
+                  const endTag = "\n</think>\n\n";
+                  fullContent += endTag;
+                  controller.enqueue(new TextEncoder().encode(endTag));
+                }
                 chunkCount++;
                 fullContent += content;
                 controller.enqueue(new TextEncoder().encode(content));
               }
             }
             
+            // If thinking finished but stream ended without content
+            if (isThinking) {
+              const endTag = "\n</think>\n\n";
+              fullContent += endTag;
+              controller.enqueue(new TextEncoder().encode(endTag));
+              isThinking = false;
+            }
+
             // Stream finished for this chunk. Check if there were tool calls.
             if (toolCalls.length > 0) {
               console.log("[API /chat] Tool calls detected:", JSON.stringify(toolCalls));
@@ -556,6 +591,7 @@ ${userMessageContent}`;
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Transfer-Encoding": "chunked",
+        "X-Resolved-Model": finalModelId,
       },
     });
   } catch (err) {

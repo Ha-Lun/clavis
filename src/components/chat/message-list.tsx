@@ -9,9 +9,10 @@ import { getModelInfo } from "@/lib/models";
 
 interface MessageListProps {
   modelId: string;
+  smoothContent?: string;
 }
 
-export function MessageList({ modelId }: MessageListProps) {
+export function MessageList({ modelId, smoothContent }: MessageListProps) {
   const { messages, isStreaming, streamingContent } = useChat();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,7 @@ export function MessageList({ modelId }: MessageListProps) {
     if (isAutoScrollEnabled.current) {
       bottomRef.current?.scrollIntoView({ behavior: "auto" });
     }
-  }, [messages, streamingContent]);
+  }, [messages, streamingContent, smoothContent]);
 
   if (messages.length === 0 && !isStreaming) {
     return (
@@ -69,7 +70,7 @@ export function MessageList({ modelId }: MessageListProps) {
           ))}
         </AnimatePresence>
 
-        {isStreaming && streamingContent && (
+        {isStreaming && (smoothContent || streamingContent) && (
           <MessageBubble
             message={{
               $id: "streaming",
@@ -80,7 +81,7 @@ export function MessageList({ modelId }: MessageListProps) {
               $permissions: [],
               chat_id: "",
               role: "assistant",
-              content: streamingContent,
+              content: smoothContent || streamingContent,
             }}
             index={messages.length}
             isStreaming

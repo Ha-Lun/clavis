@@ -11,9 +11,10 @@ Flux is a premium, high-performance AI chat interface designed with a **Dark Lux
 - **🌊 Fluid Generation**: Custom-built smooth streaming that makes AI responses feel natural and continuous.
 - **🛑 Instant Control**: Real-time "Stop Generation" capability using AbortController.
 - **🧠 Multi-Model Support**: Support for a variety of top-tier models including:
-  - **DeepSeek V4** (Flash & Pro)
+  - **DeepSeek V4 Pro**
+  - **Meta Llama 3.3**
+  - **Qwen 3.5**
   - **NVIDIA Nemotron**
-  - **Zhipu GLM 5.1**
   - **MiniMax M2.7**
   - **Moonshot Kimi**
 - **📂 Organization**: Full sidebar management for recent chats and categorized projects.

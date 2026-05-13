@@ -159,6 +159,9 @@ interface ChatViewProps {
           appendStreamingContent(chunk);
         }
 
+        const resolvedModel = res.headers.get("X-Resolved-Model");
+        const finalModelId = resolvedModel || (activeChat?.model || chat.model);
+
         const assistantMessage: Message = {
           $id: crypto.randomUUID(),
           $collectionId: "",
@@ -169,6 +172,7 @@ interface ChatViewProps {
           chat_id: chat.id,
           role: "assistant",
           content: fullContent,
+          model: finalModelId, // Storing the resolved model in the message
         };
         addMessage(assistantMessage);
       } catch (err: any) {
@@ -261,6 +265,7 @@ interface ChatViewProps {
       <div className="flex-1 overflow-hidden flex flex-col">
         <MessageList
           modelId={chat.model}
+          smoothContent={smoothContent}
         />
       </div>
       <div className="flex flex-col">

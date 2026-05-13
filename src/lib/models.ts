@@ -1,7 +1,8 @@
 export type ModelId =
-  | "deepseek-ai/deepseek-v4-flash"
+  | "auto"
+  | "mistralai/mistral-small-4-119b-2603"
   | "deepseek-ai/deepseek-v4-pro"
-  | "z-ai/glm5.1"
+  | "qwen/qwen3.5-122b-a10b"
   | "minimaxai/minimax-m2.7"
   | "moonshotai/kimi-k2.6"
   | "nvidia/nemotron-3-nano-30b-a3b";
@@ -13,6 +14,11 @@ export interface ModelInfo {
 }
 
 export const MODELS: ModelInfo[] = [
+  {
+    id: "auto",
+    name: "Auto",
+    shortName: "Auto",
+  },
   {
     id: "nvidia/nemotron-3-nano-30b-a3b",
     name: "Nemotron Nano",
@@ -29,9 +35,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "MiniMax",
   },
   {
-    id: "z-ai/glm5.1",
-    name: "GLM 5.1",
-    shortName: "GLM",
+    id: "qwen/qwen3.5-122b-a10b",
+    name: "Qwen 3.5",
+    shortName: "Qwen",
   },
   {
     id: "deepseek-ai/deepseek-v4-pro",
@@ -39,13 +45,13 @@ export const MODELS: ModelInfo[] = [
     shortName: "DS Pro",
   },
   {
-    id: "deepseek-ai/deepseek-v4-flash",
-    name: "DeepSeek V4 Flash",
-    shortName: "DS Flash",
+    id: "mistralai/mistral-small-4-119b-2603",
+    name: "Mistral Small 4",
+    shortName: "Mistral",
   },
 ];
 
-export const DEFAULT_MODEL: ModelId = "nvidia/nemotron-3-nano-30b-a3b";
+export const DEFAULT_MODEL: ModelId = "auto";
 
 export function getModelInfo(modelId: string): ModelInfo {
   return (

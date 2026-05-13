@@ -1,45 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/appwrite/config";
-import { Client, Account } from "node-appwrite";
 
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get(SESSION_COOKIE);
-
-  const isAuthPage =
-    request.nextUrl.pathname === "/login" ||
-    request.nextUrl.pathname === "/signup";
   const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
 
-  let hasSession = false;
+  // Basic presence check in middleware (Node.js Appwrite SDK is not supported in Edge runtime)
+  const hasSessionCookie = !!session?.value;
 
-  if (session?.value) {
-    try {
-      const client = new Client()
-        .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
-        .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!)
-        .setSession(session.value);
-
-      const account = new Account(client);
-      await account.get();
-      hasSession = true;
-    } catch (error) {
-      hasSession = false;
-    }
-  }
-
-  // Redirect unauthenticated users to login
-  if (isDashboard && !hasSession) {
+  // Protect dashboard routes
+  if (isDashboard && !hasSessionCookie) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthPage && hasSession) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  // NOTE: We do not automatically redirect away from /login or /signup here.
+  // Doing so can cause infinite redirect loops if the cookie exists but the session
+  // is invalid on the server components. The server components or client-side logic
+  // will handle redirecting authenticated users away from auth pages.
 
   return NextResponse.next();
 }
