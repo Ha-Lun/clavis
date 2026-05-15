@@ -90,13 +90,13 @@ const config: Config = {
         "sm-dark": "0 1px 2px rgba(0,0,0,0.3)",
         "md-dark": "0 4px 12px rgba(0,0,0,0.4)",
         "lg-dark": "0 8px 24px rgba(0,0,0,0.5)",
-        "glow":    "0 0 0 1px rgba(99,102,241,0.25), 0 0 16px rgba(99,102,241,0.1)",
-        "glow-lg": "0 0 0 2px rgba(99,102,241,0.3), 0 0 24px rgba(99,102,241,0.15)",
+        "glow":    "0 0 0 1px rgba(106,13,173,0.25), 0 0 16px rgba(106,13,173,0.1)",
+        "glow-lg": "0 0 0 2px rgba(106,13,173,0.3), 0 0 24px rgba(106,13,173,0.15)",
         /* Legacy compat */
         "stripe-ambient":  "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)",
         "stripe-elevated": "0 4px 16px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.1)",
         "stripe-deep":     "0 8px 24px rgba(0,0,0,0.2)",
-        "stripe-focus":    "0 0 0 2px rgba(99,102,241,0.4)",
+        "stripe-focus":    "0 0 0 2px rgba(106,13,173,0.4)",
       },
 
       /* ─── Backdrop blur ─── */

@@ -1,5 +1,5 @@
 /**
- * Appwrite Setup Script for Flux
+ * Appwrite Setup Script for Sciora
  *
  * Run this once to create the collections, attributes, indexes,
  * and storage bucket in your existing Appwrite database.
@@ -25,7 +25,7 @@ import {
 
 // Use the existing Appwrite database — do NOT try to create it
 const DATABASE_ID = "69f62a80001dafec8332";
-const BUCKET_ID = "flux-uploads";
+const BUCKET_ID = "sciora-uploads";
 
 async function main() {
   // Load env vars from .env.local if available
@@ -61,7 +61,7 @@ async function main() {
   const databases = new Databases(client);
   const storage = new Storage(client);
 
-  console.log("🚀 Setting up Appwrite for Flux...");
+  console.log("🚀 Setting up Appwrite for Sciora...");
   console.log(`   Using existing database: ${DATABASE_ID}\n`);
 
   // ── Helper to create a collection ─────────────────────────
@@ -246,7 +246,7 @@ async function main() {
   try {
     await storage.createBucket(
       BUCKET_ID,
-      "Flux Uploads",
+      "Sciora Uploads",
       [
         Permission.read(Role.users()),
         Permission.create(Role.users()),
@@ -256,11 +256,11 @@ async function main() {
       undefined, // enabled
       50000000 // maxFileSize: 50MB
     );
-    console.log("\n✅ Storage bucket 'flux-uploads' created");
+    console.log("\n✅ Storage bucket 'sciora-uploads' created");
   } catch (err: unknown) {
     const error = err as { code?: number };
     if (error.code === 409) {
-      console.log("\n⏭️  Storage bucket 'flux-uploads' already exists");
+      console.log("\n⏭️  Storage bucket 'sciora-uploads' already exists");
     } else {
       throw err;
     }

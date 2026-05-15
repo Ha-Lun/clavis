@@ -1,6 +1,6 @@
-# Flux: AI Dark Luxury - Project Context
+# Sciora: AI Dark Luxury - Project Context
 
-This file provides instructional context for AI agents working on the **Flux** project. Flux is a premium, high-performance AI chat interface featuring a "Dark Luxury" aesthetic.
+This file provides instructional context for AI agents working on the **Sciora** project. Sciora is a premium, high-performance AI chat interface featuring a "Dark Luxury" aesthetic.
 
 ## 🏗️ Project Architecture & Tech Stack
 

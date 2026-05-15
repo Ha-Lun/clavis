@@ -113,14 +113,14 @@ export function MessageBubble({
           ) : (
             /* ─── Assistant message ─────────────────── */
             <div className="min-w-0">
-              {/* Flux sender label */}
+              {/* Sciora sender label */}
               <div className="flex items-center gap-1.5 mb-2">
                 <div className="h-5 w-5 rounded-md bg-primary/15 flex items-center justify-center">
                   <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 text-primary" strokeWidth={2.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <span className="text-[13px] font-medium text-foreground tracking-tight">Flux</span>
+                <span className="text-[13px] font-medium text-foreground tracking-tight">Sciora</span>
               </div>
 
               {/* File refs */}

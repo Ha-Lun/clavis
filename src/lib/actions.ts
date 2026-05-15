@@ -7,7 +7,7 @@ import { ID, Query } from "node-appwrite";
 import { DEFAULT_MODEL } from "@/lib/models";
 import type { Message } from "@/lib/appwrite/types";
 
-const FLUX_SYSTEM_PROMPT = `You are Flux, an expert AI advisor built for technical and creative work.
+const SCIORA_SYSTEM_PROMPT = `You are Sciora, an expert AI advisor built for technical and creative work.
 
 ## Personality
 - You are direct, confident, and deeply knowledgeable
@@ -70,7 +70,7 @@ export async function processInitialMessage(chatId: string, message: string, mod
     const completion = await nvidia.chat.completions.create({
       model: modelId,
       messages: [
-        { role: "system", content: FLUX_SYSTEM_PROMPT },
+        { role: "system", content: SCIORA_SYSTEM_PROMPT },
         { role: "user", content: message },
       ],
       stream: false,

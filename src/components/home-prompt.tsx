@@ -119,7 +119,7 @@ export function HomePrompt() {
         className="mb-12 text-center"
       >
         <h1 className="text-[52px] md:text-[64px] font-extralight tracking-[-0.04em] text-foreground leading-none">
-          Flux
+          Sciora
         </h1>
         <p className="mt-2 text-[14px] text-muted-foreground/50 font-light tracking-wide">
           What can I help you with today?
@@ -136,7 +136,7 @@ export function HomePrompt() {
         <motion.div
           animate={{
             boxShadow: isFocused
-              ? "0 0 0 1px rgba(99,102,241,0.35), 0 0 24px rgba(99,102,241,0.08)"
+              ? "0 0 0 1px rgba(106,13,173,0.35), 0 0 24px rgba(106,13,173,0.08)"
               : "0 0 0 1px rgba(0,0,0,0)",
           }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -294,7 +294,7 @@ export function HomePrompt() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 + SUGGESTIONS.length * 0.06, ease: "easeOut" }}
-          whileHover={{ borderColor: "rgba(99,102,241,0.2)" }}
+          whileHover={{ borderColor: "rgba(106,13,173,0.2)" }}
           className={cn(
             "flex items-start gap-2.5 p-4 text-left",
             "bg-card border border-dashed border-border rounded-lg",

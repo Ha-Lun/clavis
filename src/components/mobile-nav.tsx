@@ -18,7 +18,7 @@ export function MobileNav() {
       >
         <Menu className="h-4 w-4" />
       </Button>
-      <span className="text-[14px] font-medium tracking-tight text-foreground">Flux</span>
+      <span className="text-[14px] font-medium tracking-tight text-foreground">Sciora</span>
     </div>
   );
 }

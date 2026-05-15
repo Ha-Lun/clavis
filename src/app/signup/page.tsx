@@ -38,7 +38,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(99,102,241,0.06),transparent)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(106,13,173,0.06),transparent)]" />
 
       <motion.div
         className="w-full max-w-sm relative"
@@ -54,7 +54,7 @@ export default function SignupPage() {
             </svg>
           </div>
           <h1 className="text-[28px] font-light tracking-tight text-foreground">Create account</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground font-light">Get started with Flux today</p>
+          <p className="mt-1 text-[13px] text-muted-foreground font-light">Get started with Sciora today</p>
         </div>
 
         {/* Form */}

@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Flux — AI Chat",
+  title: "Sciora — AI Chat",
   description:
     "Your personal AI productivity app. Chat with multiple AI models, organize conversations into projects, and boost your workflow.",
   keywords: ["AI", "chat", "productivity", "assistant"],

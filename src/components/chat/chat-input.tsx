@@ -114,13 +114,13 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
           animate={{
             boxShadow: isStreaming
               ? [
-                  "0 0 0 1px rgba(99,102,241,0.15), 0 0 0px rgba(99,102,241,0)",
-                  "0 0 0 2px rgba(99,102,241,0.5), 0 0 20px rgba(99,102,241,0.2)",
-                  "0 0 0 1px rgba(99,102,241,0.15), 0 0 0px rgba(99,102,241,0)"
+                  "0 0 0 1px rgba(106,13,173,0.15), 0 0 0px rgba(106,13,173,0)",
+                  "0 0 0 2px rgba(106,13,173,0.5), 0 0 20px rgba(106,13,173,0.2)",
+                  "0 0 0 1px rgba(106,13,173,0.15), 0 0 0px rgba(106,13,173,0)"
                 ]
               : isFocused
-                ? "0 0 0 1px rgba(99,102,241,0.35), 0 0 20px rgba(99,102,241,0.08)"
-                : "0 0 0 1px rgba(255,255,255,0.0), 0 0 0px rgba(99,102,241,0.0)",
+                ? "0 0 0 1px rgba(106,13,173,0.35), 0 0 20px rgba(106,13,173,0.08)"
+                : "0 0 0 1px rgba(255,255,255,0.0), 0 0 0px rgba(106,13,173,0.0)",
           }}
           transition={{
             boxShadow: isStreaming

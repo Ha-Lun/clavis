@@ -1,7 +1,7 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
 import { createNvidiaClient } from "@/lib/nvidia";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
-import { FLUX_SYSTEM_PROMPT } from "@/lib/prompts";
+import { SCIORA_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest } from "next/server";
 import { ID, Query } from "node-appwrite";
 import { routeModel } from "@/lib/modelRouter";
@@ -24,9 +24,10 @@ async function callAIWithRetry(
   model: string,
   messages: MessageParam[],
   signal: AbortSignal,
-  systemPrompt: string = FLUX_SYSTEM_PROMPT,
+  systemPrompt: string = SCIORA_SYSTEM_PROMPT,
   maxRetries: number = 2,
   timeoutMs: number = 30000,
+  onRetry?: (attempt: number) => void,
 ) {
   let lastError: Error | null = null;
 
@@ -84,6 +85,7 @@ async function callAIWithRetry(
       if (is429) {
         // Don't retry 429s immediately, wait a bit
         if (attempt < maxRetries) {
+          onRetry?.(attempt + 2);
           await new Promise((r) => setTimeout(r, 2000));
           continue;
         }
@@ -99,6 +101,7 @@ async function callAIWithRetry(
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 1000;
         console.log(`[API /chat] Retrying in ${delay}ms...`);
+        onRetry?.(attempt + 2);
         await new Promise((r) => setTimeout(r, delay));
       }
     }
@@ -145,7 +148,7 @@ export async function POST(request: NextRequest) {
 
     // Verify chat belongs to user
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    let finalSystemPrompt = `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${FLUX_SYSTEM_PROMPT}`;
+    let finalSystemPrompt = `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${SCIORA_SYSTEM_PROMPT}`;
     try {
       const chat = await admin.databases.getDocument(
         dbId,
@@ -174,7 +177,7 @@ export async function POST(request: NextRequest) {
             chat.project_id
           );
           if (project.instructions) {
-            finalSystemPrompt = `${FLUX_SYSTEM_PROMPT}\n\nProject Instructions:\n${project.instructions}`;
+            finalSystemPrompt = `${SCIORA_SYSTEM_PROMPT}\n\nProject Instructions:\n${project.instructions}`;
             console.log("[API /chat] Applied project instructions");
           }
         } catch (err) {
@@ -380,33 +383,6 @@ ${userMessageContent}`;
       });
     }
 
-    let completion;
-    try {
-      console.log("[API /chat] Calling NVIDIA API with retry...");
-      completion = await callAIWithRetry(nvidia, finalModelId, messages, request.signal, finalSystemPrompt);
-    } catch (err: any) {
-      console.error("[API /chat] NVIDIA API error after retries:", err.message);
-      if (err.status === 429 || err.message?.includes("busy")) {
-        return new Response(
-          JSON.stringify({
-            error: "Model is busy. Please try again in a moment.",
-          }),
-          { status: 429 },
-        );
-      }
-
-      const errorMessage =
-        err.message || "Failed to communicate with AI provider";
-      return new Response(
-        JSON.stringify({
-          error: errorMessage.toLowerCase().includes("timeout")
-            ? "The request timed out. Please try again."
-            : `AI Error: ${errorMessage}`,
-        }),
-        { status: err.status || 500 },
-      );
-    }
-
     // Stream response
     let fullContent = "";
     let chunkCount = 0;
@@ -530,7 +506,20 @@ ${userMessageContent}`;
               }
 
               console.log("[API /chat] Calling AI again with tool results...");
-              const nextCompletion = await callAIWithRetry(nvidia, model, messages, request.signal, finalSystemPrompt);
+              const nextCompletion = await callAIWithRetry(
+                nvidia, 
+                finalModelId, 
+                messages, 
+                request.signal, 
+                finalSystemPrompt,
+                2,
+                30000,
+                (attempt) => {
+                  const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})..._\n\n`;
+                  fullContent += retryMsg;
+                  controller.enqueue(new TextEncoder().encode(retryMsg));
+                }
+              );
               await processStream(nextCompletion);
               return;
             }
@@ -578,12 +567,84 @@ ${userMessageContent}`;
               controller.close();
             } else {
               console.error("Stream error:", err);
-              controller.error(err);
+              const errorMessage = `\n\n❌ Error: ${err.message || "Failed to process stream"}`;
+              fullContent += errorMessage;
+              controller.enqueue(new TextEncoder().encode(errorMessage));
+              
+              // Save what we have
+              if (fullContent) {
+                try {
+                  await admin.databases.createDocument(
+                    dbId,
+                    COLLECTIONS.MESSAGES,
+                    ID.unique(),
+                    {
+                      chat_id: chatId,
+                      role: "assistant",
+                      content: fullContent,
+                    },
+                  );
+                } catch (dbErr) {
+                  console.error("[API /chat] Failed to save error response:", dbErr);
+                }
+              }
+              controller.close();
             }
           }
         }
 
-        await processStream(completion);
+        try {
+          console.log("[API /chat] Calling NVIDIA API with retry...");
+          const completion = await callAIWithRetry(
+            nvidia, 
+            finalModelId, 
+            messages, 
+            request.signal, 
+            finalSystemPrompt,
+            2,
+            30000,
+            (attempt) => {
+              const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})..._\n\n`;
+              fullContent += retryMsg;
+              controller.enqueue(new TextEncoder().encode(retryMsg));
+            }
+          );
+          await processStream(completion);
+        } catch (err: any) {
+          console.error("[API /chat] NVIDIA API error after retries:", err.message);
+          
+          let errorText = "";
+          if (err.status === 429 || err.message?.includes("busy")) {
+            errorText = "Model is busy. Please try again in a moment.";
+          } else {
+            const errorMessage = err.message || "Failed to communicate with AI provider";
+            errorText = errorMessage.toLowerCase().includes("timeout")
+              ? "The request timed out. Please try again."
+              : `AI Error: ${errorMessage}`;
+          }
+          
+          const finalErrorMsg = `\n\n❌ ${errorText}`;
+          fullContent += finalErrorMsg;
+          controller.enqueue(new TextEncoder().encode(finalErrorMsg));
+          
+          // Save error message to DB
+          try {
+            await admin.databases.createDocument(
+              dbId,
+              COLLECTIONS.MESSAGES,
+              ID.unique(),
+              {
+                chat_id: chatId,
+                role: "assistant",
+                content: fullContent,
+              },
+            );
+          } catch (dbErr) {
+            console.error("[API /chat] Failed to save final error response:", dbErr);
+          }
+          
+          controller.close();
+        }
       },
     });
 

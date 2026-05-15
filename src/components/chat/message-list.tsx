@@ -88,7 +88,7 @@ export function MessageList({ modelId, smoothContent }: MessageListProps) {
           />
         )}
 
-        {isStreaming && !streamingContent && (
+        {isStreaming && (
           <ThinkingIndicator modelId={modelId} />
         )}
 

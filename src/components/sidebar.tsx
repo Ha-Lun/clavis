@@ -125,11 +125,15 @@ function SidebarContent({
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
-  // Undo project deletion state
+  // Undo state
   const [localProjects, setLocalProjects] = useState<Project[]>(projects);
   const [undoProject, setUndoProject] = useState<Project | null>(null);
   const [showUndoProject, setShowUndoProject] = useState(false);
   const undoProjectTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [undoChat, setUndoChat] = useState<Chat | null>(null);
+  const [showUndoChat, setShowUndoChat] = useState(false);
+  const undoChatTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync projects to local state unless we are in the middle of undo flow
   useEffect(() => {
@@ -259,20 +263,58 @@ function SidebarContent({
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    const chatToDelete = chats.find((c) => (c.$id ?? c.id) === chatId);
+
+    // Find chat to undo later
+    const chatToDelete = chats.find((c) => (c.$id ?? (c as any).id) === chatId);
     if (!chatToDelete) return;
+
+    // Clear any existing timer
+    if (undoChatTimerRef.current) {
+      clearTimeout(undoChatTimerRef.current);
+    }
+
+    // Optimistic UI update
     removeChat(chatId);
     if (pathname === `/dashboard/chat/${chatId}`) {
       router.push("/dashboard");
     }
-    try {
-      const res = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete chat on server");
-    } catch (err) {
-      console.error("Failed to delete chat:", err);
-      setChats([chatToDelete, ...chats]);
-      alert("Failed to delete chat. Please check your connection.");
+
+    // Show undo popup
+    setUndoChat(chatToDelete);
+    setShowUndoChat(true);
+
+    // Set timer for actual deletion
+    undoChatTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Delete failed");
+        setShowUndoChat(false);
+        setUndoChat(null);
+      } catch (err) {
+        console.error("Failed to delete chat permanently:", err);
+      }
+    }, 5000);
+  };
+
+  const handleUndoChatDelete = () => {
+    if (!undoChat) return;
+
+    if (undoChatTimerRef.current) {
+      clearTimeout(undoChatTimerRef.current);
+      undoChatTimerRef.current = null;
     }
+
+    // Restore in global store
+    if (!chats.find(c => (c.$id ?? (c as any).id) === (undoChat.$id ?? (undoChat as any).id))) {
+      setChats([undoChat, ...chats].sort((a, b) => {
+        const dateA = new Date(a.$updatedAt).getTime();
+        const dateB = new Date(b.$updatedAt).getTime();
+        return dateB - dateA;
+      }));
+    }
+
+    setShowUndoChat(false);
+    setTimeout(() => setUndoChat(null), 300);
   };
 
   const handleLogout = async () => {
@@ -313,7 +355,7 @@ function SidebarContent({
                 transition={{ duration: 0.15 }}
                 className="text-[15px] font-medium tracking-tight text-foreground overflow-hidden whitespace-nowrap"
               >
-                Flux
+                Sciora
               </motion.span>
             )}
           </AnimatePresence>
@@ -709,31 +751,62 @@ function SidebarContent({
           </div>
         </div>
 
-        {/* Project Undo Popup inside sidebar */}
+        {/* Global Undo Popups (Project & Chat) */}
         <div 
           className={cn(
-            "absolute bottom-[72px] left-3 right-3 z-50 transition-all duration-100 transform",
-            showUndoProject ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+            "fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end transition-all duration-300 transform",
+            (showUndoProject || showUndoChat) ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
           )}
         >
-          <div className="bg-foreground text-background px-3 py-2.5 rounded-lg shadow-lg flex items-center justify-between gap-3 text-sm">
-            <span className="truncate flex-1 font-medium text-[13px]">Project deleted</span>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={handleUndoProjectDelete}
-                className="flex items-center gap-1.5 px-2 py-1 hover:bg-background/20 rounded transition-colors text-[13px] font-medium"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Undo
-              </button>
-              <button
-                onClick={() => setShowUndoProject(false)}
-                className="p-1 hover:bg-background/20 rounded transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          {/* Project Undo Popup */}
+          {showUndoProject && (
+            <div className="bg-[#1a1a24] text-foreground border border-border/50 px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-4 text-sm min-w-[280px] max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col min-w-0">
+                <span className="font-medium text-[13px]">Project deleted</span>
+                <span className="text-[11px] text-muted-foreground truncate">{undoProject?.name}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 border-l border-border/30 pl-4">
+                <button
+                  onClick={handleUndoProjectDelete}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Undo
+                </button>
+                <button
+                  onClick={() => setShowUndoProject(false)}
+                  className="p-1.5 hover:bg-white/[0.05] rounded-lg transition-colors text-muted-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Chat Undo Popup */}
+          {showUndoChat && (
+            <div className="bg-[#1a1a24] text-foreground border border-border/50 px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-4 text-sm min-w-[280px] max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col min-w-0">
+                <span className="font-medium text-[13px]">Chat deleted</span>
+                <span className="text-[11px] text-muted-foreground truncate">{undoChat?.title}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 border-l border-border/30 pl-4">
+                <button
+                  onClick={handleUndoChatDelete}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Undo
+                </button>
+                <button
+                  onClick={() => setShowUndoChat(false)}
+                  className="p-1.5 hover:bg-white/[0.05] rounded-lg transition-colors text-muted-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

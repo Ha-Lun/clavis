@@ -27,7 +27,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background relative overflow-hidden">
       {/* Subtle background gradient */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(99,102,241,0.06),transparent)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(106,13,173,0.06),transparent)]" />
 
       <motion.div
         className="w-full max-w-sm relative"
@@ -43,7 +43,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="text-[28px] font-light tracking-tight text-foreground">Welcome back</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground font-light">Sign in to your Flux account</p>
+          <p className="mt-1 text-[13px] text-muted-foreground font-light">Sign in to your Sciora account</p>
         </div>
 
         {/* Form */}

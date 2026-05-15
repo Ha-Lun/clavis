@@ -1,8 +1,8 @@
-# 🌌 Flux: AI Dark Luxury
+# 🌌 Sciora: AI Dark Luxury
 
-Flux is a premium, high-performance AI chat interface designed with a **Dark Luxury** aesthetic. It combines the power of state-of-the-art AI models with a sleek, glassmorphic UI, providing a frictionless and visually stunning experience for power users.
+Sciora is a premium, high-performance AI chat interface designed with a **Dark Luxury** aesthetic. It combines the power of state-of-the-art AI models with a sleek, glassmorphic UI, providing a frictionless and visually stunning experience for power users.
 
-![Flux Home Mockup](https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop)
+![Sciora Home Mockup](https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop)
 
 ## ✨ Key Features
 
@@ -32,8 +32,8 @@ Flux is a premium, high-performance AI chat interface designed with a **Dark Lux
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/Ha-Lun/flux.git
-cd flux
+git clone https://github.com/Ha-Lun/sciora.git
+cd sciora
 ```
 
 ### 2. Install dependencies
@@ -58,7 +58,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## 🎨 Design Philosophy
 
-Flux follows the principles of **Modern Glassmorphism**:
+Sciora follows the principles of **Modern Glassmorphism**:
 - High background blur (`backdrop-blur-md`)
 - Subtle borders (`border-white/10`)
 - Deep, desaturated backgrounds (`#0a0a0f`)
