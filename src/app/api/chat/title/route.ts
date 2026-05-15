@@ -1,6 +1,7 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
 import { COLLECTIONS } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
+import { Chat } from "@/lib/appwrite/types";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       dbId,
       COLLECTIONS.CHATS,
       chatId
-    );
+    ) as unknown as Chat;
 
     if (chat.user_id !== user.$id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });

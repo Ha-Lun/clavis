@@ -175,7 +175,7 @@ function SidebarContent({
     e.stopPropagation();
 
     // Find project to undo later
-    const projectToDelete = localProjects.find(p => (p.$id ?? p.id) === projectId);
+    const projectToDelete = localProjects.find(p => p.$id === projectId);
     if (!projectToDelete) return;
 
     // Clear any existing timer
@@ -184,7 +184,7 @@ function SidebarContent({
     }
 
     // Optimistic UI update
-    setLocalProjects((prev) => prev.filter((p) => (p.$id ?? p.id) !== projectId));
+    setLocalProjects((prev) => prev.filter((p) => p.$id !== projectId));
     removeProject(projectId);
 
     if (pathname === `/dashboard/projects/${projectId}`) {
@@ -225,7 +225,7 @@ function SidebarContent({
     
     // Restore in global store
     const currentGlobal = useProjectStore.getState().projects;
-    if (!currentGlobal.find(p => (p.$id ?? p.id) === (undoProject.$id ?? undoProject.id))) {
+    if (!currentGlobal.find(p => p.$id === undoProject.$id)) {
       setProjects([undoProject, ...currentGlobal].sort((a, b) => a.name.localeCompare(b.name)));
     }
 
@@ -244,9 +244,8 @@ function SidebarContent({
       });
       const { chat } = await res.json();
       if (chat) {
-        const chatWithId = { ...chat, id: chat.$id ?? chat.id };
-        setChats([chatWithId, ...chats]);
-        router.push(`/dashboard/chat/${chatWithId.id}`);
+        setChats([chat, ...chats]);
+        router.push(`/dashboard/chat/${chat.$id}`);
         onClose();
       }
     } catch (err) {
@@ -259,7 +258,7 @@ function SidebarContent({
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    const chatToDelete = chats.find((c) => (c.$id ?? c.id) === chatId);
+    const chatToDelete = chats.find((c) => c.$id === chatId);
     if (!chatToDelete) return;
     removeChat(chatId);
     if (pathname === `/dashboard/chat/${chatId}`) {
@@ -427,12 +426,12 @@ function SidebarContent({
                           if (a.isPinned && !b.isPinned) return -1;
                           if (!a.isPinned && b.isPinned) return 1;
                           return (
-                            new Date((b.$updatedAt || b.updatedAt) as string).getTime() -
-                            new Date((a.$updatedAt || a.updatedAt) as string).getTime()
+                            new Date(b.$updatedAt as string).getTime() -
+                            new Date(a.$updatedAt as string).getTime()
                           );
                         })
                         .map((chat) => {
-                          const chatId = chat.$id ?? chat.id;
+                          const chatId = chat.$id;
                           const isActive = pathname === `/dashboard/chat/${chatId}`;
 
                           return (
@@ -572,7 +571,7 @@ function SidebarContent({
                           return a.name.localeCompare(b.name);
                         })
                         .map((project) => {
-                          const projectId = project.$id ?? project.id;
+                          const projectId = project.$id;
                           const isActive = pathname === `/dashboard/projects/${projectId}`;
 
                           return (

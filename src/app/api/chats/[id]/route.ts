@@ -2,6 +2,7 @@ import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
 import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
 import { Query } from "node-appwrite";
+import { Chat } from "@/lib/appwrite/types";
 
 export async function PATCH(
   request: NextRequest,
@@ -22,7 +23,7 @@ export async function PATCH(
       dbId,
       COLLECTIONS.CHATS,
       params.id
-    );
+    ) as unknown as Chat;
 
     if (existing.user_id !== user.$id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -68,13 +69,13 @@ export async function DELETE(
     console.log("[DELETE chat] Starting:", params.id);
 
     // Verify ownership
-    let existing;
+    let existing: Chat;
     try {
       existing = await admin.databases.getDocument(
         dbId,
         COLLECTIONS.CHATS,
         params.id
-      );
+      ) as unknown as Chat;
     } catch (err: any) {
       console.log("[DELETE chat] Document not found or error:", err.message);
       // If document doesn't exist, consider it deleted

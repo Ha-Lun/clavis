@@ -5,6 +5,7 @@ import { FLUX_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest } from "next/server";
 import { ID, Query } from "node-appwrite";
 import { routeModel } from "@/lib/modelRouter";
+import { Chat, Project, FileRecord, Message } from "@/lib/appwrite/types";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
         dbId,
         COLLECTIONS.CHATS,
         chatId,
-      );
+      ) as unknown as Chat;
       console.log(
         "[API /chat] Chat found:",
         chat.title,
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
             dbId,
             COLLECTIONS.PROJECTS,
             chat.project_id
-          );
+          ) as unknown as Project;
           if (project.instructions) {
             finalSystemPrompt = `${FLUX_SYSTEM_PROMPT}\n\nProject Instructions:\n${project.instructions}`;
             console.log("[API /chat] Applied project instructions");
@@ -186,18 +187,18 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`[API /chat] Fetching context files for chat: ${chatId}, project: ${chat.project_id}`);
         
-        let allFiles: any[] = [];
+        let allFiles: FileRecord[] = [];
         if (chat.project_id) {
           const [chatFiles, projectFiles] = await Promise.all([
             admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId)]),
             admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("project_id", chat.project_id)])
           ]);
           console.log(`[API /chat] Found ${chatFiles.documents.length} chat files and ${projectFiles.documents.length} project files`);
-          allFiles = [...chatFiles.documents, ...projectFiles.documents];
+          allFiles = [...(chatFiles.documents as unknown as FileRecord[]), ...(projectFiles.documents as unknown as FileRecord[])];
         } else {
           const chatFiles = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId)]);
           console.log(`[API /chat] Found ${chatFiles.documents.length} chat files`);
-          allFiles = chatFiles.documents;
+          allFiles = chatFiles.documents as unknown as FileRecord[];
         }
         
         if (allFiles.length > 0) {
@@ -259,12 +260,12 @@ export async function POST(request: NextRequest) {
     );
 
     // Build message list - ONLY previous messages (not current)
+    // Build Message history
     // Current message is already in UI and will be included via chat context if needed
-    const messages: MessageParam[] = history.documents.map((m) => ({
+    const messages: MessageParam[] = (history.documents as unknown as Message[]).map((m) => ({
       role: m.role as "system" | "user" | "assistant" | "tool",
       content: m.content as string,
     }));
-
     // Add current user message to context
     let userMessageContent = message;
 
@@ -293,12 +294,13 @@ export async function POST(request: NextRequest) {
 
             // First, try to get it from the database where it was extracted during upload
             try {
-              const fileRecords = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [
+              const fileRecordsResult = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [
                 Query.equal("file_id", fileId),
                 Query.limit(1)
               ]);
-              if (fileRecords.documents.length > 0 && fileRecords.documents[0].content) {
-                text = fileRecords.documents[0].content;
+              const fileDocs = fileRecordsResult.documents as unknown as FileRecord[];
+              if (fileDocs.length > 0 && fileDocs[0].content) {
+                text = fileDocs[0].content;
                 fetchedFromDb = true;
                 console.log(`[API /chat] Successfully retrieved content from DB for ${file.name}`);
               }

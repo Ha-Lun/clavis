@@ -1,8 +1,7 @@
 import { createAdminClient, createSessionClient } from "@/lib/appwrite/server";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
-import { ID } from "node-appwrite";
-import { InputFile } from "node-appwrite/file";
+import { ID, InputFile } from "node-appwrite";
 
 export async function POST(request: NextRequest) {
   try {

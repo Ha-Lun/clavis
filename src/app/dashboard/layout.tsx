@@ -54,18 +54,8 @@ export default async function DashboardLayout({
       ]),
     ]);
 
-    chats = chatsResult.documents.map((doc) => ({
-      ...doc,
-      id: doc.$id,
-      created_at: doc.$createdAt,
-      updated_at: doc.$updatedAt,
-    })) as unknown as Chat[];
-
-    projects = projectsResult.documents.map((doc) => ({
-      ...doc,
-      id: doc.$id,
-      created_at: doc.$createdAt,
-    })) as unknown as Project[];
+    chats = chatsResult.documents as unknown as Chat[];
+    projects = projectsResult.documents as unknown as Project[];
   } catch (err: unknown) {
     const error = err as { message?: string; code?: number; type?: string };
     console.error("[DEBUG] APPWRITE ERROR:", {

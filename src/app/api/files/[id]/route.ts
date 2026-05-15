@@ -1,9 +1,10 @@
-import { createAdminClient, createSessionClient } from "@/lib/appwrite/server";
-import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
+import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
+import { COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
+import { FileRecord } from "@/lib/appwrite/types";
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -16,12 +17,11 @@ export async function DELETE(
     const admin = await createAdminClient();
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
-    // Get file record to find storage file ID
     const fileDoc = await admin.databases.getDocument(
       dbId,
       COLLECTIONS.FILES,
       params.id
-    );
+    ) as unknown as FileRecord;
 
     if (fileDoc.user_id !== user.$id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

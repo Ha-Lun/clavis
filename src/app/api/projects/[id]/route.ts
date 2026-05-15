@@ -1,6 +1,7 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
 import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
+import { Project } from "@/lib/appwrite/types";
 
 export async function PATCH(
   request: NextRequest,
@@ -20,7 +21,7 @@ export async function PATCH(
       dbId,
       COLLECTIONS.PROJECTS,
       params.id
-    );
+    ) as unknown as Project;
 
     if (existing.user_id !== user.$id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -70,7 +71,7 @@ export async function DELETE(
       dbId,
       COLLECTIONS.PROJECTS,
       params.id
-    );
+    ) as unknown as Project;
 
     if (existing.user_id !== user.$id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

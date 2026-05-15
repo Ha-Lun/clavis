@@ -35,7 +35,7 @@ export default async function ProjectDetailPage({
         Query.limit(50),
       ]),
     ]);
-    project = projectRes;
+    project = projectRes as unknown as Project;
     chatsResult = chatsRes;
   } catch {
     notFound();

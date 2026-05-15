@@ -55,38 +55,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const updateChatTitle = useCallback((chatId: string, title: string) => {
     setChats((prev) =>
-      prev.map((c) => (c.id === chatId ? { ...c, title } : c))
+      prev.map((c) => (c.$id === chatId ? { ...c, title } : c))
     );
     setActiveChat((prev) =>
-      prev?.id === chatId ? { ...prev, title } : prev
+      prev?.$id === chatId ? { ...prev, title } : prev
     );
   }, []);
 
   const updateChatModel = useCallback((chatId: string, model: string) => {
     setChats((prev) =>
-      prev.map((c) => (c.id === chatId ? { ...c, model } : c))
+      prev.map((c) => (c.$id === chatId ? { ...c, model } : c))
     );
     setActiveChat((prev) =>
-      prev?.id === chatId ? { ...prev, model } : prev
+      prev?.$id === chatId ? { ...prev, model } : prev
     );
   }, []);
 
   const toggleChatPin = useCallback((chatId: string, isPinned: boolean) => {
     setChats((prev) =>
       prev.map((c) => {
-        const id = c.$id ?? c.id;
-        return id === chatId ? { ...c, isPinned } : c;
+        return c.$id === chatId ? { ...c, isPinned } : c;
       })
     );
     setActiveChat((prev) => {
-      const id = prev?.$id ?? prev?.id;
-      return id === chatId ? { ...prev!, isPinned } : prev;
+      return prev?.$id === chatId ? { ...prev!, isPinned } : prev;
     });
   }, []);
 
   const removeChat = useCallback((chatId: string) => {
-    setChats((prev) => prev.filter((c) => c.id !== chatId));
-    setActiveChat((prev) => (prev?.id === chatId ? null : prev));
+    setChats((prev) => prev.filter((c) => c.$id !== chatId));
+    setActiveChat((prev) => (prev?.$id === chatId ? null : prev));
   }, []);
 
   return (

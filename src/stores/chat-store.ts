@@ -43,27 +43,27 @@ export const useChatStore = create<ChatState>((set) => ({
   updateChatTitle: (chatId, title) =>
     set((state) => ({
       chats: state.chats.map((c) =>
-        c.id === chatId ? { ...c, title } : c
+        c.$id === chatId ? { ...c, title } : c
       ),
       activeChat:
-        state.activeChat?.id === chatId
+        state.activeChat?.$id === chatId
           ? { ...state.activeChat, title }
           : state.activeChat,
     })),
   updateChatModel: (chatId, model) =>
     set((state) => ({
       chats: state.chats.map((c) =>
-        c.id === chatId ? { ...c, model } : c
+        c.$id === chatId ? { ...c, model } : c
       ),
       activeChat:
-        state.activeChat?.id === chatId
+        state.activeChat?.$id === chatId
           ? { ...state.activeChat, model }
           : state.activeChat,
     })),
   removeChat: (chatId) =>
     set((state) => ({
-      chats: state.chats.filter((c) => c.id !== chatId),
+      chats: state.chats.filter((c) => c.$id !== chatId),
       activeChat:
-        state.activeChat?.id === chatId ? null : state.activeChat,
+        state.activeChat?.$id === chatId ? null : state.activeChat,
     })),
 }));

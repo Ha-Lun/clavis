@@ -23,14 +23,17 @@ export interface Message extends AppwriteDocument {
   chat_id: string;
   role: "user" | "assistant";
   content: string;
+  model?: string;
 }
 
 export interface FileRecord extends AppwriteDocument {
   user_id: string;
   chat_id: string | null;
   project_id: string | null;
+  file_id: string;
   name: string;
   storagePath: string;
   mimeType: string | null;
   sizeBytes: number | null;
+  content: string | null;
 }

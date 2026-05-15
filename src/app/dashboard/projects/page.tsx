@@ -34,7 +34,7 @@ export default function ProjectsPage() {
 
   const handleDelete = async (projectId: string) => {
     // 1. Optimistically remove from UI
-    const projectToDelete = projects.find((p) => (p.$id ?? p.id) === projectId);
+    const projectToDelete = projects.find((p) => p.$id === projectId);
     if (!projectToDelete) return;
 
     removeProject(projectId);
@@ -102,8 +102,8 @@ export default function ProjectsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {projects.map((project) => (
               <Link
-                key={project.id}
-                href={`/dashboard/projects/${project.id}`}
+                key={project.$id}
+                href={`/dashboard/projects/${project.$id}`}
                 className="group"
               >
                 <Card className="h-full bg-card border border-border shadow-stripe-ambient hover:shadow-stripe-elevated hover:border-primary transition-all duration-300 rounded-[16px] overflow-hidden">
@@ -118,7 +118,7 @@ export default function ProjectsPage() {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          handleDelete(project.id);
+                          handleDelete(project.$id);
                         }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-[6px]"
                         aria-label="Delete project"

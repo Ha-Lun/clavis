@@ -36,7 +36,7 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
         Query.limit(100),
       ]),
     ]);
-    chatDoc = chatRes;
+    chatDoc = chatRes as unknown as Chat;
     messagesResult = msgsRes;
   } catch {
     notFound();
@@ -50,19 +50,9 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
   console.log("[DEBUG chat page] First doc keys:", messagesResult.documents[0] ? Object.keys(messagesResult.documents[0]) : "none");
 
   // Pass initial message to client via URL search params state
-  const chat: Chat = {
-    ...chatDoc,
-    id: chatDoc.$id,
-    created_at: chatDoc.$createdAt,
-    updated_at: chatDoc.$updatedAt,
-  } as unknown as Chat;
+  const chat: Chat = chatDoc;
 
-  const messages: Message[] = messagesResult.documents.map((doc) => ({
-    ...doc,
-    id: doc.$id,
-    chat_id: doc.chat_id,
-    created_at: doc.$createdAt,
-  })) as unknown as Message[];
+  const messages: Message[] = messagesResult.documents as unknown as Message[];
 
   // Pass initial message from URL to client
   const initialMessage = resolvedSearchParams.msg ? decodeURIComponent(resolvedSearchParams.msg) : null;

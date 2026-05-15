@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +11,8 @@ import { getModelInfo } from "@/lib/models";
 import { useChat } from "@/context/chat-context";
 import type { Chat, Project } from "@/lib/appwrite/types";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface ProjectTabsProps {
   project: Project;
@@ -20,7 +20,7 @@ interface ProjectTabsProps {
 }
 
 interface ProjectFile {
-  id: string;
+  $id: string;
   name: string;
   url: string;
   mimeType: string;
@@ -28,38 +28,35 @@ interface ProjectFile {
   createdAt: string;
 }
 
-export function ProjectTabs({ project, chats }: ProjectTabsProps) {
+export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) {
   const router = useRouter();
-  const { chats: globalChats, setChats: setGlobalChats, removeChat } = useChat();
-  const [localChats, setLocalChats] = useState<Chat[]>(chats);
-  const [instructions, setInstructions] = useState(project.instructions || "");
-  const [isSaving, setIsSaving] = useState(false);
+  const { removeChat, chats: globalChats, setChats: setGlobalChats } = useChat();
+  const [localChats, setLocalChats] = useState<Chat[]>(initialChats);
   const [files, setFiles] = useState<ProjectFile[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isLoadingFiles, setIsLoadingFiles] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [instructions, setInstructions] = useState(project.instructions || "");
   const [isCreatingChat, setIsCreatingChat] = useState(false);
-
+  
   // Undo state
-  const [undoChat, setUndoChat] = useState<Chat | null>(null);
   const [showUndo, setShowUndo] = useState(false);
+  const [undoChat, setUndoChat] = useState<Chat | null>(null);
   const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchFiles();
     return () => {
-      // Cleanup timer on unmount - but this might skip the delete!
-      // In a real app, we'd want to ensure the delete happens if we haven't undone.
       if (undoTimerRef.current) {
         clearTimeout(undoTimerRef.current);
-        // We could trigger the delete here if needed, but for a prototype this is fine.
       }
     };
-  }, [project.id]);
+  }, [project.$id]);
 
   const fetchFiles = async () => {
     setIsLoadingFiles(true);
     try {
-      const res = await fetch(`/api/projects/${project.$id || project.id}/files`);
+      const res = await fetch(`/api/projects/${project.$id}/files`);
       const data = await res.json();
       if (data.files) setFiles(data.files);
     } catch (err) {
@@ -72,14 +69,14 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/projects/${project.$id || project.id}`, {
+      const res = await fetch(`/api/projects/${project.$id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ instructions }),
       });
       if (!res.ok) throw new Error("Failed to save");
     } catch (err) {
-      console.error(err);
+      console.error("Failed to save instructions:", err);
     } finally {
       setIsSaving(false);
     }
@@ -93,19 +90,18 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("projectId", project.$id || project.id);
+      formData.append("projectId", project.$id);
 
       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Upload failed");
-
-      await fetchFiles();
+      if (res.ok) {
+        fetchFiles();
+      }
     } catch (err) {
-      console.error("Upload error:", err);
-      alert("File upload failed");
+      console.error("Upload failed:", err);
     } finally {
       setIsUploading(false);
     }
@@ -115,27 +111,27 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
     try {
       const res = await fetch(`/api/files/${fileId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
-      setFiles((prev) => prev.filter((f) => f.id !== fileId));
+      setFiles((prev) => prev.filter((f) => f.$id !== fileId));
     } catch (err) {
       console.error("Delete error:", err);
       alert("Failed to delete file");
     }
   };
 
-  const handleNewProjectChat = async () => {
+  const handleCreateChat = async () => {
     setIsCreatingChat(true);
     try {
       const res = await fetch("/api/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          projectId: project.$id || project.id 
+          projectId: project.$id 
         }),
       });
       
       const { chat } = await res.json();
       if (chat) {
-        router.push(`/dashboard/chat/${chat.$id || chat.id}`);
+        router.push(`/dashboard/chat/${chat.$id}`);
       }
     } catch (err) {
       console.error("Failed to create project chat:", err);
@@ -149,31 +145,26 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
     e.stopPropagation();
 
     // Find the chat to undo later
-    const chatToDelete = localChats.find(c => (c.$id ?? c.id) === chatId);
+    const chatToDelete = localChats.find(c => c.$id === chatId);
     if (!chatToDelete) return;
 
     // Clear any existing undo timer
     if (undoTimerRef.current) {
       clearTimeout(undoTimerRef.current);
-      // If there was a pending deletion, we should probably execute it now
-      // but to keep it simple we'll just overwrite.
     }
 
     // Optimistic UI update
-    setLocalChats((prev) => prev.filter((c) => (c.$id ?? c.id) !== chatId));
+    setLocalChats((prev) => prev.filter((c) => c.$id !== chatId));
     removeChat(chatId);
 
     // Show undo popup
     setUndoChat(chatToDelete);
     setShowUndo(true);
 
-    // Set timer for actual deletion
+    // Start timer for real deletion
     undoTimerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/chats/${chatId}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) throw new Error("Delete failed");
+        await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
         setShowUndo(false);
         setUndoChat(null);
       } catch (err) {
@@ -190,57 +181,80 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
       undoTimerRef.current = null;
     }
 
-    const chatId = undoChat.$id ?? undoChat.id;
+    const chatId = undoChat.$id;
     
     // Restore locally
     setLocalChats(prev => [undoChat, ...prev].sort((a, b) => 
-      new Date((b.$updatedAt || b.updatedAt) as string).getTime() - 
-      new Date((a.$updatedAt || a.updatedAt) as string).getTime()
+      new Date(b.$updatedAt as string).getTime() - 
+      new Date(a.$updatedAt as string).getTime()
     ));
 
     // Restore globally
-    const chatWithCorrectId = { ...undoChat, id: chatId };
-    setGlobalChats([chatWithCorrectId, ...globalChats]);
+    setGlobalChats([undoChat, ...globalChats]);
 
     setShowUndo(false);
     setUndoChat(null);
   };
 
   return (
-    <div className="relative w-full">
-      <Tabs defaultValue="chats" className="w-full">
-        <TabsList className="mb-6 bg-secondary border border-border p-1 w-full sm:w-auto inline-flex h-auto rounded-lg">
-          <TabsTrigger value="chats" className="flex items-center gap-2 py-1.5 px-3.5 rounded-md text-[13px] data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground">
-            <MessageSquare className="h-4 w-4" />
+    <Tabs defaultValue="chats" className="w-full">
+      <div className="flex items-center justify-between mb-6">
+        <TabsList className="bg-secondary/50 p-1 rounded-xl">
+          <TabsTrigger value="chats" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-6 py-2 text-[13px] font-medium transition-all">
+            <MessageSquare className="h-4 w-4 mr-2" />
             Chats
           </TabsTrigger>
-          <TabsTrigger value="files" className="flex items-center gap-2 py-1.5 px-3.5 rounded-md text-[13px] data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground">
-            <FileText className="h-3.5 w-3.5" />
+          <TabsTrigger value="files" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-6 py-2 text-[13px] font-medium transition-all">
+            <FileText className="h-4 w-4 mr-2" />
             Files
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2 py-1.5 px-3.5 rounded-md text-[13px] data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground">
-            <Settings className="h-3.5 w-3.5" />
-            Settings
+          <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-6 py-2 text-[13px] font-medium transition-all">
+            <Settings className="h-4 w-4 mr-2" />
+            Instructions
           </TabsTrigger>
         </TabsList>
 
-        {/* CHATS TAB */}
-        <TabsContent value="chats" className="mt-0 animate-fade-in border-none p-0 outline-none">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-light tracking-tight text-foreground">Chats in this project</h2>
-            <Button
-              onClick={handleNewProjectChat}
-              disabled={isCreatingChat}
-              className="gap-2 bg-primary hover:bg-primary/90 transition-colors text-white text-[13px] rounded-md h-8 cursor-pointer"
-            >
-              {isCreatingChat ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              New Chat
-            </Button>
-          </div>
+        <div className="flex items-center gap-2">
+          {showUndo && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full text-[12px] text-accent animate-in fade-in slide-in-from-right-4 duration-300">
+              <span>Chat deleted</span>
+              <button 
+                onClick={handleUndoDelete}
+                className="flex items-center gap-1 font-medium hover:underline"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Undo
+              </button>
+              <button onClick={() => setShowUndo(false)} className="p-0.5 hover:bg-accent/20 rounded">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          
+          <Button
+            onClick={handleCreateChat}
+            disabled={isCreatingChat}
+            size="sm"
+            className="h-9 gap-2 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-stripe-ambient px-4 font-normal"
+          >
+            {isCreatingChat ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            New Chat
+          </Button>
+        </div>
+      </div>
 
+      <TabsContent value="chats" className="mt-0 focus-visible:ring-0">
+        <div className="space-y-4">
           {localChats.length === 0 ? (
-            <div className="text-center py-16 animate-fade-in border border-dashed border-border rounded-[16px] bg-secondary/20">
-              <MessageSquare className="h-10 w-10 text-muted-foreground/40 mx-auto mb-4" />
+            <div className="text-center py-20 border border-dashed border-border rounded-[20px] bg-card/30">
+              <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-7 w-7 text-primary/40" />
+              </div>
+              <h3 className="text-lg font-light text-foreground mb-1">No project chats</h3>
               <p className="text-muted-foreground text-[15px] font-light">
                 No chats assigned to this project yet
               </p>
@@ -249,7 +263,7 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {localChats.map((chat) => {
                 const model = getModelInfo(chat.model as string);
-                const chatId = chat.$id || chat.id;
+                const chatId = chat.$id;
                 return (
                   <Link
                     key={chatId}
@@ -270,11 +284,10 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
                           </Badge>
                         </div>
                         <CardDescription className="text-[13px] text-muted-foreground font-light pt-2 flex items-center justify-between">
-                          <span>{new Date((chat.$updatedAt || chat.updatedAt) as string).toLocaleDateString()}</span>
+                          <span>Updated {new Date(chat.$updatedAt as string).toLocaleDateString()}</span>
                           <button
                             onClick={(e) => handleDeleteChat(chatId, e)}
-                            className="p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all duration-100 opacity-0 group-hover:opacity-100"
-                            title="Delete Chat"
+                            className="p-1 text-muted-foreground/40 hover:text-accent hover:bg-accent/10 rounded-md transition-all opacity-0 group-hover:opacity-100"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -286,10 +299,12 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
               })}
             </div>
           )}
-        </TabsContent>
+        </div>
+      </TabsContent>
 
-        {/* FILES TAB */}
-        <TabsContent value="files" className="mt-0 animate-fade-in border-none p-0 outline-none">
+      <TabsContent value="files" className="mt-0 focus-visible:ring-0">
+        <Card className="bg-card border-border rounded-[20px] shadow-stripe-ambient overflow-hidden">
+          <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-light tracking-tight text-foreground">Project Files</h2>
             <div className="flex items-center gap-2">
@@ -302,12 +317,16 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 h-9 rounded-[8px]"
+                className="h-9 gap-2 text-xs font-normal border-border bg-transparent hover:bg-secondary/50 rounded-lg"
                 onClick={() => document.getElementById("project-file-upload")?.click()}
                 disabled={isUploading}
               >
-                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
-                Upload File
+                {isUploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <UploadCloud className="h-3.5 w-3.5" />
+                )}
+                Upload
               </Button>
             </div>
           </div>
@@ -319,8 +338,8 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
               ))}
             </div>
           ) : files.length === 0 ? (
-            <div className="text-center py-16 animate-fade-in border border-dashed border-border rounded-[16px] bg-secondary/20">
-              <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-4" />
+            <div className="text-center py-16 border border-dashed border-border rounded-[16px] bg-secondary/5">
+              <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground text-[15px] font-light">
                 No files uploaded yet.
               </p>
@@ -328,7 +347,7 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {files.map((file) => (
-                <Card key={file.id} className="bg-card border border-border hover:border-primary/30 transition-colors duration-100 rounded-xl overflow-hidden">
+                <Card key={file.$id} className="bg-card border border-border hover:border-primary/30 transition-colors duration-100 rounded-xl overflow-hidden">
                   <CardHeader className="p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 overflow-hidden">
@@ -340,7 +359,7 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <a
                           href={file.url}
                           target="_blank"
@@ -350,7 +369,7 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
                           <ExternalLink className="h-4 w-4" />
                         </a>
                         <button
-                          onClick={() => handleDeleteFile(file.id)}
+                          onClick={() => handleDeleteFile(file.$id)}
                           className="p-2 text-muted-foreground hover:text-accent transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -362,77 +381,40 @@ export function ProjectTabs({ project, chats }: ProjectTabsProps) {
               ))}
             </div>
           )}
-        </TabsContent>
+          </div>
+        </Card>
+      </TabsContent>
 
-        {/* SETTINGS TAB */}
-        <TabsContent value="settings" className="mt-0 animate-fade-in border-none p-0 outline-none">
-          <div className="max-w-2xl">
-            <h2 className="text-xl font-light tracking-tight text-foreground mb-6">Project Settings</h2>
-
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <label className="text-[15px] font-medium text-foreground">Custom System Instructions</label>
-                <p className="text-[13px] text-muted-foreground font-light">
-                  Add instructions here to influence the AI's behavior for all chats in this project. These instructions will be appended to the base system prompt.
-                </p>
-                <Textarea
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="e.g. Always answer in Spanish. Use a formal tone. Prefer functional programming paradigms."
-                  className="min-h-[200px] resize-y bg-card text-foreground font-light text-[15px] leading-relaxed rounded-[12px] p-4"
-                />
-              </div>
-
+      <TabsContent value="settings" className="mt-0 focus-visible:ring-0">
+        <Card className="bg-card border-border rounded-[20px] shadow-stripe-ambient">
+          <div className="p-6">
+            <h2 className="text-xl font-light tracking-tight text-foreground mb-4">Project Instructions</h2>
+            <p className="text-muted-foreground text-[14px] font-light mb-6">
+              Custom instructions applied to all chats within this project.
+            </p>
+            <Textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              placeholder="e.g. You are a senior frontend engineer. Focus on accessibility and performance..."
+              className="min-h-[300px] bg-secondary/20 border-border focus:border-primary/50 text-foreground font-light text-[15px] p-5 rounded-xl resize-none shadow-none"
+            />
+            <div className="flex justify-end mt-6">
               <Button
                 onClick={handleSaveSettings}
-                disabled={isSaving || instructions === (project.instructions || "")}
-                className="gap-2 rounded-[8px] bg-primary text-white hover:bg-primary/90"
+                disabled={isSaving}
+                className="gap-2 bg-primary hover:bg-primary/90 text-white shadow-stripe-ambient rounded-lg px-6 font-normal"
               >
-                <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Settings"}
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Changes
               </Button>
             </div>
           </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Undo Popup */}
-      <div 
-        className={cn(
-          "fixed bottom-8 left-8 z-50 transition-all duration-100 transform",
-          showUndo ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0 pointer-events-none"
-        )}
-      >
-        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 min-w-[300px] shadow-lg-dark">
-          <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
-            <Trash2 className="h-5 w-5 text-destructive" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Chat deleted</p>
-            <p className="text-xs text-muted-foreground line-clamp-1">{undoChat?.title}</p>
-          </div>
-          <div className="flex items-center gap-2 border-l border-border pl-4">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 gap-2 text-primary hover:text-primary hover:bg-primary/10 font-medium"
-              onClick={handleUndoDelete}
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Undo
-            </Button>
-            <button 
-              onClick={() => {
-                setShowUndo(false);
-                // The actual delete will happen when the timer expires anyway
-              }}
-              className="p-1 hover:bg-secondary rounded-md text-muted-foreground transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }

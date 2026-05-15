@@ -21,13 +21,12 @@ export const useProjectStore = create<ProjectState>((set) => ({
     set((state) => ({ projects: [project, ...state.projects] })),
   removeProject: (projectId) =>
     set((state) => ({
-      projects: state.projects.filter((p) => (p.$id || p.id) !== projectId),
+      projects: state.projects.filter((p) => p.$id !== projectId),
     })),
   toggleProjectPin: (projectId, isPinned) =>
     set((state) => ({
       projects: state.projects.map((p) => {
-        const id = p.$id || p.id;
-        return id === projectId ? { ...p, isPinned } : p;
+        return p.$id === projectId ? { ...p, isPinned } : p;
       }),
     })),
   setCreateDialogOpen: (isOpen) => set({ isCreateDialogOpen: isOpen }),

@@ -55,20 +55,20 @@ interface ChatViewProps {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({
-             chatId: chat.id,
+             chatId: chat.$id,
              firstMessage,
              model: activeChat?.model || chat.model,
            }),
          });
         const data = await res.json();
         if (data.title) {
-          updateChatTitle(chat.id, data.title);
+          updateChatTitle(chat.$id, data.title);
         }
       } catch (err) {
         console.error("Title generation failed:", err);
       }
     },
-    [chat.id, activeChat?.model, updateChatTitle]
+    [chat.$id, activeChat?.model, updateChatTitle]
   );
 
   const handleSend = useCallback(
@@ -84,7 +84,7 @@ interface ChatViewProps {
           $createdAt: new Date().toISOString(),
           $updatedAt: new Date().toISOString(),
           $permissions: [],
-          chat_id: chat.id,
+          chat_id: chat.$id,
           role: "assistant",
           content: `⚠️ Message is too long. Maximum length is ${MAX_MESSAGE_LENGTH} characters.`,
         };
@@ -101,7 +101,7 @@ interface ChatViewProps {
           $createdAt: new Date().toISOString(),
           $updatedAt: new Date().toISOString(),
           $permissions: [],
-          chat_id: chat.id,
+          chat_id: chat.$id,
           role: "user",
           content: trimmedContent,
         };
@@ -125,7 +125,7 @@ interface ChatViewProps {
           headers: { "Content-Type": "application/json" },
           signal: abortControllerRef.current.signal,
         body: JSON.stringify({
-             chatId: chat.id,
+             chatId: chat.$id,
              message: trimmedContent,
              model: activeChat?.model || chat.model,
            }),
@@ -169,7 +169,7 @@ interface ChatViewProps {
           $createdAt: new Date().toISOString(),
           $updatedAt: new Date().toISOString(),
           $permissions: [],
-          chat_id: chat.id,
+          chat_id: chat.$id,
           role: "assistant",
           content: fullContent,
           model: finalModelId, // Storing the resolved model in the message
@@ -186,7 +186,7 @@ interface ChatViewProps {
               $createdAt: new Date().toISOString(),
               $updatedAt: new Date().toISOString(),
               $permissions: [],
-              chat_id: chat.id,
+              chat_id: chat.$id,
               role: "assistant",
               content: partialContent,
             };
@@ -200,7 +200,7 @@ interface ChatViewProps {
             $createdAt: new Date().toISOString(),
             $updatedAt: new Date().toISOString(),
             $permissions: [],
-            chat_id: chat.id,
+            chat_id: chat.$id,
             role: "assistant",
             content: err instanceof Error ? `⚠️ ${err.message}` : "⚠️ Something went wrong.",
           };
@@ -214,7 +214,7 @@ interface ChatViewProps {
       }
     },
     [
-      chat.id,
+      chat.$id,
       activeChat?.model,
       isStreaming,
       addMessage,
@@ -229,9 +229,9 @@ interface ChatViewProps {
 
   // Run processInitial and set messages in useEffect safely
   useEffect(() => {
-    if (prevChatIdRef.current !== chat.id) {
+    if (prevChatIdRef.current !== chat.$id) {
        hasTriggeredInitialSend.current = false;
-       prevChatIdRef.current = chat.id;
+       prevChatIdRef.current = chat.$id;
     }
 
     setMessages(initialMessages);
@@ -244,7 +244,7 @@ interface ChatViewProps {
       handleSend(initialContent, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chat.id, initialMessages]);
+  }, [chat.$id, initialMessages]);
 
   // Cleanup on unmount only
   useEffect(() => {
@@ -273,7 +273,7 @@ interface ChatViewProps {
           onSend={handleSend}
           onStop={handleStop}
           isStreaming={isStreaming}
-          chatId={chat.id}
+          chatId={chat.$id}
           currentModel={chat.model}
         />
       </div>
