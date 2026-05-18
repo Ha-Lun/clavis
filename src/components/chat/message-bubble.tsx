@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, FileText, ExternalLink } from "lucide-react";
+import { Copy, Check, FileText, ExternalLink, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -148,15 +148,16 @@ export function MessageBubble({
                     
                     if (match && match[1] === "reasoning") {
                       return (
-                        <div className="my-3 border-l-2 border-primary/30 pl-4 py-1 bg-primary/[0.02] rounded-r-lg">
-                          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />
+                        <details className="my-3 border-l-2 border-primary/30 bg-primary/[0.02] rounded-r-lg group/think">
+                          <summary className="flex items-center gap-2 px-4 py-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-[11px] font-medium text-muted-foreground uppercase tracking-wider hover:text-muted-foreground/90 transition-colors">
+                            <ChevronRight className="h-3.5 w-3.5 text-primary/50 transition-transform duration-200 group-open/think:rotate-90" />
+                            {isStreaming && <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />}
                             Thinking Process
-                          </div>
-                          <div className="text-muted-foreground/80 font-light text-[14px] leading-relaxed whitespace-pre-wrap font-sans italic">
+                          </summary>
+                          <div className="px-4 pb-3 text-muted-foreground/80 font-light text-[14px] leading-relaxed whitespace-pre-wrap font-sans italic">
                             {children}
                           </div>
-                        </div>
+                        </details>
                       );
                     }
 
