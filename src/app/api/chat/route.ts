@@ -28,6 +28,7 @@ async function callAIWithRetry(
   maxRetries: number = 2,
   timeoutMs: number = 30000,
   onRetry?: (attempt: number) => void,
+  enableWebSearch: boolean = true,
 ) {
   let lastError: Error | null = null;
 
@@ -40,15 +41,9 @@ async function callAIWithRetry(
         setTimeout(() => reject(new Error("Request timed out")), timeoutMs),
       );
 
-      const aiPromise = nvidia.chat.completions.create({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ] as any[],
-        tools: [
+      const webSearchTool = enableWebSearch ? [
           {
-            type: "function",
+            type: "function" as const,
             function: {
               name: "web_search",
               description: "Search the web for current, up-to-date information",
@@ -61,7 +56,15 @@ async function callAIWithRetry(
               }
             }
           }
-        ],
+        ] : undefined;
+
+      const aiPromise = nvidia.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+        ] as any[],
+        ...(webSearchTool ? { tools: webSearchTool } : {}),
         stream: true,
         max_tokens: 4096,
       }, { signal });
@@ -127,11 +130,13 @@ export async function POST(request: NextRequest) {
     const user = await client.account.get();
     console.log("[API /chat] User:", user.email);
 
-    const { chatId, message, model } = await request.json();
+    const { chatId, message, model, webSearch } = await request.json();
+    const enableWebSearch = webSearch !== false; // Default to true
     console.log("[API /chat] Request:", {
       chatId: chatId?.slice(0, 20),
       message: message?.slice(0, 30),
       model,
+      webSearch: enableWebSearch,
     });
 
     if (!chatId || !message || !model) {
@@ -148,7 +153,9 @@ export async function POST(request: NextRequest) {
 
     // Verify chat belongs to user
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    let finalSystemPrompt = `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${SCIORA_SYSTEM_PROMPT}`;
+    let finalSystemPrompt = enableWebSearch
+      ? `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${SCIORA_SYSTEM_PROMPT}`
+      : `Today's date is ${currentDate}.\n\n${SCIORA_SYSTEM_PROMPT}`;
     try {
       const chat = await admin.databases.getDocument(
         dbId,
@@ -518,7 +525,8 @@ ${userMessageContent}`;
                   const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})..._\n\n`;
                   fullContent += retryMsg;
                   controller.enqueue(new TextEncoder().encode(retryMsg));
-                }
+                },
+                enableWebSearch,
               );
               await processStream(nextCompletion);
               return;
@@ -607,7 +615,8 @@ ${userMessageContent}`;
               const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})..._\n\n`;
               fullContent += retryMsg;
               controller.enqueue(new TextEncoder().encode(retryMsg));
-            }
+            },
+            enableWebSearch,
           );
           await processStream(completion);
         } catch (err: any) {

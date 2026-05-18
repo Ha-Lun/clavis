@@ -7,8 +7,10 @@ import { useChat } from "@/context/chat-context";
 import { DEFAULT_MODEL } from "@/lib/models";
 import {
   Sparkles, Code, FileText, Lightbulb, Mail, Bug,
-  Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X, ArrowUp
+  Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X, ArrowUp, Globe,
+  Users, FolderPlus
 } from "lucide-react";
+import Link from "next/link";
 import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "@/components/chat/model-selector";
 import { useProjectStore } from "@/stores/project-store";
@@ -35,6 +37,7 @@ export function HomePrompt() {
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { chats, setChats } = useChat();
@@ -92,7 +95,7 @@ export function HomePrompt() {
         const attachmentString = attachments.map((a) => `📎 ${a.name}: ${a.url}`).join("\n");
         finalContent = finalContent ? `${finalContent}\n${attachmentString}` : attachmentString;
       }
-      router.push(`/dashboard/chat/${chatWithId.id}?msg=${encodeURIComponent(finalContent)}`);
+      router.push(`/dashboard/chat/${chatWithId.id}?msg=${encodeURIComponent(finalContent)}&ws=${webSearchEnabled ? '1' : '0'}`);
     } catch (err) {
       console.error("Failed to create chat:", err);
       setIsSubmitting(false);
@@ -230,6 +233,43 @@ export function HomePrompt() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Web search toggle */}
+              <button
+                type="button"
+                onClick={() => setWebSearchEnabled((prev) => !prev)}
+                className={cn(
+                  "h-7 flex items-center gap-1.5 rounded-md px-2 transition-all duration-150 cursor-pointer",
+                  webSearchEnabled
+                    ? "bg-primary/15 text-primary hover:bg-primary/20"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-white/[0.05]"
+                )}
+                id="home-web-search-toggle"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium tracking-tight">Search</span>
+              </button>
+
+              {/* New Project button */}
+              <button
+                type="button"
+                onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
+                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-white/[0.05] transition-all duration-150 cursor-pointer"
+                id="home-new-project-button"
+              >
+                <FolderPlus className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium tracking-tight">Project</span>
+              </button>
+
+              {/* Council link */}
+              <Link
+                href="/dashboard/council"
+                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-white/[0.05] transition-all duration-150"
+                id="home-council-link"
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium tracking-tight">Council</span>
+              </Link>
             </div>
 
             <div className="flex items-center gap-2">
@@ -274,39 +314,19 @@ export function HomePrompt() {
             transition={{ duration: 0.4, delay: 0.15 + i * 0.06, ease: "easeOut" }}
             whileHover={{ borderColor: "rgba(255,255,255,0.1)" }}
             className={cn(
-              "flex items-start gap-2.5 p-4 text-left",
+              "flex items-center gap-2.5 p-4 text-left h-[52px]",
               "bg-card border border-border rounded-lg",
               "transition-colors duration-150",
               "hover:bg-white/[0.02] cursor-pointer",
               "disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
-            <s.icon className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5" />
+            <s.icon className="h-4 w-4 text-muted-foreground/50 shrink-0" />
             <span className="text-[13px] font-light text-muted-foreground leading-snug">
               {s.label}
             </span>
           </motion.button>
         ))}
-
-        {/* New project card */}
-        <motion.button
-          onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 + SUGGESTIONS.length * 0.06, ease: "easeOut" }}
-          whileHover={{ borderColor: "rgba(106,13,173,0.2)" }}
-          className={cn(
-            "flex items-start gap-2.5 p-4 text-left",
-            "bg-card border border-dashed border-border rounded-lg",
-            "transition-colors duration-150 cursor-pointer",
-            "hover:bg-white/[0.02]"
-          )}
-        >
-          <Plus className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5" />
-          <span className="text-[13px] font-light text-muted-foreground leading-snug">
-            New Project
-          </span>
-        </motion.button>
       </div>
     </div>
   );

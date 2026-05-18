@@ -27,6 +27,7 @@ import {
   Settings,
   RotateCcw,
   X,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -428,6 +429,38 @@ function SidebarContent({
             )}
           </AnimatePresence>
         </motion.button>
+      </div>
+
+      {/* Council Link */}
+      <div className={cn("px-3 pb-2 shrink-0", isCollapsed && "px-2")}>
+        <Link
+          href="/dashboard/council"
+          onClick={onClose}
+          className={cn(
+            "w-full flex items-center gap-2 px-3 py-2 rounded-md",
+            "text-[13px] font-medium",
+            "transition-colors duration-150",
+            isCollapsed && "justify-center px-0",
+            pathname === "/dashboard/council"
+              ? "bg-primary/[0.08] text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+          )}
+        >
+          <Users className="h-3.5 w-3.5 shrink-0" />
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1 }}
+                className="truncate"
+              >
+                Council
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
       </div>
 
       {/* Main scrollable content */}
