@@ -22,6 +22,7 @@ export interface Disagreement {
 }
 
 export interface CouncilSynthesis {
+  synthesizedPrompt: string;
   summary: string;
   consensus: string;
   disagreements: Disagreement[];
@@ -70,7 +71,7 @@ function buildSynthesizerPrompt(query: string, responses: CouncilModelResponse[]
     ? `\n\nNote: The following models failed and their responses are unavailable:\n${failedModels.map((r) => `- ${r.model}: ${r.error}`).join("\n")}`
     : "";
 
-  return `You are a synthesis engine. Multiple AI models were asked the same question. Your job is to analyze their responses and produce a structured comparison.
+  return `You are a synthesis engine. Multiple AI models were asked the same question. Your job is to analyze their responses and produce a structured comparison AND a single "Golden Response" (Synthesized Prompt) that represents the highest accuracy, best writing, and most useful parts of all responses combined.
 
 User's original question:
 ${query}
@@ -81,6 +82,7 @@ ${modelBlocks}${failedBlock}
 Analyze the above responses and return ONLY a valid JSON object with this exact shape (no markdown fences, no preamble, no explanation — raw JSON only):
 
 {
+  "synthesizedPrompt": "The single most accurate, helpful, and well-written synthesis of all provided answers.",
   "summary": "2-3 sentence overview of what the models collectively say",
   "consensus": "Points all/most models agreed on as a coherent paragraph",
   "disagreements": [
@@ -95,11 +97,11 @@ Analyze the above responses and return ONLY a valid JSON object with this exact 
 }
 
 Confidence rules:
-- "high" if all models agree on the core answer
+- "high" if all models agree on the core answer and facts
 - "medium" if minor divergences or different emphasis
-- "low" if contradictions on key points
+- "low" if contradictions on key points or many model failures
 
-Keep all fields highly concise, focused, and free of decorative text to ensure maximum synthesis speed. Return ONLY the JSON. No other text.`;
+The synthesizedPrompt should be cohesive, direct, and authoritative. Return ONLY the JSON. No other text.`;
 }
 
 // ─── Core Functions ───────────────────────────────
@@ -145,10 +147,18 @@ function parseSynthesis(raw: string): CouncilSynthesis {
   }
 
   try {
-    return JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    return {
+      synthesizedPrompt: parsed.synthesizedPrompt || parsed.consensus || parsed.summary || cleaned,
+      summary: parsed.summary || "Summary unavailable",
+      consensus: parsed.consensus || "Consensus unavailable",
+      disagreements: parsed.disagreements || [],
+      confidence: parsed.confidence || "low"
+    };
   } catch {
     return {
-      summary: "The synthesizer returned a non-JSON response. Raw output is included below.",
+      synthesizedPrompt: cleaned,
+      summary: "Parsing failed",
       consensus: cleaned,
       disagreements: [],
       confidence: "low",

@@ -618,6 +618,18 @@ export default function CouncilPage() {
                   </div>
                 </div>
 
+                {/* Synthesized Response */}
+                <div className="p-6 rounded-lg border border-primary/20 bg-primary/[0.03] shadow-glow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[12px] font-semibold text-primary/70 uppercase tracking-widest">
+                      Synthesized Response
+                    </h3>
+                  </div>
+                  <p className="text-[15px] text-foreground font-normal leading-relaxed whitespace-pre-wrap">
+                    {result.synthesis.synthesizedPrompt}
+                  </p>
+                </div>
+
                 {/* Summary */}
                 <div className="p-5 rounded-lg border border-border bg-card space-y-2">
                   <h3 className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
