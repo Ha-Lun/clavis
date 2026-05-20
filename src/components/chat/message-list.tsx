@@ -12,6 +12,22 @@ interface MessageListProps {
   smoothContent?: string;
 }
 
+function toRoman(num: number): string {
+  const pairs: [number, string][] = [
+    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+    [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+    [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+  ];
+  let result = "";
+  for (const [value, numeral] of pairs) {
+    while (num >= value) {
+      result += numeral;
+      num -= value;
+    }
+  }
+  return result;
+}
+
 export function MessageList({ modelId, smoothContent }: MessageListProps) {
   const { messages, isStreaming, streamingContent } = useChat();
 
@@ -32,6 +48,9 @@ export function MessageList({ modelId, smoothContent }: MessageListProps) {
     }
   }, [messages, streamingContent, smoothContent]);
 
+  // Calculate turn number (each user-assistant pair = 1 turn)
+  let turnCounter = 0;
+
   if (messages.length === 0 && !isStreaming) {
     return (
       <motion.div
@@ -42,10 +61,10 @@ export function MessageList({ modelId, smoothContent }: MessageListProps) {
       >
         <div className="text-center">
           <p className="text-[20px] font-light tracking-tight text-muted-foreground/50 mb-2">
-            What can I help you with?
+            Pose your question to begin.
           </p>
           <p className="text-[13px] text-muted-foreground/30 font-light">
-            Send a message below to begin
+            Clavis awaits your inquiry.
           </p>
         </div>
       </motion.div>
@@ -58,34 +77,65 @@ export function MessageList({ modelId, smoothContent }: MessageListProps) {
       className="flex-1 overflow-y-auto scrollbar-thin"
       onScroll={handleScroll}
     >
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-0">
+        {/* Clavis header */}
+        <div className="text-center mb-8">
+          <h2 className="font-cinzel text-[16px] font-normal tracking-[0.1em] text-muted-foreground/40">
+            CLAVIS
+          </h2>
+          <div className="mt-2 mx-auto w-12 h-px bg-primary/30" />
+        </div>
+
         <AnimatePresence initial={false}>
-          {messages.map((message, index) => (
-            <MessageBubble
-              key={message.$id}
-              message={message}
-              index={index}
-              modelName={message.role === "assistant" ? modelName : undefined}
-            />
-          ))}
+          {messages.map((message, index) => {
+            // Track turn numbers: increment when we hit a user message
+            if (message.role === "user") {
+              turnCounter++;
+            }
+            const currentTurn = turnCounter;
+
+            return (
+              <div key={message.$id}>
+                {/* Turn separator with Roman numeral */}
+                {message.role === "user" && index > 0 && (
+                  <div className="flex items-center gap-4 my-6">
+                    <div className="flex-1 h-px bg-border/60" />
+                    <span className="text-[11px] font-medium text-muted-foreground/35 tracking-[0.15em] uppercase font-cinzel">
+                      {toRoman(currentTurn)}
+                    </span>
+                    <div className="flex-1 h-px bg-border/60" />
+                  </div>
+                )}
+                <div className={message.role === "user" ? "mb-4" : "mb-6"}>
+                  <MessageBubble
+                    message={message}
+                    index={index}
+                    modelName={message.role === "assistant" ? modelName : undefined}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </AnimatePresence>
 
         {isStreaming && (smoothContent || streamingContent) && (
-          <MessageBubble
-            message={{
-              $id: "streaming",
-              $collectionId: "",
-              $databaseId: "",
-              $createdAt: new Date().toISOString(),
-              $updatedAt: new Date().toISOString(),
-              $permissions: [],
-              chat_id: "",
-              role: "assistant",
-              content: smoothContent || streamingContent,
-            }}
-            index={messages.length}
-            isStreaming
-          />
+          <div className="mb-6">
+            <MessageBubble
+              message={{
+                $id: "streaming",
+                $collectionId: "",
+                $databaseId: "",
+                $createdAt: new Date().toISOString(),
+                $updatedAt: new Date().toISOString(),
+                $permissions: [],
+                chat_id: "",
+                role: "assistant",
+                content: smoothContent || streamingContent,
+              }}
+              index={messages.length}
+              isStreaming
+            />
+          </div>
         )}
 
         {isStreaming && (

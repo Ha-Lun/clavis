@@ -1,7 +1,7 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
 import { createNvidiaClient } from "@/lib/nvidia";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
-import { SCIORA_SYSTEM_PROMPT } from "@/lib/prompts";
+import { CLAVIS_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest } from "next/server";
 import { ID, Query } from "node-appwrite";
 import { routeModel } from "@/lib/modelRouter";
@@ -24,7 +24,7 @@ async function callAIWithRetry(
   model: string,
   messages: MessageParam[],
   signal: AbortSignal,
-  systemPrompt: string = SCIORA_SYSTEM_PROMPT,
+  systemPrompt: string = CLAVIS_SYSTEM_PROMPT,
   maxRetries: number = 2,
   timeoutMs: number = 30000,
   onRetry?: (attempt: number) => void,
@@ -154,8 +154,8 @@ export async function POST(request: NextRequest) {
     // Verify chat belongs to user
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     let finalSystemPrompt = enableWebSearch
-      ? `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${SCIORA_SYSTEM_PROMPT}`
-      : `Today's date is ${currentDate}.\n\n${SCIORA_SYSTEM_PROMPT}`;
+      ? `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${CLAVIS_SYSTEM_PROMPT}`
+      : `Today's date is ${currentDate}.\n\n${CLAVIS_SYSTEM_PROMPT}`;
     try {
       const chat = await admin.databases.getDocument(
         dbId,
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
             chat.project_id
           );
           if (project.instructions) {
-            finalSystemPrompt = `${SCIORA_SYSTEM_PROMPT}\n\nProject Instructions:\n${project.instructions}`;
+            finalSystemPrompt = `${CLAVIS_SYSTEM_PROMPT}\n\nProject Instructions:\n${project.instructions}`;
             console.log("[API /chat] Applied project instructions");
           }
         } catch (err) {
@@ -547,7 +547,7 @@ ${userMessageContent}`;
               {
                 chat_id: chatId,
                 role: "assistant",
-                content: fullContent,
+                content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
               },
             );
 
@@ -564,7 +564,7 @@ ${userMessageContent}`;
                     {
                       chat_id: chatId,
                       role: "assistant",
-                      content: fullContent,
+                      content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
                     },
                   );
                   console.log("[API /chat] Partial response saved.");
@@ -589,7 +589,7 @@ ${userMessageContent}`;
                     {
                       chat_id: chatId,
                       role: "assistant",
-                      content: fullContent,
+                      content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
                     },
                   );
                 } catch (dbErr) {
@@ -645,7 +645,7 @@ ${userMessageContent}`;
               {
                 chat_id: chatId,
                 role: "assistant",
-                content: fullContent,
+                content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
               },
             );
           } catch (dbErr) {

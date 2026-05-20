@@ -27,7 +27,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background relative overflow-hidden">
       {/* Subtle background gradient */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(106,13,173,0.06),transparent)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(168,124,62,0.06),transparent)]" />
 
       <motion.div
         className="w-full max-w-sm relative"
@@ -37,13 +37,16 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary mb-4">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-white" strokeWidth={2.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 mb-4">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+              <circle cx="12" cy="6" r="4" />
+              <circle cx="12" cy="6" r="1.5" />
+              <path d="M12 10v11" />
+              <path d="M12 17h4v4h-2v-2h-2" />
             </svg>
           </div>
           <h1 className="text-[28px] font-light tracking-tight text-foreground">Welcome back</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground font-light">Sign in to your Sciora account</p>
+          <p className="mt-1 text-[13px] text-muted-foreground font-light">Sign in to your Clavis account</p>
         </div>
 
         {/* Form */}
@@ -101,7 +104,7 @@ export default function LoginPage() {
             <motion.div whileTap={{ scale: 0.98 }} className="pt-1">
               <Button
                 type="submit"
-                className="w-full h-10 text-[14px] font-medium bg-primary text-white hover:bg-primary/90 rounded-md cursor-pointer transition-colors"
+                className="w-full h-10 text-[14px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md cursor-pointer transition-colors"
                 disabled={loading}
               >
                 {loading ? (

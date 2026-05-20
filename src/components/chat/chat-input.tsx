@@ -115,13 +115,13 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
           animate={{
             boxShadow: isStreaming
               ? [
-                  "0 0 0 1px rgba(106,13,173,0.15), 0 0 0px rgba(106,13,173,0)",
-                  "0 0 0 2px rgba(106,13,173,0.5), 0 0 20px rgba(106,13,173,0.2)",
-                  "0 0 0 1px rgba(106,13,173,0.15), 0 0 0px rgba(106,13,173,0)"
+                  "0 0 0 1px rgba(168,124,62,0.15), 0 0 0px rgba(168,124,62,0)",
+                  "0 0 0 2px rgba(168,124,62,0.5), 0 0 20px rgba(168,124,62,0.15)",
+                  "0 0 0 1px rgba(168,124,62,0.15), 0 0 0px rgba(168,124,62,0)"
                 ]
               : isFocused
-                ? "0 0 0 1px rgba(106,13,173,0.35), 0 0 20px rgba(106,13,173,0.08)"
-                : "0 0 0 1px rgba(255,255,255,0.0), 0 0 0px rgba(106,13,173,0.0)",
+                ? "0 0 0 1px rgba(168,124,62,0.35), 0 0 20px rgba(168,124,62,0.08)"
+                : "0 0 0 1px rgba(0,0,0,0.0), 0 0 0px rgba(168,124,62,0.0)",
           }}
           transition={{
             boxShadow: isStreaming
@@ -179,7 +179,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder="Ask anything…"
+            placeholder="Pose your question."
             rows={1}
             className={cn(
               "w-full resize-none bg-transparent",
@@ -211,7 +211,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                     className={cn(
                       "h-7 w-7 flex items-center justify-center rounded-md",
                       "text-muted-foreground/60 hover:text-muted-foreground",
-                      "hover:bg-white/[0.05] transition-colors cursor-pointer"
+                      "hover:bg-foreground/[0.05] transition-colors cursor-pointer"
                     )}
                     disabled={uploading}
                     id="file-upload-button"
@@ -250,7 +250,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   "h-7 flex items-center gap-1.5 rounded-md px-2 transition-all duration-150 cursor-pointer",
                   webSearchEnabled
                     ? "bg-primary/15 text-primary hover:bg-primary/20"
-                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-white/[0.05]"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05]"
                 )}
                 id="web-search-toggle"
               >
@@ -284,7 +284,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   className={cn(
                     "h-7 w-7 flex items-center justify-center rounded-md transition-all duration-100",
                     hasContent
-                      ? "bg-primary text-white shadow-glow cursor-pointer"
+                      ? "bg-primary text-primary-foreground shadow-glow cursor-pointer"
                       : "bg-secondary text-muted-foreground/40 cursor-default"
                   )}
                   onClick={handleSubmit}
@@ -299,7 +299,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
         </motion.div>
 
         <p className="text-[11px] text-muted-foreground/30 text-center mt-2.5 tracking-tight">
-          Shift + Enter for new line
+          Shift + Enter for a new line
         </p>
       </div>
     </div>

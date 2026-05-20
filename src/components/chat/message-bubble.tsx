@@ -28,7 +28,17 @@ export function MessageBubble({
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
 
-  const { attachments, cleanContent: contentWithoutAttachments } = extractAttachments(message.content);
+  // Parse the model from the HTML comment if present
+  let rawContent = message.content || "";
+  let resolvedModel = (message as any).model || undefined;
+
+  const modelCommentMatch = rawContent.match(/<!--\s*model:\s*([^\s]+)\s*-->/);
+  if (modelCommentMatch) {
+    resolvedModel = modelCommentMatch[1];
+    rawContent = rawContent.replace(/<!--\s*model:\s*[^\s]+\s*-->/, "").trim();
+  }
+
+  const { attachments, cleanContent: contentWithoutAttachments } = extractAttachments(rawContent);
   const { fileRefs, cleanContent } = extractFileRefs(contentWithoutAttachments);
 
   // Handle <think> tags that some reasoning models stream in their content
@@ -92,7 +102,7 @@ export function MessageBubble({
                       href={file.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 bg-primary/[0.12] hover:bg-primary/[0.18] border border-primary/[0.15] rounded-md px-2.5 py-1 transition-colors group/file cursor-pointer"
+                      className="flex items-center gap-1.5 bg-primary/[0.08] hover:bg-primary/[0.14] border border-primary/[0.15] rounded-md px-2.5 py-1 transition-colors group/file cursor-pointer"
                     >
                       <FileText className="h-3.5 w-3.5 text-primary/70" />
                       <span className="text-[12px] font-medium max-w-[140px] truncate text-foreground">
@@ -105,22 +115,26 @@ export function MessageBubble({
               )}
 
               {displayContent && (
-                <div className="bg-primary/[0.10] dark:bg-primary/[0.12] text-foreground rounded-2xl rounded-br-sm px-4 py-2.5 text-[14px] font-light leading-relaxed break-words whitespace-pre-wrap">
+                <div className="bg-primary/[0.07] dark:bg-primary/[0.10] text-foreground rounded-2xl rounded-br-sm px-4 py-2.5 text-[14px] font-light leading-relaxed break-words whitespace-pre-wrap">
                   {displayContent}
                 </div>
               )}
             </div>
           ) : (
-            /* ─── Assistant message ─────────────────── */
+            /* ─── Clavis message ─────────────────── */
             <div className="min-w-0">
-              {/* Sciora sender label */}
+              {/* Clavis sender label */}
               <div className="flex items-center gap-1.5 mb-2">
                 <div className="h-5 w-5 rounded-md bg-primary/15 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 text-primary" strokeWidth={2.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  {/* Roman-inspired key icon */}
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+                    <circle cx="12" cy="6" r="4" />
+                    <circle cx="12" cy="6" r="1.5" />
+                    <path d="M12 10v11" />
+                    <path d="M12 17h4v4h-2v-2h-2" />
                   </svg>
                 </div>
-                <span className="text-[13px] font-medium text-foreground tracking-tight">Sciora</span>
+                <span className="text-[13px] font-medium text-foreground tracking-tight">Clavis</span>
               </div>
 
               {/* File refs */}
@@ -162,7 +176,7 @@ export function MessageBubble({
                     }
 
                     return isBlock ? (
-                      <div className="rounded-lg overflow-hidden my-3.5 border border-border bg-[#0a0a0f] not-prose">
+                      <div className="rounded-lg overflow-hidden my-3.5 border border-border bg-[#1a1814] dark:bg-[#1a1814] not-prose">
                         {/* Code block header */}
                         <div className="flex items-center justify-between bg-secondary px-4 py-2 border-b border-border">
                           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -212,12 +226,12 @@ export function MessageBubble({
                     <li className="mb-0.5 font-light leading-relaxed">{children}</li>
                   ),
                   h1: ({ children }) => (
-                    <h1 className="text-[22px] font-medium tracking-tight mb-3 mt-6 text-foreground">
+                    <h1 className="font-cinzel text-[22px] font-normal tracking-wide mb-3 mt-6 text-foreground">
                       {children}
                     </h1>
                   ),
                   h2: ({ children }) => (
-                    <h2 className="text-[18px] font-medium tracking-tight mb-2.5 mt-5 text-foreground">
+                    <h2 className="font-cinzel text-[18px] font-normal tracking-wide mb-2.5 mt-5 text-foreground">
                       {children}
                     </h2>
                   ),
@@ -243,11 +257,11 @@ export function MessageBubble({
                     <em className="italic text-muted-foreground">{children}</em>
                   ),
                   blockquote: ({ children }) => (
-                    <blockquote className="border-l-2 border-border pl-4 text-muted-foreground my-3 italic">
+                    <blockquote className="border-l-2 border-primary/30 pl-4 text-muted-foreground my-3 italic">
                       {children}
                     </blockquote>
                   ),
-                  hr: () => <hr className="border-border my-4" />,
+                  hr: () => <hr className="border-border/60 my-5" />,
                   table: ({ children }) => (
                     <div className="overflow-x-auto my-4">
                       <table className="w-full text-[13px] border-collapse">{children}</table>
@@ -267,14 +281,14 @@ export function MessageBubble({
               </ReactMarkdown>
 
               {/* Model attribution */}
-              {!isStreaming && modelName && (
+              {!isStreaming && (resolvedModel || modelName) && (
                 <div className="mt-3 flex flex-col items-start gap-0.5">
                   <p className="text-[10px] text-muted-foreground/30 font-medium uppercase tracking-widest">
-                    {modelName}
+                    {resolvedModel ? getRoutingLabel(resolvedModel) : modelName}
                   </p>
-                  {modelName === "Auto" && (message as any).model && (
+                  {((modelName === "Auto") || (resolvedModel && getRoutingLabel(resolvedModel) !== modelName)) && resolvedModel && resolvedModel !== "Auto" && (
                     <p className="text-[10px] text-muted-foreground/50 font-light italic">
-                      Auto → {getRoutingLabel((message as any).model)}
+                      {modelName === "Auto" ? "Auto" : "Switched"} → {getRoutingLabel(resolvedModel)}
                     </p>
                   )}
                 </div>
@@ -290,13 +304,13 @@ export function MessageBubble({
                 className={cn(
                   "flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium",
                   "text-muted-foreground/50 hover:text-muted-foreground",
-                  "hover:bg-white/[0.05] transition-colors cursor-pointer"
+                  "hover:bg-foreground/[0.05] transition-colors cursor-pointer"
                 )}
               >
                 {copied ? (
                   <>
-                    <Check className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Copied</span>
+                    <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
+                    <span className="text-green-600 dark:text-green-500">Copied</span>
                   </>
                 ) : (
                   <>
@@ -330,8 +344,8 @@ function CopyCodeButton({ code }: { code: string }) {
     >
       {copied ? (
         <>
-          <Check className="h-3 w-3 text-green-500" />
-          <span className="text-green-500">Copied</span>
+          <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
+          <span className="text-green-600 dark:text-green-500">Copied</span>
         </>
       ) : (
         <>

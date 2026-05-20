@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon } from "lucide-react";
+import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History } from "lucide-react";
 import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS } from "@/lib/council";
 import type { CouncilResult, CouncilProgressEvent } from "@/lib/council";
+
+interface CouncilHistoryItem {
+  id: string;
+  timestamp: string;
+  query: string;
+  selectedModels: string[];
+  result: CouncilResult | null;
+}
 
 const MAX_SELECTED = 3;
 
@@ -29,6 +37,66 @@ export default function CouncilPage() {
   const [modelProgress, setModelProgress] = useState<ModelProgress[]>([]);
   const [phase, setPhase] = useState<"idle" | "querying" | "synthesizing" | "done">("idle");
   const abortRef = useRef<AbortController | null>(null);
+
+  const [history, setHistory] = useState<CouncilHistoryItem[]>([]);
+  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(true);
+
+  const queryRef = useRef(query);
+  const modelsRef = useRef(selectedModels);
+
+  useEffect(() => {
+    queryRef.current = query;
+  }, [query]);
+
+  useEffect(() => {
+    modelsRef.current = selectedModels;
+  }, [selectedModels]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("clavis_council_history");
+    if (saved) {
+      try {
+        setHistory(JSON.parse(saved));
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+  }, []);
+
+  const handleLoadHistory = useCallback((item: CouncilHistoryItem) => {
+    setActiveHistoryId(item.id);
+    setQuery(item.query);
+    setSelectedModels(item.selectedModels);
+    setResult(item.result);
+    setError(null);
+    setPhase("done");
+  }, []);
+
+  const handleDeleteHistory = useCallback((id: string) => {
+    setHistory((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      localStorage.setItem("clavis_council_history", JSON.stringify(updated));
+      return updated;
+    });
+    setActiveHistoryId((prevActive) => {
+      if (prevActive === id) {
+        setResult(null);
+        setQuery("");
+        setPhase("idle");
+        return null;
+      }
+      return prevActive;
+    });
+  }, []);
+
+  const handleNewQuery = useCallback(() => {
+    setActiveHistoryId(null);
+    setQuery("");
+    setResult(null);
+    setError(null);
+    setPhase("idle");
+  }, []);
 
   const hasQuery = query.trim().length > 0;
   const hasEnoughModels = selectedModels.length === MAX_SELECTED;
@@ -109,6 +177,15 @@ export default function CouncilPage() {
     }
   }, [canRun, query, selectedModels]);
 
+  const handleStop = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      setIsRunning(false);
+      setPhase("idle");
+      setError("Consultation stopped by user.");
+    }
+  }, []);
+
   const handleProgressEvent = useCallback((event: CouncilProgressEvent) => {
     switch (event.type) {
       case "model_querying":
@@ -146,6 +223,21 @@ export default function CouncilPage() {
       case "result":
         setResult(event.data);
         setPhase("done");
+        
+        // Save to history
+        const newItem = {
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          query: queryRef.current.trim(),
+          selectedModels: modelsRef.current,
+          result: event.data,
+        };
+        setHistory((prev) => {
+          const updated = [newItem, ...prev];
+          localStorage.setItem("clavis_council_history", JSON.stringify(updated));
+          return updated;
+        });
+        setActiveHistoryId(newItem.id);
         break;
 
       case "error":
@@ -171,27 +263,101 @@ export default function CouncilPage() {
   const completedCount = modelProgress.filter((m) => m.status === "complete" || m.status === "error").length;
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-thin">
-      <div className="max-w-3xl mx-auto px-6 py-10 lg:py-14">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="mb-10"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
-              <Users className="h-4 w-4 text-primary" />
+    <div className="h-full flex overflow-hidden bg-background">
+      {/* Council History Sidebar */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+            className="border-r border-border bg-card flex flex-col shrink-0 overflow-hidden"
+          >
+            <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
+              <span className="font-cinzel text-[13px] font-semibold text-foreground tracking-[0.05em] uppercase">Council Logs</span>
+              <button
+                onClick={handleNewQuery}
+                className="p-1.5 rounded-md hover:bg-foreground/[0.05] text-primary transition-colors cursor-pointer"
+                title="New Inquiry"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
-              Model Council
-            </h1>
-          </div>
-          <p className="text-[14px] text-muted-foreground font-normal ml-11">
-            Query multiple models in parallel and get a synthesized consensus
-          </p>
-        </motion.div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">
+              {history.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground/30 text-[12px] font-light">
+                  No past inquiries
+                </div>
+              ) : (
+                history.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleLoadHistory(item)}
+                    className={cn(
+                      "group relative p-3 rounded-lg border text-left cursor-pointer transition-all duration-150",
+                      activeHistoryId === item.id
+                        ? "border-primary/40 bg-primary/[0.05] text-foreground"
+                        : "border-border/50 bg-transparent text-muted-foreground hover:border-border hover:bg-foreground/[0.02]"
+                    )}
+                  >
+                    <div className="pr-6">
+                      <p className="text-[13px] font-normal leading-snug line-clamp-2 text-foreground/80 group-hover:text-foreground">
+                        {item.query}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/45 mt-1.5 font-light">
+                        {new Date(item.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteHistory(item.id);
+                      }}
+                      className="absolute top-2.5 right-2.5 p-1 rounded hover:bg-foreground/[0.08] opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-red-400 transition-all cursor-pointer"
+                      title="Delete Log"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-10 lg:py-14">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="mb-10"
+          >
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-primary" />
+                </div>
+                <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
+                  Model Council
+                </h1>
+              </div>
+              <button
+                onClick={() => setShowHistory(prev => !prev)}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[12px] text-muted-foreground hover:bg-foreground/[0.02] transition-colors cursor-pointer font-medium"
+              >
+                <History className="h-3.5 w-3.5" />
+                <span>{showHistory ? "Hide Logs" : "Show Logs"}</span>
+              </button>
+            </div>
+            <p className="text-[14px] text-muted-foreground font-normal ml-11">
+              Query multiple models in parallel and get a synthesized consensus
+            </p>
+          </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -257,7 +423,7 @@ export default function CouncilPage() {
             <motion.div
               animate={{
                 boxShadow: isFocused
-                  ? "0 0 0 1px rgba(106,13,173,0.35), 0 0 24px rgba(106,13,173,0.08)"
+                  ? "0 0 0 1px rgba(168,124,62,0.35), 0 0 24px rgba(168,124,62,0.08)"
                   : "0 0 0 1px rgba(0,0,0,0)",
               }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -282,33 +448,38 @@ export default function CouncilPage() {
                 )}
                 disabled={isRunning}
               />
-              <div className="flex items-center justify-end px-4 pb-3">
-                <motion.button
-                  whileHover={canRun ? { scale: 1.03 } : {}}
-                  whileTap={canRun ? { scale: 0.95 } : {}}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className={cn(
-                    "flex items-center gap-2 h-8 px-4 rounded-md text-[13px] font-semibold transition-all duration-150",
-                    canRun
-                      ? "bg-primary text-white shadow-glow cursor-pointer"
-                      : "bg-secondary text-muted-foreground/30 cursor-default"
-                  )}
-                  onClick={handleRun}
-                  disabled={!canRun}
-                  id="run-council-button"
-                >
-                  {isRunning ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      <span>Consulting…</span>
-                    </>
-                  ) : (
-                    <>
-                      <Users className="h-3.5 w-3.5" />
-                      <span>Run Council</span>
-                    </>
-                  )}
-                </motion.button>
+              <div className="flex items-center justify-end gap-2 px-4 pb-3">
+                {isRunning ? (
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className="flex items-center gap-2 h-8 px-4 rounded-md text-[13px] font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer transition-all duration-150"
+                    onClick={handleStop}
+                    id="stop-council-button"
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                    <span>Stop Consultation</span>
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    whileHover={canRun ? { scale: 1.03 } : {}}
+                    whileTap={canRun ? { scale: 0.95 } : {}}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className={cn(
+                      "flex items-center gap-2 h-8 px-4 rounded-md text-[13px] font-semibold transition-all duration-150",
+                      canRun
+                        ? "bg-primary text-primary-foreground shadow-glow cursor-pointer"
+                        : "bg-secondary text-muted-foreground/30 cursor-default"
+                    )}
+                    onClick={handleRun}
+                    disabled={!canRun}
+                    id="run-council-button"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    <span>Run Council</span>
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           </div>
@@ -573,5 +744,6 @@ export default function CouncilPage() {
         </motion.div>
       </div>
     </div>
+  </div>
   );
 }

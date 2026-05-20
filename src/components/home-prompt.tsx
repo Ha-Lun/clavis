@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useChat } from "@/context/chat-context";
 import { DEFAULT_MODEL } from "@/lib/models";
 import {
-  Sparkles, Code, FileText, Lightbulb, Mail, Bug,
+  BookOpen, Lightbulb, Scale, HelpCircle, Layers, FlaskConical,
   Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X, ArrowUp, Globe,
-  Users, FolderPlus
+  Users, FolderPlus, FileText
 } from "lucide-react";
 import Link from "next/link";
 import { cn, Attachment } from "@/lib/utils";
@@ -22,12 +22,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const SUGGESTIONS = [
-  { icon: Sparkles, label: "Explain a concept" },
-  { icon: Code,      label: "Write some code"  },
-  { icon: FileText,  label: "Summarise a document" },
-  { icon: Lightbulb, label: "Brainstorm ideas" },
-  { icon: Mail,      label: "Draft an email"   },
-  { icon: Bug,       label: "Debug my code"    },
+  { icon: BookOpen,     label: "Explain a concept" },
+  { icon: Lightbulb,    label: "Define a term" },
+  { icon: Layers,       label: "Walk through the steps" },
+  { icon: HelpCircle,   label: "Clarify a distinction" },
+  { icon: Scale,        label: "Compare two ideas" },
+  { icon: FlaskConical, label: "Test my understanding" },
 ];
 
 export function HomePrompt() {
@@ -121,11 +121,11 @@ export function HomePrompt() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="mb-12 text-center"
       >
-        <h1 className="text-[52px] md:text-[64px] font-extralight tracking-[-0.04em] text-foreground leading-none">
-          Sciora
+        <h1 className="font-cinzel text-[42px] md:text-[52px] font-normal tracking-[0.06em] text-foreground leading-none">
+          Clavis
         </h1>
-        <p className="mt-2 text-[14px] text-muted-foreground/50 font-light tracking-wide">
-          What can I help you with today?
+        <p className="mt-3 text-[14px] text-muted-foreground/60 font-light tracking-wide">
+          Begin your inquiry.
         </p>
       </motion.div>
 
@@ -139,7 +139,7 @@ export function HomePrompt() {
         <motion.div
           animate={{
             boxShadow: isFocused
-              ? "0 0 0 1px rgba(106,13,173,0.35), 0 0 24px rgba(106,13,173,0.08)"
+              ? "0 0 0 1px rgba(168,124,62,0.35), 0 0 24px rgba(168,124,62,0.08)"
               : "0 0 0 1px rgba(0,0,0,0)",
           }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -189,7 +189,7 @@ export function HomePrompt() {
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder="Ask anything…"
+            placeholder="Pose your question."
             rows={3}
             className={cn(
               "w-full resize-none bg-transparent",
@@ -208,7 +208,7 @@ export function HomePrompt() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/[0.05] transition-colors cursor-pointer"
+                    className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
                     disabled={uploading || isSubmitting}
                   >
                     {uploading ? (
@@ -242,7 +242,7 @@ export function HomePrompt() {
                   "h-7 flex items-center gap-1.5 rounded-md px-2 transition-all duration-150 cursor-pointer",
                   webSearchEnabled
                     ? "bg-primary/15 text-primary hover:bg-primary/20"
-                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-white/[0.05]"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05]"
                 )}
                 id="home-web-search-toggle"
               >
@@ -254,7 +254,7 @@ export function HomePrompt() {
               <button
                 type="button"
                 onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
-                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-white/[0.05] transition-all duration-150 cursor-pointer"
+                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05] transition-all duration-150 cursor-pointer"
                 id="home-new-project-button"
               >
                 <FolderPlus className="h-3.5 w-3.5" />
@@ -264,7 +264,7 @@ export function HomePrompt() {
               {/* Council link */}
               <Link
                 href="/dashboard/council"
-                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-white/[0.05] transition-all duration-150"
+                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05] transition-all duration-150"
                 id="home-council-link"
               >
                 <Users className="h-3.5 w-3.5" />
@@ -285,7 +285,7 @@ export function HomePrompt() {
                 className={cn(
                   "h-8 w-8 flex items-center justify-center rounded-md transition-all duration-100",
                   hasContent && !isSubmitting
-                    ? "bg-primary text-white shadow-glow cursor-pointer"
+                    ? "bg-primary text-primary-foreground shadow-glow cursor-pointer"
                     : "bg-secondary text-muted-foreground/30 cursor-default"
                 )}
                 onClick={() => handleSubmit()}
@@ -312,12 +312,12 @@ export function HomePrompt() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 + i * 0.06, ease: "easeOut" }}
-            whileHover={{ borderColor: "rgba(255,255,255,0.1)" }}
+            whileHover={{ borderColor: "hsl(33, 48%, 45%)" }}
             className={cn(
               "flex items-center gap-2.5 p-4 text-left h-[52px]",
               "bg-card border border-border rounded-lg",
               "transition-colors duration-150",
-              "hover:bg-white/[0.02] cursor-pointer",
+              "hover:bg-primary/[0.04] cursor-pointer",
               "disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >

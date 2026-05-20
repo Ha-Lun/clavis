@@ -99,7 +99,7 @@ Confidence rules:
 - "medium" if minor divergences or different emphasis
 - "low" if contradictions on key points
 
-Return ONLY the JSON. No other text.`;
+Keep all fields highly concise, focused, and free of decorative text to ensure maximum synthesis speed. Return ONLY the JSON. No other text.`;
 }
 
 // ─── Core Functions ───────────────────────────────
@@ -117,11 +117,11 @@ async function queryModel(
       nvidia.chat.completions.create({
         model,
         messages: [
-          { role: "system", content: "You are a knowledgeable AI assistant. Answer the user's question thoroughly and concisely." },
+          { role: "system", content: "You are a knowledgeable AI assistant. Answer the user's question directly, clearly, and concisely. Keep responses under 300 words without conversational filler or introductory preamble." },
           { role: "user", content: query },
         ],
         stream: false,
-        max_tokens: 2048,
+        max_tokens: 1024,
       }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("Request timed out after 60s")), 60000)
