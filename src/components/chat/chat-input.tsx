@@ -142,7 +142,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
                 <div className="flex flex-wrap gap-2 px-4 pt-3 pb-1">

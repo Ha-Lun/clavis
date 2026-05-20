@@ -71,8 +71,8 @@ export function MessageBubble({
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.3,
-        delay: Math.min(index * 0.04, 0.25),
-        ease: [0.25, 0.1, 0.25, 1],
+        delay: Math.min(index * 0.02, 0.1),
+        ease: [0.16, 1, 0.3, 1],
       }}
     >
       <div
@@ -226,12 +226,12 @@ export function MessageBubble({
                     <li className="mb-0.5 font-light leading-relaxed">{children}</li>
                   ),
                   h1: ({ children }) => (
-                    <h1 className="font-cinzel text-[22px] font-normal tracking-wide mb-3 mt-6 text-foreground">
+                    <h1 className="text-[22px] font-normal tracking-wide mb-3 mt-6 text-foreground">
                       {children}
                     </h1>
                   ),
                   h2: ({ children }) => (
-                    <h2 className="font-cinzel text-[18px] font-normal tracking-wide mb-2.5 mt-5 text-foreground">
+                    <h2 className="text-[18px] font-normal tracking-wide mb-2.5 mt-5 text-foreground">
                       {children}
                     </h2>
                   ),
