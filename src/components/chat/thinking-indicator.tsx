@@ -28,7 +28,7 @@ export function ThinkingIndicator({ modelId: _modelId }: ThinkingIndicatorProps)
         </g>
       </svg>
       <span className="text-[12px] font-medium tracking-wide opacity-80 mt-px">
-        Thinking…
+        Considering…
       </span>
     </div>
   );

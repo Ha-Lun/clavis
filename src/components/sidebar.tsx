@@ -27,6 +27,7 @@ import {
   Settings,
   RotateCcw,
   X,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -76,7 +77,7 @@ export function SidebarProvider({
     <>
       {/* Desktop sidebar */}
       <aside
-        className="hidden lg:flex border-r border-white/[0.06] dark:border-white/[0.06] border-black/[0.06] bg-card flex-col z-20 overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"
+        className="hidden lg:flex border-r border-border bg-card flex-col z-20 overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"
         style={{ width: isCollapsed ? 60 : 272, flexShrink: 0 }}
       >
         <SidebarContent
@@ -125,11 +126,15 @@ function SidebarContent({
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
-  // Undo project deletion state
+  // Undo state
   const [localProjects, setLocalProjects] = useState<Project[]>(projects);
   const [undoProject, setUndoProject] = useState<Project | null>(null);
   const [showUndoProject, setShowUndoProject] = useState(false);
   const undoProjectTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [undoChat, setUndoChat] = useState<Chat | null>(null);
+  const [showUndoChat, setShowUndoChat] = useState(false);
+  const undoChatTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync projects to local state unless we are in the middle of undo flow
   useEffect(() => {
@@ -258,20 +263,57 @@ function SidebarContent({
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    const chatToDelete = chats.find((c) => c.$id === chatId);
+    // Find chat to undo later
+    const chatToDelete = chats.find((c) => (c.$id ?? (c as any).id) === chatId);
     if (!chatToDelete) return;
+
+    // Clear any existing timer
+    if (undoChatTimerRef.current) {
+      clearTimeout(undoChatTimerRef.current);
+    }
+
+    // Optimistic UI update
     removeChat(chatId);
     if (pathname === `/dashboard/chat/${chatId}`) {
       router.push("/dashboard");
     }
-    try {
-      const res = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete chat on server");
-    } catch (err) {
-      console.error("Failed to delete chat:", err);
-      setChats([chatToDelete, ...chats]);
-      alert("Failed to delete chat. Please check your connection.");
+
+    // Show undo popup
+    setUndoChat(chatToDelete);
+    setShowUndoChat(true);
+
+    // Set timer for actual deletion
+    undoChatTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Delete failed");
+        setShowUndoChat(false);
+        setUndoChat(null);
+      } catch (err) {
+        console.error("Failed to delete chat permanently:", err);
+      }
+    }, 5000);
+  };
+
+  const handleUndoChatDelete = () => {
+    if (!undoChat) return;
+
+    if (undoChatTimerRef.current) {
+      clearTimeout(undoChatTimerRef.current);
+      undoChatTimerRef.current = null;
     }
+
+    // Restore in global store
+    if (!chats.find(c => (c.$id ?? (c as any).id) === (undoChat.$id ?? (undoChat as any).id))) {
+      setChats([undoChat, ...chats].sort((a, b) => {
+        const dateA = new Date(a.$updatedAt).getTime();
+        const dateB = new Date(b.$updatedAt).getTime();
+        return dateB - dateA;
+      }));
+    }
+
+    setShowUndoChat(false);
+    setTimeout(() => setUndoChat(null), 300);
   };
 
   const handleLogout = async () => {
@@ -285,7 +327,7 @@ function SidebarContent({
       {/* Header */}
       <div
         className={cn(
-          "h-14 flex items-center justify-between px-4 shrink-0 border-b border-white/[0.04] dark:border-white/[0.04] border-black/[0.04]",
+          "h-14 flex items-center justify-between px-4 shrink-0 border-b border-border",
           isCollapsed && "justify-center px-0"
         )}
       >
@@ -297,10 +339,13 @@ function SidebarContent({
           )}
           onClick={onClose}
         >
-          {/* Minimal logo mark */}
-          <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-white" strokeWidth={2.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          {/* Roman-inspired key icon */}
+          <div className="h-6 w-6 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+              <circle cx="12" cy="6" r="4" />
+              <circle cx="12" cy="6" r="1.5" />
+              <path d="M12 10v11" />
+              <path d="M12 17h4v4h-2v-2h-2" />
             </svg>
           </div>
           <AnimatePresence>
@@ -310,9 +355,9 @@ function SidebarContent({
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.15 }}
-                className="text-[15px] font-medium tracking-tight text-foreground overflow-hidden whitespace-nowrap"
+                className="font-cinzel text-[15px] font-normal tracking-[0.05em] text-foreground overflow-hidden whitespace-nowrap"
               >
-                Flux
+                Clavis
               </motion.span>
             )}
           </AnimatePresence>
@@ -324,7 +369,7 @@ function SidebarContent({
             <button
               type="button"
               onClick={toggleCollapse}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors cursor-pointer"
+              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? (
@@ -341,7 +386,7 @@ function SidebarContent({
           <button
             type="button"
             onClick={toggleCollapse}
-            className="absolute bottom-auto h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors cursor-pointer"
+            className="absolute bottom-auto h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
             title="Expand sidebar"
           >
             <PanelLeftOpen className="h-3.5 w-3.5" />
@@ -360,7 +405,7 @@ function SidebarContent({
             "w-full flex items-center gap-2 px-3 py-2 rounded-md",
             "text-[13px] font-medium text-muted-foreground",
             "bg-transparent border border-border",
-            "hover:border-white/[0.12] hover:text-foreground hover:bg-white/[0.03]",
+            "hover:border-primary/20 hover:text-foreground hover:bg-foreground/[0.03]",
             "transition-colors duration-150 cursor-pointer",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             isCollapsed && "justify-center px-0"
@@ -385,6 +430,38 @@ function SidebarContent({
             )}
           </AnimatePresence>
         </motion.button>
+      </div>
+
+      {/* Council Link */}
+      <div className={cn("px-3 pb-2 shrink-0", isCollapsed && "px-2")}>
+        <Link
+          href="/dashboard/council"
+          onClick={onClose}
+          className={cn(
+            "w-full flex items-center gap-2 px-3 py-2 rounded-md",
+            "text-[13px] font-medium",
+            "transition-colors duration-150",
+            isCollapsed && "justify-center px-0",
+            pathname === "/dashboard/council"
+              ? "bg-primary/[0.08] text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+          )}
+        >
+          <Users className="h-3.5 w-3.5 shrink-0" />
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1 }}
+                className="truncate"
+              >
+                Council
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
       </div>
 
       {/* Main scrollable content */}
@@ -412,7 +489,7 @@ function SidebarContent({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="overflow-hidden mt-0.5"
                 >
                   <div className="space-y-px">
@@ -440,8 +517,8 @@ function SidebarContent({
                               className={cn(
                                 "group relative flex items-center rounded-md transition-colors duration-100 h-8",
                                 isActive
-                                  ? "bg-white/[0.06] dark:bg-white/[0.06]"
-                                  : "hover:bg-white/[0.04] dark:hover:bg-white/[0.04]"
+                                  ? "bg-primary/[0.08] dark:bg-primary/[0.08]"
+                                  : "hover:bg-foreground/[0.04] dark:hover:bg-foreground/[0.04]"
                               )}
                             >
                               {/* Active indicator bar */}
@@ -479,7 +556,7 @@ function SidebarContent({
                                   "transition-opacity duration-150",
                                   // Gradient mask from transparent to surface
                                   isActive
-                                    ? "bg-gradient-to-l from-[hsl(0_0%_7%)] from-70% via-[hsl(0_0%_7%)] to-transparent"
+                                    ? "bg-gradient-to-l from-card from-70% via-card to-transparent"
                                     : "bg-gradient-to-l from-card from-70% via-card to-transparent",
                                   // Always visible if pinned, otherwise hover-only
                                   chat.isPinned
@@ -555,7 +632,7 @@ function SidebarContent({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="overflow-hidden mt-0.5"
                 >
                   <div className="space-y-px">
@@ -580,8 +657,8 @@ function SidebarContent({
                               className={cn(
                                 "group relative flex items-center rounded-md transition-colors duration-100 h-8",
                                 isActive
-                                  ? "bg-white/[0.06]"
-                                  : "hover:bg-white/[0.04]"
+                                  ? "bg-primary/[0.08]"
+                                  : "hover:bg-foreground/[0.04]"
                               )}
                             >
                               {isActive && (
@@ -617,7 +694,7 @@ function SidebarContent({
                                   "absolute right-0 top-0 bottom-0 flex items-center pr-1 pl-8 z-10",
                                   "transition-opacity duration-150",
                                   isActive
-                                    ? "bg-gradient-to-l from-[hsl(0_0%_7%)] from-70% via-[hsl(0_0%_7%)] to-transparent"
+                                    ? "bg-gradient-to-l from-card from-70% via-card to-transparent"
                                     : "bg-gradient-to-l from-card from-70% via-card to-transparent",
                                   project.isPinned
                                     ? "opacity-100"
@@ -661,7 +738,7 @@ function SidebarContent({
 
       {/* Footer */}
       <div className={cn(
-        "mt-auto px-3 py-3 border-t border-white/[0.04] shrink-0",
+        "mt-auto px-3 py-3 border-t border-border shrink-0",
         isCollapsed && "px-2"
       )}>
         <div className={cn(
@@ -690,7 +767,7 @@ function SidebarContent({
           <div className={cn("flex items-center gap-1 shrink-0", isCollapsed && "flex-col")}>
             <Link
               href="/dashboard/settings"
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors cursor-pointer"
+              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
               title="Settings"
             >
               <Settings className="h-3.5 w-3.5" />
@@ -700,7 +777,7 @@ function SidebarContent({
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-white/[0.05] transition-colors rounded-md cursor-pointer"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors rounded-md cursor-pointer"
               title="Sign out"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -708,31 +785,62 @@ function SidebarContent({
           </div>
         </div>
 
-        {/* Project Undo Popup inside sidebar */}
+        {/* Global Undo Popups (Project & Chat) */}
         <div 
           className={cn(
-            "absolute bottom-[72px] left-3 right-3 z-50 transition-all duration-100 transform",
-            showUndoProject ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+            "fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end transition-all duration-300 transform",
+            (showUndoProject || showUndoChat) ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
           )}
         >
-          <div className="bg-foreground text-background px-3 py-2.5 rounded-lg shadow-lg flex items-center justify-between gap-3 text-sm">
-            <span className="truncate flex-1 font-medium text-[13px]">Project deleted</span>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={handleUndoProjectDelete}
-                className="flex items-center gap-1.5 px-2 py-1 hover:bg-background/20 rounded transition-colors text-[13px] font-medium"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Undo
-              </button>
-              <button
-                onClick={() => setShowUndoProject(false)}
-                className="p-1 hover:bg-background/20 rounded transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          {/* Project Undo Popup */}
+          {showUndoProject && (
+            <div className="bg-card text-foreground border border-border/50 px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-4 text-sm min-w-[280px] max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col min-w-0">
+                <span className="font-medium text-[13px]">Project deleted</span>
+                <span className="text-[11px] text-muted-foreground truncate">{undoProject?.name}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 border-l border-border/30 pl-4">
+                <button
+                  onClick={handleUndoProjectDelete}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-foreground/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Undo
+                </button>
+                <button
+                  onClick={() => setShowUndoProject(false)}
+                  className="p-1.5 hover:bg-foreground/[0.05] rounded-lg transition-colors text-muted-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Chat Undo Popup */}
+          {showUndoChat && (
+            <div className="bg-card text-foreground border border-border/50 px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-4 text-sm min-w-[280px] max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col min-w-0">
+                <span className="font-medium text-[13px]">Chat deleted</span>
+                <span className="text-[11px] text-muted-foreground truncate">{undoChat?.title}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 border-l border-border/30 pl-4">
+                <button
+                  onClick={handleUndoChatDelete}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-foreground/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Undo
+                </button>
+                <button
+                  onClick={() => setShowUndoChat(false)}
+                  className="p-1.5 hover:bg-foreground/[0.05] rounded-lg transition-colors text-muted-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

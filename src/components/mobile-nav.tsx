@@ -8,7 +8,7 @@ export function MobileNav() {
   const { toggleSidebar } = useUIStore();
 
   return (
-    <div className="lg:hidden flex items-center gap-3 h-12 px-4 border-b border-white/[0.06] dark:border-white/[0.06] border-black/[0.06] bg-background shrink-0">
+    <div className="lg:hidden flex items-center gap-3 h-12 px-4 border-b border-border bg-background shrink-0">
       <Button
         variant="ghost"
         size="icon"
@@ -18,7 +18,7 @@ export function MobileNav() {
       >
         <Menu className="h-4 w-4" />
       </Button>
-      <span className="text-[14px] font-medium tracking-tight text-foreground">Flux</span>
+      <span className="font-cinzel text-[14px] font-normal tracking-[0.05em] text-foreground">Clavis</span>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X, ArrowUp } from "lucide-react";
+import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X, ArrowUp, Globe } from "lucide-react";
 import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "./model-selector";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ChatInputProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, options?: { webSearch?: boolean }) => void;
   onStop?: () => void;
   isStreaming: boolean;
   chatId: string;
@@ -26,6 +26,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,13 +48,13 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
         : attachmentString;
     }
 
-    onSend(finalContent);
+    onSend(finalContent, { webSearch: webSearchEnabled });
     setContent("");
     setAttachments([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [content, isStreaming, onSend, attachments]);
+  }, [content, isStreaming, onSend, attachments, webSearchEnabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -114,13 +115,13 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
           animate={{
             boxShadow: isStreaming
               ? [
-                  "0 0 0 1px rgba(99,102,241,0.15), 0 0 0px rgba(99,102,241,0)",
-                  "0 0 0 2px rgba(99,102,241,0.5), 0 0 20px rgba(99,102,241,0.2)",
-                  "0 0 0 1px rgba(99,102,241,0.15), 0 0 0px rgba(99,102,241,0)"
+                  "0 0 0 1px rgba(168,124,62,0.15), 0 0 0px rgba(168,124,62,0)",
+                  "0 0 0 2px rgba(168,124,62,0.5), 0 0 20px rgba(168,124,62,0.15)",
+                  "0 0 0 1px rgba(168,124,62,0.15), 0 0 0px rgba(168,124,62,0)"
                 ]
               : isFocused
-                ? "0 0 0 1px rgba(99,102,241,0.35), 0 0 20px rgba(99,102,241,0.08)"
-                : "0 0 0 1px rgba(255,255,255,0.0), 0 0 0px rgba(99,102,241,0.0)",
+                ? "0 0 0 1px rgba(168,124,62,0.35), 0 0 20px rgba(168,124,62,0.08)"
+                : "0 0 0 1px rgba(0,0,0,0.0), 0 0 0px rgba(168,124,62,0.0)",
           }}
           transition={{
             boxShadow: isStreaming
@@ -141,7 +142,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
                 <div className="flex flex-wrap gap-2 px-4 pt-3 pb-1">
@@ -178,7 +179,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder="Ask anything…"
+            placeholder="Pose your question."
             rows={1}
             className={cn(
               "w-full resize-none bg-transparent",
@@ -194,7 +195,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
 
           {/* Bottom toolbar */}
           <div className="flex items-center justify-between px-3 pb-3">
-            {/* Left: attachment */}
+            {/* Left: attachment + web search */}
             <div className="flex items-center gap-1">
               <input
                 ref={fileInputRef}
@@ -210,7 +211,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                     className={cn(
                       "h-7 w-7 flex items-center justify-center rounded-md",
                       "text-muted-foreground/60 hover:text-muted-foreground",
-                      "hover:bg-white/[0.05] transition-colors cursor-pointer"
+                      "hover:bg-foreground/[0.05] transition-colors cursor-pointer"
                     )}
                     disabled={uploading}
                     id="file-upload-button"
@@ -240,6 +241,22 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Web search toggle */}
+              <button
+                type="button"
+                onClick={() => setWebSearchEnabled((prev) => !prev)}
+                className={cn(
+                  "h-7 flex items-center gap-1.5 rounded-md px-2 transition-all duration-150 cursor-pointer",
+                  webSearchEnabled
+                    ? "bg-primary/15 text-primary hover:bg-primary/20"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05]"
+                )}
+                id="web-search-toggle"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium tracking-tight">Search</span>
+              </button>
             </div>
 
             {/* Right: model selector + send/stop */}
@@ -267,7 +284,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   className={cn(
                     "h-7 w-7 flex items-center justify-center rounded-md transition-all duration-100",
                     hasContent
-                      ? "bg-primary text-white shadow-glow cursor-pointer"
+                      ? "bg-primary text-primary-foreground shadow-glow cursor-pointer"
                       : "bg-secondary text-muted-foreground/40 cursor-default"
                   )}
                   onClick={handleSubmit}
@@ -282,7 +299,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
         </motion.div>
 
         <p className="text-[11px] text-muted-foreground/30 text-center mt-2.5 tracking-tight">
-          Shift + Enter for new line
+          Shift + Enter for a new line
         </p>
       </div>
     </div>

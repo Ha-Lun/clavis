@@ -12,11 +12,12 @@ interface ChatViewProps {
   chat: Chat;
   initialMessages: Message[];
   processInitial?: boolean;
+  initialWebSearch?: boolean;
 }
 
   const MAX_MESSAGE_LENGTH = 30000;
 
-  export function ChatView({ chat, initialMessages, processInitial }: ChatViewProps) {
+  export function ChatView({ chat, initialMessages, processInitial, initialWebSearch = true }: ChatViewProps) {
   const {
     messages,
     setMessages,
@@ -72,7 +73,17 @@ interface ChatViewProps {
   );
 
   const handleSend = useCallback(
-    async (content: string, skipUserMessage: boolean = false) => {
+    async (content: string, skipUserMessageOrOptions: boolean | { webSearch?: boolean } = false, maybeOptions?: { webSearch?: boolean }) => {
+      // Handle overloaded signature: (content, skip, options) or (content, options)
+      let skipUserMessage = false;
+      let options: { webSearch?: boolean } = {};
+      if (typeof skipUserMessageOrOptions === 'boolean') {
+        skipUserMessage = skipUserMessageOrOptions;
+        options = maybeOptions || {};
+      } else if (typeof skipUserMessageOrOptions === 'object') {
+        options = skipUserMessageOrOptions;
+      }
+
       const trimmedContent = content.trim();
       if (!trimmedContent || isStreaming) return;
 
@@ -125,9 +136,10 @@ interface ChatViewProps {
           headers: { "Content-Type": "application/json" },
           signal: abortControllerRef.current.signal,
         body: JSON.stringify({
-             chatId: chat.$id,
+             chatId: chat.$id || (chat as any).id,
              message: trimmedContent,
              model: activeChat?.model || chat.model,
+             webSearch: (options as any).webSearch ?? true,
            }),
         });
 
@@ -241,7 +253,7 @@ interface ChatViewProps {
     if (processInitial && initialMessages.length > 0 && !hasTriggeredInitialSend.current) {
       hasTriggeredInitialSend.current = true;
       const initialContent = initialMessages[0].content;
-      handleSend(initialContent, true);
+      handleSend(initialContent, true, { webSearch: initialWebSearch });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.$id, initialMessages]);
@@ -260,7 +272,7 @@ interface ChatViewProps {
       className="flex flex-col h-full"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="flex-1 overflow-hidden flex flex-col">
         <MessageList

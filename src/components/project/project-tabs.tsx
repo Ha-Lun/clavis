@@ -197,6 +197,7 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
   };
 
   return (
+    <>
     <Tabs defaultValue="chats" className="w-full">
       <div className="flex items-center justify-between mb-6">
         <TabsList className="bg-secondary/50 p-1 rounded-xl">
@@ -416,5 +417,36 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
         </Card>
       </TabsContent>
     </Tabs>
+
+      {/* Undo Popup */}
+      <div 
+        className={cn(
+          "fixed bottom-6 right-6 z-50 transition-all duration-300 transform",
+          showUndo ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+        )}
+      >
+        <div className="bg-[#1a1a24] text-foreground border border-border/50 px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-4 text-sm min-w-[280px] max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-[13px]">Chat deleted</span>
+            <span className="text-[11px] text-muted-foreground truncate">{undoChat?.title}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 border-l border-border/30 pl-4">
+            <button
+              onClick={handleUndoDelete}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Undo
+            </button>
+            <button 
+              onClick={() => setShowUndo(false)}
+              className="p-1.5 hover:bg-white/[0.05] rounded-lg transition-colors text-muted-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
