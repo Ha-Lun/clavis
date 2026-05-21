@@ -10,7 +10,7 @@ export const COLLECTIONS = {
   FILES: "files",
 } as const;
 
-export const BUCKET_ID = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || "sciora-uploads";
+export const BUCKET_ID = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || "clavis-uploads";
 
 // Cookie name for Appwrite session
 export const SESSION_COOKIE = "appwrite-session";

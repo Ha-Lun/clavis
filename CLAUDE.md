@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture & Structure
 
-Sciora is a Next.js 14 application using the App Router, designed with a "Dark Luxury" aesthetic.
+Clavis is a Next.js 14 application using the App Router, designed with a "Dark Luxury" aesthetic.
 
 ### Core Architecture
 - **Frontend Framework**: Next.js 14 (App Router)

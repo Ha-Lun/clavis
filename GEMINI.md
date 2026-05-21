@@ -1,6 +1,6 @@
-# Sciora: AI Dark Luxury - Project Context
+# Clavis: AI Dark Luxury - Project Context
 
-This file provides instructional context for AI agents working on the **Sciora** project. Sciora is a premium, high-performance AI chat interface featuring a "Dark Luxury" aesthetic.
+This file provides instructional context for AI agents working on the **Clavis** project. Clavis is a premium, high-performance AI chat interface featuring a "Dark Luxury" aesthetic.
 
 ## 🏗️ Project Architecture & Tech Stack
 
