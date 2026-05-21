@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
             chat.project_id
           ) as unknown as Project;
           if (project.instructions) {
-            finalSystemPrompt = `${CLAVIS_SYSTEM_PROMPT}\n\nProject Instructions:\n${project.instructions}`;
+            finalSystemPrompt += `\n\nProject Instructions:\n${project.instructions}`;
             console.log("[API /chat] Applied project instructions");
           }
         } catch (err) {

@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History } from "lucide-react";
+import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS } from "@/lib/council";
 import type { CouncilResult, CouncilProgressEvent } from "@/lib/council";
 
@@ -275,7 +276,7 @@ export default function CouncilPage() {
             className="border-r border-border bg-card flex flex-col shrink-0 overflow-hidden"
           >
             <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-              <span className="font-cinzel text-[13px] font-semibold text-foreground tracking-[0.05em] uppercase">Council Logs</span>
+              <span className="font-cinzel text-[13px] font-semibold text-foreground tracking-[0.05em] uppercase">Model Council Logs</span>
               <button
                 onClick={handleNewQuery}
                 className="p-1.5 rounded-md hover:bg-foreground/[0.05] text-primary transition-colors cursor-pointer"
@@ -495,7 +496,7 @@ export default function CouncilPage() {
               >
                 {/* Phase indicator */}
                 <div className="flex items-center gap-2 mb-3">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                  <ThinkingSpinner className="h-3.5 w-3.5 text-primary" size="14px" />
                   <span className="text-[13px] text-muted-foreground font-medium">
                     {phase === "querying" && `Querying models (${completedCount}/${modelProgress.length})…`}
                     {phase === "synthesizing" && "Synthesizing responses…"}
@@ -515,7 +516,7 @@ export default function CouncilPage() {
                       <div className="flex items-center gap-2.5 min-w-0">
                         {/* Status icon */}
                         {mp.status === "querying" && (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+                          <ThinkingSpinner className="h-3.5 w-3.5 text-primary shrink-0" size="14px" />
                         )}
                         {mp.status === "complete" && (
                           <div className="h-3.5 w-3.5 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0">
@@ -565,7 +566,7 @@ export default function CouncilPage() {
                       animate={{ opacity: 1, x: 0 }}
                       className="flex items-center gap-2.5 pt-2 mt-2 border-t border-border"
                     >
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400 shrink-0" />
+                      <ThinkingSpinner className="h-3.5 w-3.5 text-amber-400 shrink-0" size="14px" />
                       <span className="text-[13px] text-amber-400 font-medium">
                         Kimi K2.6 is synthesizing…
                       </span>

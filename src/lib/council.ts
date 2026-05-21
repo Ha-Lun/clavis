@@ -53,7 +53,7 @@ export const COUNCIL_MODELS = [
   { id: "mistralai/mistral-small-4-119b-2603", name: "Mistral Small 4" },
   { id: "minimaxai/minimax-m2.7", name: "MiniMax M2.7" },
   { id: "qwen/qwen3.5-122b-a10b", name: "Qwen 3.5" },
-  { id: "deepseek-ai/deepseek-v4-pro", name: "DeepSeek V4 Pro" },
+  { id: "mistralai/mistral-medium-3.5-128b", name: "Mistral Medium 3.5" },
 ] as const;
 
 export const DEFAULT_COUNCIL_MODELS = COUNCIL_MODELS.slice(0, 3).map((m) => m.id);
@@ -79,7 +79,7 @@ ${query}
 Model responses:
 ${modelBlocks}${failedBlock}
 
-Analyze the above responses and return ONLY a valid JSON object with this exact shape (no markdown fences, no preamble, no explanation — raw JSON only):
+Analyze the above responses and return ONLY a valid JSON object with this exact shape. Do not wrap the JSON in markdown formatting. Your response MUST start with { and end with }.
 
 {
   "synthesizedPrompt": "The single most accurate, helpful, and well-written synthesis of all provided answers.",
@@ -101,7 +101,7 @@ Confidence rules:
 - "medium" if minor divergences or different emphasis
 - "low" if contradictions on key points or many model failures
 
-The synthesizedPrompt should be cohesive, direct, and authoritative. Return ONLY the JSON. No other text.`;
+The synthesizedPrompt should be cohesive, direct, and authoritative. Return ONLY raw JSON.`;
 }
 
 // ─── Core Functions ───────────────────────────────
@@ -142,24 +142,35 @@ async function queryModel(
 
 function parseSynthesis(raw: string): CouncilSynthesis {
   let cleaned = raw.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+
+  // 1. Try to extract JSON from markdown code block if present
+  const jsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[1].trim();
+  } else {
+    // 2. Fallback: try to find the first { and last }
+    const startIdx = cleaned.indexOf('{');
+    const endIdx = cleaned.lastIndexOf('}');
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      cleaned = cleaned.substring(startIdx, endIdx + 1);
+    }
   }
 
   try {
     const parsed = JSON.parse(cleaned);
     return {
-      synthesizedPrompt: parsed.synthesizedPrompt || parsed.consensus || parsed.summary || cleaned,
+      synthesizedPrompt: parsed.synthesizedPrompt || parsed.consensus || parsed.summary || "Synthesis unavailable",
       summary: parsed.summary || "Summary unavailable",
       consensus: parsed.consensus || "Consensus unavailable",
-      disagreements: parsed.disagreements || [],
-      confidence: parsed.confidence || "low"
+      disagreements: Array.isArray(parsed.disagreements) ? parsed.disagreements : [],
+      confidence: ["high", "medium", "low"].includes(parsed.confidence) ? parsed.confidence : "medium"
     };
-  } catch {
+  } catch (err) {
+    console.error("[Council] Failed to parse synthesis JSON. Raw string:", raw);
     return {
-      synthesizedPrompt: cleaned,
-      summary: "Parsing failed",
-      consensus: cleaned,
+      synthesizedPrompt: "Failed to synthesize a coherent response. The model did not return valid JSON data.",
+      summary: "Parsing failed.",
+      consensus: "Parsing failed.",
       disagreements: [],
       confidence: "low",
     };

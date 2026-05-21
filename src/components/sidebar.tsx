@@ -457,7 +457,7 @@ function SidebarContent({
                 transition={{ duration: 0.1 }}
                 className="truncate"
               >
-                Council
+                Model Council
               </motion.span>
             )}
           </AnimatePresence>

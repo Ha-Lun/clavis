@@ -10,6 +10,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { Message } from "@/lib/appwrite/types";
 import { extractAttachments, extractFileRefs } from "@/lib/utils";
+import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { getRoutingLabel } from "@/lib/modelRouter";
 
 interface MessageBubbleProps {
@@ -44,18 +45,18 @@ export function MessageBubble({
   // Handle <think> tags that some reasoning models stream in their content
   let displayContent = cleanContent;
   if (displayContent.includes('<think>')) {
-    displayContent = displayContent.replace(/<think>\n?/g, '```reasoning\n');
-    displayContent = displayContent.replace(/<\/think>\n?/g, '\n```\n\n');
+    displayContent = displayContent.replace(/<think>\n?/g, '~~~reasoning\n');
+    displayContent = displayContent.replace(/<\/think>\n?/g, '\n~~~\n\n');
   } else if (displayContent.includes('</think>')) {
-     displayContent = displayContent.replace(/<\/think>\n?/g, '\n```\n\n');
+     displayContent = displayContent.replace(/<\/think>\n?/g, '\n~~~\n\n');
   }
   
   // Automatically close unclosed think blocks while streaming to ensure markdown renders correctly
-  if (isStreaming && displayContent.includes('```reasoning')) {
-    const openCount = (displayContent.match(/```reasoning/g) || []).length;
-    const closeCount = (displayContent.match(/\n```(\n|$)/g) || []).length;
+  if (isStreaming && displayContent.includes('~~~reasoning')) {
+    const openCount = (displayContent.match(/~~~reasoning/g) || []).length;
+    const closeCount = (displayContent.match(/\n~~~($|\n)/g) || []).length;
     if (openCount > closeCount) {
-      displayContent += '\n```';
+      displayContent += '\n~~~';
     }
   }
 
@@ -165,7 +166,7 @@ export function MessageBubble({
                         <details className="my-3 border-l-2 border-primary/30 bg-primary/[0.02] rounded-r-lg group/think">
                           <summary className="flex items-center gap-2 px-4 py-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-[11px] font-medium text-muted-foreground uppercase tracking-wider hover:text-muted-foreground/90 transition-colors">
                             <ChevronRight className="h-3.5 w-3.5 text-primary/50 transition-transform duration-200 group-open/think:rotate-90" />
-                            {isStreaming && <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />}
+                            {isStreaming && <ThinkingSpinner className="h-3 w-3 text-primary/40" size="12px" />}
                             Thinking Process
                           </summary>
                           <div className="px-4 pb-3 text-muted-foreground/80 font-light text-[14px] leading-relaxed whitespace-pre-wrap font-sans italic">

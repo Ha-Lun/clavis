@@ -1,7 +1,7 @@
 export type ModelId =
   | "auto"
   | "mistralai/mistral-small-4-119b-2603"
-  | "deepseek-ai/deepseek-v4-pro"
+  | "mistralai/mistral-medium-3.5-128b"
   | "qwen/qwen3.5-122b-a10b"
   | "minimaxai/minimax-m2.7"
   | "moonshotai/kimi-k2.6"
@@ -40,9 +40,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "Qwen",
   },
   {
-    id: "deepseek-ai/deepseek-v4-pro",
-    name: "DeepSeek V4 Pro",
-    shortName: "DS Pro",
+    id: "mistralai/mistral-medium-3.5-128b",
+    name: "Mistral Medium 3.5",
+    shortName: "Mistral Med",
   },
   {
     id: "mistralai/mistral-small-4-119b-2603",

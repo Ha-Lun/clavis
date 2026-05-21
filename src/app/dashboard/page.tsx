@@ -1,6 +1,5 @@
 import { getUser, createSessionClient } from "@/lib/appwrite/server";
 import { HomePrompt } from "@/components/home-prompt";
-import { TestModelsFab } from "@/components/test-models-fab";
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -13,7 +12,6 @@ export default async function DashboardPage() {
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8 flex items-center justify-center relative">
       <HomePrompt />
-      <TestModelsFab />
     </div>
   );
 }

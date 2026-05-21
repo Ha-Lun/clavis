@@ -8,7 +8,7 @@ import { DEFAULT_MODEL } from "@/lib/models";
 import {
   BookOpen, Lightbulb, Scale, HelpCircle, Layers, FlaskConical,
   Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X, ArrowUp, Globe,
-  Users, FolderPlus, FileText
+  Users, FolderPlus, FileText, Check, ChevronDown
 } from "lucide-react";
 import Link from "next/link";
 import { cn, Attachment } from "@/lib/utils";
@@ -234,42 +234,50 @@ export function HomePrompt() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Web search toggle */}
-              <button
-                type="button"
-                onClick={() => setWebSearchEnabled((prev) => !prev)}
-                className={cn(
-                  "h-7 flex items-center gap-1.5 rounded-md px-2 transition-all duration-150 cursor-pointer",
-                  webSearchEnabled
-                    ? "bg-primary/15 text-primary hover:bg-primary/20"
-                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05]"
-                )}
-                id="home-web-search-toggle"
-              >
-                <Globe className="h-3.5 w-3.5" />
-                <span className="text-[11px] font-medium tracking-tight">Search</span>
-              </button>
+              {/* Mode Selection Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05] transition-all duration-150 cursor-pointer"
+                  >
+                    <Layers className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium tracking-tight">Mode</span>
+                    <ChevronDown className="h-2.5 w-2.5 opacity-40" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48 bg-popover border-border p-1">
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    onClick={() => setWebSearchEnabled((prev) => !prev)}
+                    className="cursor-pointer gap-2 py-2 px-2.5 text-[13px] rounded-md focus:bg-foreground/[0.05]"
+                  >
+                    <div className="flex items-center gap-2 flex-1">
+                      <Globe className={cn("h-3.5 w-3.5", webSearchEnabled ? "text-primary" : "text-muted-foreground/50")} />
+                      <span>Web Search</span>
+                    </div>
+                    {webSearchEnabled && <Check className="h-3 w-3 text-primary" />}
+                  </DropdownMenuItem>
 
-              {/* New Project button */}
-              <button
-                type="button"
-                onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
-                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05] transition-all duration-150 cursor-pointer"
-                id="home-new-project-button"
-              >
-                <FolderPlus className="h-3.5 w-3.5" />
-                <span className="text-[11px] font-medium tracking-tight">Project</span>
-              </button>
+                  <DropdownMenuItem
+                    onClick={() => useProjectStore.getState().setCreateDialogOpen(true)}
+                    className="cursor-pointer gap-2 py-2 px-2.5 text-[13px] rounded-md focus:bg-foreground/[0.05]"
+                  >
+                    <FolderPlus className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    <span>New Project</span>
+                  </DropdownMenuItem>
 
-              {/* Council link */}
-              <Link
-                href="/dashboard/council"
-                className="h-7 flex items-center gap-1.5 rounded-md px-2 text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05] transition-all duration-150"
-                id="home-council-link"
-              >
-                <Users className="h-3.5 w-3.5" />
-                <span className="text-[11px] font-medium tracking-tight">Council</span>
-              </Link>
+                  <DropdownMenuItem
+                    asChild
+                    className="cursor-pointer gap-2 py-2 px-2.5 text-[13px] rounded-md focus:bg-foreground/[0.05]"
+                  >
+                    <Link href="/dashboard/council" className="flex items-center gap-2 w-full">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      <span>Model Council</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="flex items-center gap-2">
