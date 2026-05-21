@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
 import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History } from "lucide-react";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS } from "@/lib/council";
@@ -36,7 +37,7 @@ export default function CouncilPage() {
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [modelProgress, setModelProgress] = useState<ModelProgress[]>([]);
-  const [phase, setPhase] = useState<"idle" | "querying" | "synthesizing" | "done">("idle");
+  const [phase, setPhase] = useState<"idle" | "searching" | "querying" | "synthesizing" | "done">("idle");
   const abortRef = useRef<AbortController | null>(null);
 
   const [history, setHistory] = useState<CouncilHistoryItem[]>([]);
@@ -189,6 +190,14 @@ export default function CouncilPage() {
 
   const handleProgressEvent = useCallback((event: CouncilProgressEvent) => {
     switch (event.type) {
+      case "web_searching":
+        setPhase("searching");
+        break;
+
+      case "web_search_complete":
+        setPhase("querying");
+        break;
+
       case "model_querying":
         setModelProgress((prev) =>
           prev.map((m) =>
@@ -265,69 +274,6 @@ export default function CouncilPage() {
 
   return (
     <div className="h-full flex overflow-hidden bg-background">
-      {/* Council History Sidebar */}
-      <AnimatePresence>
-        {showHistory && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 350, damping: 30 }}
-            className="border-r border-border bg-card flex flex-col shrink-0 overflow-hidden"
-          >
-            <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-              <span className="font-cinzel text-[13px] font-semibold text-foreground tracking-[0.05em] uppercase">Model Council Logs</span>
-              <button
-                onClick={handleNewQuery}
-                className="p-1.5 rounded-md hover:bg-foreground/[0.05] text-primary transition-colors cursor-pointer"
-                title="New Inquiry"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">
-              {history.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground/30 text-[12px] font-light">
-                  No past inquiries
-                </div>
-              ) : (
-                history.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleLoadHistory(item)}
-                    className={cn(
-                      "group relative p-3 rounded-lg border text-left cursor-pointer transition-all duration-150",
-                      activeHistoryId === item.id
-                        ? "border-primary/40 bg-primary/[0.05] text-foreground"
-                        : "border-border/50 bg-transparent text-muted-foreground hover:border-border hover:bg-foreground/[0.02]"
-                    )}
-                  >
-                    <div className="pr-6">
-                      <p className="text-[13px] font-normal leading-snug line-clamp-2 text-foreground/80 group-hover:text-foreground">
-                        {item.query}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/45 mt-1.5 font-light">
-                        {new Date(item.timestamp).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteHistory(item.id);
-                      }}
-                      className="absolute top-2.5 right-2.5 p-1 rounded hover:bg-foreground/[0.08] opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-red-400 transition-all cursor-pointer"
-                      title="Delete Log"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-10 lg:py-14">
         <div className="max-w-3xl mx-auto">
@@ -498,6 +444,7 @@ export default function CouncilPage() {
                 <div className="flex items-center gap-2 mb-3">
                   <ThinkingSpinner className="h-3.5 w-3.5 text-primary" size="14px" />
                   <span className="text-[13px] text-muted-foreground font-medium">
+                    {phase === "searching" && "Searching the web…"}
                     {phase === "querying" && `Querying models (${completedCount}/${modelProgress.length})…`}
                     {phase === "synthesizing" && "Synthesizing responses…"}
                   </span>
@@ -626,9 +573,9 @@ export default function CouncilPage() {
                       Synthesized Response
                     </h3>
                   </div>
-                  <p className="text-[15px] text-foreground font-normal leading-relaxed whitespace-pre-wrap">
+                  <ReactMarkdown className="prose dark:prose-invert max-w-none text-[15px] text-foreground font-normal leading-relaxed prose-p:mb-3 prose-p:last:mb-0 prose-headings:text-foreground prose-strong:text-foreground prose-ul:pl-5 prose-ol:pl-5 prose-li:mb-0.5 prose-pre:bg-[#1a1814] prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-code:bg-secondary prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.82em] prose-code:font-mono prose-code:before:content-none prose-code:after:content-none">
                     {result.synthesis.synthesizedPrompt}
-                  </p>
+                  </ReactMarkdown>
                 </div>
 
                 {/* Summary */}
@@ -636,9 +583,9 @@ export default function CouncilPage() {
                   <h3 className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
                     Summary
                   </h3>
-                  <p className="text-[14px] text-foreground font-normal leading-relaxed">
+                  <ReactMarkdown className="prose dark:prose-invert max-w-none text-[14px] text-foreground font-normal leading-relaxed prose-p:mb-2 prose-p:last:mb-0 prose-headings:text-foreground prose-strong:text-foreground prose-code:bg-secondary prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.82em] prose-code:font-mono prose-code:before:content-none prose-code:after:content-none">
                     {result.synthesis.summary}
-                  </p>
+                  </ReactMarkdown>
                 </div>
 
                 {/* Consensus */}
@@ -646,9 +593,9 @@ export default function CouncilPage() {
                   <h3 className="text-[12px] font-semibold text-primary/60 uppercase tracking-widest">
                     Consensus
                   </h3>
-                  <p className="text-[14px] text-foreground font-normal leading-relaxed">
+                  <ReactMarkdown className="prose dark:prose-invert max-w-none text-[14px] text-foreground font-normal leading-relaxed prose-p:mb-2 prose-p:last:mb-0 prose-headings:text-foreground prose-strong:text-foreground prose-code:bg-secondary prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.82em] prose-code:font-mono prose-code:before:content-none prose-code:after:content-none">
                     {result.synthesis.consensus}
-                  </p>
+                  </ReactMarkdown>
                 </div>
 
                 {/* Disagreements */}
@@ -679,9 +626,9 @@ export default function CouncilPage() {
                                 <span className="text-[11px] font-semibold text-primary/70 uppercase tracking-wider shrink-0 mt-0.5 w-20 truncate">
                                   {info?.name || p.model.split("/").pop()}
                                 </span>
-                                <span className="text-[13px] text-muted-foreground font-normal leading-relaxed">
+                                <ReactMarkdown className="prose dark:prose-invert max-w-none text-[13px] text-muted-foreground font-normal leading-relaxed prose-p:mb-1 prose-p:last:mb-0 prose-strong:text-foreground prose-code:bg-secondary prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-code:text-[0.82em] prose-code:font-mono prose-code:before:content-none prose-code:after:content-none">
                                   {p.view}
-                                </span>
+                                </ReactMarkdown>
                               </div>
                             );
                           })}
@@ -743,9 +690,9 @@ export default function CouncilPage() {
                         {mr.error ? (
                           <p className="text-[13px] text-red-400 font-normal italic">{mr.error}</p>
                         ) : (
-                          <p className="text-[13px] text-muted-foreground font-normal leading-relaxed whitespace-pre-wrap">
+                          <ReactMarkdown className="prose dark:prose-invert max-w-none text-[13px] text-muted-foreground font-normal leading-relaxed prose-p:mb-2 prose-p:last:mb-0 prose-headings:text-foreground prose-strong:text-foreground prose-ul:pl-5 prose-ol:pl-5 prose-li:mb-0.5 prose-pre:bg-[#1a1814] prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-code:bg-secondary prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.82em] prose-code:font-mono prose-code:before:content-none prose-code:after:content-none">
                             {mr.response}
-                          </p>
+                          </ReactMarkdown>
                         )}
                       </div>
                     ))}
@@ -757,6 +704,69 @@ export default function CouncilPage() {
         </motion.div>
       </div>
     </div>
-  </div>
+
+      {/* Council History Sidebar */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+            className="border-l border-border bg-card flex flex-col shrink-0 overflow-hidden"
+          >
+            <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
+              <span className="font-cinzel text-[13px] font-semibold text-foreground tracking-[0.05em] uppercase">Model Council Logs</span>
+              <button
+                onClick={handleNewQuery}
+                className="p-1.5 rounded-md hover:bg-foreground/[0.05] text-primary transition-colors cursor-pointer"
+                title="New Inquiry"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">
+              {history.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground/30 text-[12px] font-light">
+                  No past inquiries
+                </div>
+              ) : (
+                history.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleLoadHistory(item)}
+                    className={cn(
+                      "group relative p-3 rounded-lg border text-left cursor-pointer transition-all duration-150",
+                      activeHistoryId === item.id
+                        ? "border-primary/40 bg-primary/[0.05] text-foreground"
+                        : "border-border/50 bg-transparent text-muted-foreground hover:border-border hover:bg-foreground/[0.02]"
+                    )}
+                  >
+                    <div className="pr-6">
+                      <p className="text-[13px] font-normal leading-snug line-clamp-2 text-foreground/80 group-hover:text-foreground">
+                        {item.query}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/45 mt-1.5 font-light">
+                        {new Date(item.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteHistory(item.id);
+                      }}
+                      className="absolute top-2.5 right-2.5 p-1 rounded hover:bg-foreground/[0.08] opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-red-400 transition-all cursor-pointer"
+                      title="Delete Log"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

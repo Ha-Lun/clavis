@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useChat } from "@/context/chat-context";
 import { DEFAULT_MODEL } from "@/lib/models";
 import {
-  BookOpen, Lightbulb, Scale, HelpCircle, Layers, FlaskConical,
+  Layers,
   Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X, ArrowUp, Globe,
   Users, FolderPlus, FileText, Check, ChevronDown
 } from "lucide-react";
@@ -20,15 +20,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const SUGGESTIONS = [
-  { icon: BookOpen,     label: "Explain a concept" },
-  { icon: Lightbulb,    label: "Define a term" },
-  { icon: Layers,       label: "Walk through the steps" },
-  { icon: HelpCircle,   label: "Clarify a distinction" },
-  { icon: Scale,        label: "Compare two ideas" },
-  { icon: FlaskConical, label: "Test my understanding" },
-];
 
 export function HomePrompt() {
   const [content, setContent] = useState("");
@@ -310,32 +301,6 @@ export function HomePrompt() {
         </motion.div>
       </motion.div>
 
-      {/* ─── Suggestion cards ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full mt-6">
-        {SUGGESTIONS.map((s, i) => (
-          <motion.button
-            key={i}
-            onClick={() => handleSubmit(s.label)}
-            disabled={isSubmitting}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.06 + i * 0.03, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ borderColor: "hsl(33, 48%, 45%)" }}
-            className={cn(
-              "flex items-center gap-2.5 p-4 text-left h-[52px]",
-              "bg-card border border-border rounded-lg",
-              "transition-colors duration-150",
-              "hover:bg-primary/[0.04] cursor-pointer",
-              "disabled:opacity-40 disabled:cursor-not-allowed"
-            )}
-          >
-            <s.icon className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-            <span className="text-[13px] font-light text-muted-foreground leading-snug">
-              {s.label}
-            </span>
-          </motion.button>
-        ))}
-      </div>
     </div>
   );
 }

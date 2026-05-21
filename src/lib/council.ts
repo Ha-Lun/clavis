@@ -37,6 +37,8 @@ export interface CouncilResult {
 
 // Progress event types for SSE streaming
 export type CouncilProgressEvent =
+  | { type: "web_searching" }
+  | { type: "web_search_complete"; resultCount: number }
   | { type: "model_querying"; model: string; modelName: string; index: number; total: number }
   | { type: "model_complete"; model: string; modelName: string; index: number; total: number; latencyMs: number }
   | { type: "model_error"; model: string; modelName: string; index: number; total: number; error: string; latencyMs: number }
@@ -119,7 +121,7 @@ async function queryModel(
       nvidia.chat.completions.create({
         model,
         messages: [
-          { role: "system", content: "You are a knowledgeable AI assistant. Answer the user's question directly, clearly, and concisely. Keep responses under 300 words without conversational filler or introductory preamble." },
+          { role: "system", content: "You are a knowledgeable AI assistant. Answer the user's question directly, clearly, and concisely. If web search results are provided, use them as your primary source of information and cite sources where relevant. Keep responses under 300 words without conversational filler or introductory preamble." },
           { role: "user", content: query },
         ],
         stream: false,
@@ -190,6 +192,43 @@ export async function councilWithProgress(
   const nvidia = createNvidiaClient();
   const total = models.length;
 
+  // Always perform web search to enrich council queries
+  let enrichedQuery = query;
+  onProgress({ type: "web_searching" });
+  try {
+    console.log("[Council] Performing web search for:", query.slice(0, 80));
+    const searchRes = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.TAVILY_API_KEY || ""}`
+      },
+      body: JSON.stringify({
+        query: query,
+        search_depth: "basic",
+        max_results: 5
+      })
+    });
+
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const results = searchData.results || [];
+      const formattedResults = results
+        .map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}`)
+        .join("\n\n");
+
+      enrichedQuery = `Query: ${query}\n\n<web_search_results>\n${formattedResults}\n</web_search_results>\n\nPlease answer the query using the provided web search results for up-to-date context. Cite sources where relevant.`;
+      console.log(`[Council] Web search returned ${results.length} results`);
+      onProgress({ type: "web_search_complete", resultCount: results.length });
+    } else {
+      console.error(`[Council] Web search failed with status ${searchRes.status}`);
+      onProgress({ type: "web_search_complete", resultCount: 0 });
+    }
+  } catch (err) {
+    console.error("[Council] Web search failed:", err);
+    onProgress({ type: "web_search_complete", resultCount: 0 });
+  }
+
   // Emit querying events for all models
   models.forEach((model, index) => {
     const modelName = getModelInfo(model).name;
@@ -202,7 +241,7 @@ export async function councilWithProgress(
 
   await Promise.all(
     models.map(async (model, index) => {
-      const result = await queryModel(nvidia, model, query);
+      const result = await queryModel(nvidia, model, enrichedQuery);
       modelResponses[index] = result;
       completedCount++;
 

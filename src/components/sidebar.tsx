@@ -327,15 +327,15 @@ function SidebarContent({
       {/* Header */}
       <div
         className={cn(
-          "h-14 flex items-center justify-between px-4 shrink-0 border-b border-border",
+          "h-14 flex items-center justify-between px-4 shrink-0 border-b border-border relative group/header",
           isCollapsed && "justify-center px-0"
         )}
       >
         <Link
           href="/dashboard"
           className={cn(
-            "flex items-center gap-2.5 min-w-0",
-            isCollapsed && "justify-center"
+            "flex items-center gap-2.5 min-w-0 transition-all duration-200",
+            isCollapsed && "justify-center group-hover/header:opacity-0 group-hover/header:scale-75 group-hover/header:pointer-events-none"
           )}
           onClick={onClose}
         >
@@ -381,12 +381,12 @@ function SidebarContent({
           )}
         </div>
 
-        {/* Collapsed: show expand icon */}
+        {/* Collapsed: show expand icon on hover */}
         {isCollapsed && toggleCollapse && (
           <button
             type="button"
             onClick={toggleCollapse}
-            className="absolute bottom-auto h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-all duration-200 opacity-0 scale-75 pointer-events-none group-hover/header:opacity-100 group-hover/header:scale-100 group-hover/header:pointer-events-auto cursor-pointer"
             title="Expand sidebar"
           >
             <PanelLeftOpen className="h-3.5 w-3.5" />

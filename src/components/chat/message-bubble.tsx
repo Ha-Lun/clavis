@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, FileText, ExternalLink, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import type { Message } from "@/lib/appwrite/types";
 import { extractAttachments, extractFileRefs } from "@/lib/utils";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
@@ -185,22 +183,18 @@ export function MessageBubble({
                           </span>
                           <CopyCodeButton code={String(children).replace(/\n$/, "")} />
                         </div>
-                        <SyntaxHighlighter
-                          {...props}
-                          style={oneDark}
-                          language={match ? match[1] : "text"}
-                          PreTag="div"
-                          customStyle={{
-                            margin: 0,
-                            padding: "1rem",
-                            background: "transparent",
+                        <pre
+                          className="overflow-x-auto p-4 m-0"
+                          style={{
+                            fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
                             fontSize: "0.8125rem",
                             lineHeight: "1.6",
-                            fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
                           }}
                         >
-                          {String(children).replace(/\n$/, "")}
-                        </SyntaxHighlighter>
+                          <code className="text-foreground/85">
+                            {String(children).replace(/\n$/, "")}
+                          </code>
+                        </pre>
                       </div>
                     ) : (
                       <code
