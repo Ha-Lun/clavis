@@ -238,26 +238,9 @@ function SidebarContent({
     setTimeout(() => setUndoProject(null), 300);
   };
 
-  const handleNewChat = async () => {
-    if (isCreatingChat) return;
-    setIsCreatingChat(true);
-    try {
-      const res = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const { chat } = await res.json();
-      if (chat) {
-        setChats([chat, ...chats]);
-        router.push(`/dashboard/chat/${chat.$id}`);
-        onClose();
-      }
-    } catch (err) {
-      console.error("Failed to create chat:", err);
-    } finally {
-      setIsCreatingChat(false);
-    }
+  const handleNewChat = () => {
+    router.push(`/dashboard/chat/new`);
+    onClose();
   };
 
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent<HTMLButtonElement>) => {

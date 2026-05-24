@@ -13,11 +13,12 @@ interface ChatViewProps {
   initialMessages: Message[];
   processInitial?: boolean;
   initialWebSearch?: boolean;
+  isNewChat?: boolean;
 }
 
   const MAX_MESSAGE_LENGTH = 30000;
 
-  export function ChatView({ chat, initialMessages, processInitial, initialWebSearch = true }: ChatViewProps) {
+  export function ChatView({ chat, initialMessages, processInitial, initialWebSearch = true, isNewChat }: ChatViewProps) {
   const {
     messages,
     setMessages,
@@ -248,7 +249,11 @@ interface ChatViewProps {
 
     setMessages(initialMessages);
     setActiveChat(chat);
-    
+
+    if (isNewChat) {
+      window.history.replaceState(null, '', `/dashboard/chat/${chat.$id}`);
+    }
+
     // If processInitial flag is set, trigger the API call
     if (processInitial && initialMessages.length > 0 && !hasTriggeredInitialSend.current) {
       hasTriggeredInitialSend.current = true;
@@ -256,7 +261,7 @@ interface ChatViewProps {
       handleSend(initialContent, true, { webSearch: initialWebSearch });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chat.$id, initialMessages]);
+  }, [chat.$id, initialMessages, isNewChat]);
 
   // Cleanup on unmount only
   useEffect(() => {

@@ -23,15 +23,43 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
   const admin = await createAdminClient();
   const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
+  let chatId = resolvedParams.id;
+  let isNewChat = false;
+
+  // Handle "New Chat" fast-path
+  if (chatId === "new") {
+    try {
+      const { DEFAULT_MODEL } = await import("@/lib/models");
+      const newChat = await admin.databases.createDocument(
+        dbId,
+        COLLECTIONS.CHATS,
+        ID.unique(),
+        {
+          user_id: user.$id,
+          project_id: null,
+          title: "New Chat",
+          model: DEFAULT_MODEL,
+          updatedAt: new Date().toISOString(),
+        }
+      ) as unknown as Chat;
+
+      chatId = newChat.$id;
+      isNewChat = true;
+    } catch (err) {
+      console.error("[ChatPage] Failed to create new chat:", err);
+      notFound();
+    }
+  }
+
   // Fetch chat and messages concurrently for faster navigation
   let chatDoc;
   let messagesResult;
 
   try {
     const [chatRes, msgsRes] = await Promise.all([
-      admin.databases.getDocument(dbId, COLLECTIONS.CHATS, resolvedParams.id),
+      admin.databases.getDocument(dbId, COLLECTIONS.CHATS, chatId),
       admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
-        Query.equal("chat_id", resolvedParams.id),
+        Query.equal("chat_id", chatId),
         Query.orderAsc("$createdAt"),
         Query.limit(100),
       ]),
@@ -79,5 +107,5 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
     allMessages = [...messages, initialUserMessage];
   }
 
-  return <ChatView chat={chat} initialMessages={allMessages} processInitial={shouldProcessInitial} initialWebSearch={initialWebSearch} />;
+  return <ChatView chat={chat} initialMessages={allMessages} processInitial={shouldProcessInitial} initialWebSearch={initialWebSearch} isNewChat={isNewChat} />;
 }
