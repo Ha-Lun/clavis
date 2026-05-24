@@ -38,69 +38,9 @@ export type MessageParam = {
   tool_call_id?: string;
 };
 
-export function routeModel(messages: MessageParam[]): string {
-  const userMessages = messages.filter(m => m.role === "user");
-  if (userMessages.length === 0) {
-    return "mistralai/mistral-small-4-119b-2603";
-  }
-
-  const lastMessage = userMessages[userMessages.length - 1].content.toLowerCase();
-
-  // RULE 1: Coding / Technical (Kimi K2.6)
-  const codingKeywords = [
-    "code", "debug", "refactor", "function", "bug", "error", "fix", "implement", "api", "sql",
-    "css", "html", "react", "component", "script", "compile", "syntax", "regex", "algorithm",
-    "deploy", "git", "database", "json", "typescript", "python", "class", "import", "export",
-    "const", "var", "let", "dockerfile", "bash", "terminal", "npm", "yarn", "pip", "library",
-    "framework", "stack trace", "undefined", "null pointer", "runtime", "build"
-  ];
-
-  const hasCodingKeyword = codingKeywords.some(k => lastMessage.includes(k));
-  const hasBackticks = lastMessage.includes("`");
-  const braceCount = (lastMessage.match(/[\[\{\(\)]/g) || []).length;
-  const isBraceDense = braceCount > 2 && (braceCount / lastMessage.length) > (2 / 50);
-
-  if (hasCodingKeyword || hasBackticks || isBraceDense) {
-    return "moonshotai/kimi-k2.6";
-  }
-
-  // RULE 2: Creative / Long-form Writing (MiniMax M2.7)
-  const creativeKeywords = [
-    "write", "story", "essay", "poem", "article", "blog", "draft", "novel", "narrative",
-    "screenplay", "summarize", "translate", "proofread", "edit my", "rewrite",
-    "creative", "fiction", "character", "plot", "lyrics", "caption", "cover letter"
-  ];
-
-  const hasCreativeKeyword = creativeKeywords.some(k => lastMessage.includes(k));
-  const isLongBlock = lastMessage.length > 400 && !lastMessage.includes("?");
-
-  if (hasCreativeKeyword || isLongBlock) {
-    return "minimaxai/minimax-m2.7";
-  }
-
-  // RULE 3: Reasoning / Analysis / Math (Qwen 3.5)
-  const reasoningKeywords = [
-    "explain", "analyze", "compare", "difference between", "pros and cons", "why does",
-    "how does", "logic", "prove", "evaluate", "math", "calculate", "solve",
-    "step by step", "think through", "debate", "argument", "philosophy",
-    "what is the best", "should i", "which is better", "tradeoffs", "versus", "vs"
-  ];
-
-  if (reasoningKeywords.some(k => lastMessage.includes(k))) {
-    return "qwen/qwen3.5-122b-a10b";
-  }
-
-  // RULE 4: Simple / Conversational (Nemotron Nano)
-  const simpleKeywords = ["what", "why", "how", "explain", "describe", "compare", "analyze", "write", "calculate"];
-  const wordCount = lastMessage.trim().split(/\s+/).length;
-  const hasComplexKeyword = simpleKeywords.some(k => lastMessage.includes(k));
-
-  if (wordCount < 12 && !hasComplexKeyword) {
-    return "nvidia/nemotron-3-nano-30b-a3b";
-  }
-
-  // RULE 5: Fallback (Mistral Small 4)
-  return "mistralai/mistral-small-4-119b-2603";
+export function routeModel(_messages: MessageParam[]): string {
+  // Auto mode now always routes directly to Gemini 3.5 Flash
+  return "google/gemini-3.5-flash";
 }
 
 export function getRoutingLabel(modelId: string): string {

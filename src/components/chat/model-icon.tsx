@@ -9,6 +9,34 @@ interface ModelIconProps {
 export function ModelIcon({ modelId, className, size = 16 }: ModelIconProps) {
   const iconSize = size;
 
+  // Google / Gemini Logo
+  if (modelId.includes("google") || modelId.includes("gemini")) {
+    return (
+      <svg 
+        width={iconSize} 
+        height={iconSize} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg" 
+        className={className}
+      >
+        <path d="M12 2C12 2 12.5 8.5 15.5 11.5C18.5 14.5 22 15 22 15C22 15 18.5 15.5 15.5 18.5C12.5 21.5 12 22 12 22C12 22 11.5 21.5 8.5 18.5C5.5 15.5 2 15 2 15C2 15 5.5 15.5 8.5 11.5C11.5 8.5 12 2 12 2Z" fill="url(#gemini-gradient)" />
+        <path d="M19 5C19 5 19.2 7.2 20.2 8.2C21.2 9.2 22.4 9.4 22.4 9.4C22.4 9.4 21.2 9.6 20.2 10.6C19.2 11.6 19 12.2 19 12.2C19 12.2 18.8 11.6 17.8 10.6C16.8 9.6 15.6 9.4 15.6 9.4C15.6 9.4 16.8 9.2 17.8 8.2C18.8 7.2 19 5 19 5Z" fill="url(#gemini-gradient-small)" opacity="0.8" />
+        <defs>
+          <linearGradient id="gemini-gradient" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#4c8efb" />
+            <stop offset="50%" stopColor="#a376f9" />
+            <stop offset="100%" stopColor="#fa709a" />
+          </linearGradient>
+          <linearGradient id="gemini-gradient-small" x1="15.6" y1="5" x2="22.4" y2="12.2" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#a376f9" />
+            <stop offset="100%" stopColor="#fa709a" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+
   // DeepSeek Logo
   if (modelId.includes("deepseek")) {
     return (

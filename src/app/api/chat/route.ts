@@ -1,5 +1,5 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
-import { createNvidiaClient } from "@/lib/nvidia";
+import { createAIClient } from "@/lib/ai-client";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { CLAVIS_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest } from "next/server";
@@ -21,7 +21,7 @@ type MessageParam = {
 };
 
 async function callAIWithRetry(
-  nvidia: ReturnType<typeof createNvidiaClient>,
+  aiClient: ReturnType<typeof createAIClient>,
   model: string,
   messages: MessageParam[],
   signal: AbortSignal,
@@ -59,7 +59,7 @@ async function callAIWithRetry(
           }
         ] : undefined;
 
-      const aiPromise = nvidia.chat.completions.create({
+      const aiPromise = aiClient.chat.completions.create({
         model,
         messages: [
           { role: "system", content: systemPrompt },
@@ -360,7 +360,7 @@ ${userMessageContent}`;
     );
 
     // Call NVIDIA NIM with retry
-    console.log("[API /chat] Creating NVIDIA client, model:", model);
+    console.log("[API /chat] Creating AI client, model:", model);
 
     let finalModelId = model;
     if (model === "auto") {
@@ -368,11 +368,16 @@ ${userMessageContent}`;
       console.log(`[API /chat] Auto-routed to model: ${finalModelId}`);
     }
 
-    let nvidia: ReturnType<typeof createNvidiaClient>;
+    let apiModelId = finalModelId;
+    if (finalModelId.startsWith("google/")) {
+      apiModelId = finalModelId.replace("google/", "");
+    }
+
+    let aiClient: ReturnType<typeof createAIClient>;
     try {
-      nvidia = createNvidiaClient();
+      aiClient = createAIClient(finalModelId);
     } catch (err: any) {
-      console.error("[API /chat] NVIDIA client error:", err.message);
+      console.error("[API /chat] AI client error:", err.message);
       return new Response(JSON.stringify({ error: err.message }), {
         status: 500,
       });
@@ -502,8 +507,8 @@ ${userMessageContent}`;
 
               console.log("[API /chat] Calling AI again with tool results...");
               const nextCompletion = await callAIWithRetry(
-                nvidia, 
-                finalModelId, 
+                aiClient, 
+                apiModelId, 
                 messages, 
                 request.signal, 
                 finalSystemPrompt,
@@ -590,10 +595,10 @@ ${userMessageContent}`;
         }
 
         try {
-          console.log("[API /chat] Calling NVIDIA API with retry...");
+          console.log("[API /chat] Calling AI API with retry...");
           const completion = await callAIWithRetry(
-            nvidia, 
-            finalModelId, 
+            aiClient, 
+            apiModelId, 
             messages, 
             request.signal, 
             finalSystemPrompt,

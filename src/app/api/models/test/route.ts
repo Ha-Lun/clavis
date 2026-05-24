@@ -1,4 +1,4 @@
-import { createNvidiaClient } from "@/lib/nvidia";
+import { createAIClient } from "@/lib/ai-client";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "modelId is required" }, { status: 400 });
     }
 
-    const nvidia = createNvidiaClient();
+    let apiModelId = modelId;
+    if (modelId.startsWith("google/")) {
+      apiModelId = modelId.replace("google/", "");
+    }
+
+    const aiClient = createAIClient(modelId);
     const timeoutMs = 15000;
 
     // Use a race to enforce a strict timeout
@@ -19,8 +24,8 @@ export async function POST(req: NextRequest) {
       setTimeout(() => reject(new Error("Request timed out")), timeoutMs),
     );
 
-    const testPromise = nvidia.chat.completions.create({
-      model: modelId,
+    const testPromise = aiClient.chat.completions.create({
+      model: apiModelId,
       messages: [{ role: "user", content: "Reply with exactly 'ok'" }],
       max_tokens: 10,
     });
