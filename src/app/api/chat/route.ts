@@ -67,7 +67,7 @@ async function callAIWithRetry(
         ] as any[],
         ...(webSearchTool ? { tools: webSearchTool } : {}),
         stream: true,
-        max_tokens: 4096,
+        max_tokens: model.includes("qwen3.5") ? 16384 : 8192,
       }, { signal });
 
       const completion = await Promise.race([aiPromise, timeoutPromise]);
@@ -128,9 +128,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const user = await client.account.get();
-    console.log("[API /chat] User:", user.email);
-
     const { chatId, message, model, webSearch } = await request.json();
     const enableWebSearch = webSearch !== false; // Default to true
     console.log("[API /chat] Request:", {
@@ -152,31 +149,44 @@ export async function POST(request: NextRequest) {
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
     console.log("[API /chat] Admin client, dbId:", dbId);
 
+    // Parallel fetch user, chat, and history to minimize initial latency
+    const [user, chat, historyResult] = await Promise.all([
+      client.account.get(),
+      admin.databases.getDocument(dbId, COLLECTIONS.CHATS, chatId) as Promise<Chat>,
+      admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
+        Query.equal("chat_id", chatId),
+        Query.orderAsc("$createdAt"),
+        Query.limit(99),
+      ]),
+    ]);
+
+    console.log("[API /chat] User:", user.email);
+
+    if (chat.user_id !== user.$id) {
+      console.log("[API /chat] Chat not owned by user - 404");
+      return new Response(JSON.stringify({ error: "Chat not found" }), {
+        status: 404,
+      });
+    }
+
+    // Save user message in the background - don't block the AI stream
+    const saveUserMsgPromise = admin.databases.createDocument(
+      dbId,
+      COLLECTIONS.MESSAGES,
+      ID.unique(),
+      {
+        chat_id: chatId,
+        role: "user",
+        content: message,
+      },
+    ).then(() => console.log("[API /chat] User message saved to DB"));
+
     // Verify chat belongs to user
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     let finalSystemPrompt = enableWebSearch
       ? `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${CLAVIS_SYSTEM_PROMPT}`
       : `Today's date is ${currentDate}.\n\n${CLAVIS_SYSTEM_PROMPT}`;
     try {
-      const chat = await admin.databases.getDocument(
-        dbId,
-        COLLECTIONS.CHATS,
-        chatId,
-      ) as unknown as Chat;
-      console.log(
-        "[API /chat] Chat found:",
-        chat.title,
-        "user_id match:",
-        chat.user_id === user.$id,
-      );
-
-      if (chat.user_id !== user.$id) {
-        console.log("[API /chat] Chat not owned by user - 404");
-        return new Response(JSON.stringify({ error: "Chat not found" }), {
-          status: 404,
-        });
-      }
-
       if (chat.project_id) {
         try {
           const project = await admin.databases.getDocument(
@@ -196,7 +206,7 @@ export async function POST(request: NextRequest) {
       // Fetch all relevant files for context (project level + chat level)
       try {
         console.log(`[API /chat] Fetching context files for chat: ${chatId}, project: ${chat.project_id}`);
-        
+
         let allFiles: FileRecord[] = [];
         if (chat.project_id) {
           const [chatFiles, projectFiles] = await Promise.all([
@@ -210,14 +220,14 @@ export async function POST(request: NextRequest) {
           console.log(`[API /chat] Found ${chatFiles.documents.length} chat files`);
           allFiles = chatFiles.documents as unknown as FileRecord[];
         }
-        
+
         if (allFiles.length > 0) {
           // Deduplicate by $id
           const uniqueFiles = Array.from(new Map(allFiles.map(f => [f.$id, f])).values());
           const fileNames = uniqueFiles.map(f => f.name).join(", ");
-          
+
           let filesContext = `The following files are available in this project context: ${fileNames}\n\n`;
-          
+
           const filesWithContent = uniqueFiles.filter(f => f.content);
           console.log(`[API /chat] Total unique files: ${uniqueFiles.length}, files with readable content: ${filesWithContent.length}`);
 
@@ -225,12 +235,18 @@ export async function POST(request: NextRequest) {
             const contentBlocks = filesWithContent
               .map(f => `--- START FILE: ${f.name} ---\n${f.content}\n--- END FILE: ${f.name} ---`)
               .join("\n\n");
-            
-            filesContext += `File Contents:\n${contentBlocks}`;
+
+            // Apply context volume cap (50k chars) to prevent TTFT spikes
+            const MAX_CONTEXT_CHARS = 50000;
+            if (contentBlocks.length > MAX_CONTEXT_CHARS) {
+              filesContext += `File Contents (Truncated to ${MAX_CONTEXT_CHARS} chars):\n${contentBlocks.slice(0, MAX_CONTEXT_CHARS)}\n\n[Context truncated due to size limit]`;
+            } else {
+              filesContext += `File Contents:\n${contentBlocks}`;
+            }
           } else {
             filesContext += "Note: No readable text content was extracted from these files yet.";
           }
-          
+
           finalSystemPrompt += `\n\nProject/Chat Files Context:\n${filesContext}`;
           console.log(`[API /chat] Applied context from ${uniqueFiles.length} files. Prompt length: ${finalSystemPrompt.length}`);
         }
@@ -238,41 +254,11 @@ export async function POST(request: NextRequest) {
         console.error("[API /chat] Failed to fetch files for context:", err);
       }
     } catch (err) {
-      console.log("[API /chat] Chat fetch error:", err);
-      return new Response(JSON.stringify({ error: "Chat not found" }), {
-        status: 404,
-      });
+      console.log("[API /chat] Context fetch error:", err);
     }
 
-
-    // Save user message to DB IMMEDIATELY (before AI call) - ensures persistence on refresh
-    console.log("[API /chat] Saving user message to DB first...");
-    await admin.databases.createDocument(
-      dbId,
-      COLLECTIONS.MESSAGES,
-      ID.unique(),
-      {
-        chat_id: chatId,
-        role: "user",
-        content: message,
-      },
-    );
-
-    // Query history to get context (now including the message just saved)
-    const history = await admin.databases.listDocuments(
-      dbId,
-      COLLECTIONS.MESSAGES,
-      [
-        Query.equal("chat_id", chatId),
-        Query.orderAsc("$createdAt"),
-        Query.limit(99), // Leave room for current message
-      ],
-    );
-
-    // Build message list - ONLY previous messages (not current)
-    // Build Message history
-    // Current message is already in UI and will be included via chat context if needed
-    const messages: MessageParam[] = (history.documents as unknown as Message[]).map((m) => ({
+    // Build message list from history (which was fetched in parallel at the start)
+    const messages: MessageParam[] = (historyResult.documents as unknown as Message[]).map((m) => ({
       role: m.role as "system" | "user" | "assistant" | "tool",
       content: m.content as string,
     }));
@@ -427,7 +413,7 @@ ${userMessageContent}`;
               }
 
               // Handle Reasoning Content (Chain of Thought)
-              const reasoningContent = (delta as any)?.reasoning_content ?? "";
+              const reasoningContent = (delta as any)?.reasoning_content ?? (delta as any)?.thought ?? "";
               if (reasoningContent) {
                 if (!isThinking) {
                   isThinking = true;
