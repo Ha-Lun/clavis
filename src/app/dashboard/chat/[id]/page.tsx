@@ -1,6 +1,6 @@
 import { getUser, createSessionClient, createAdminClient } from "@/lib/appwrite/server";
 import { COLLECTIONS } from "@/lib/appwrite/config";
-import { Query } from "node-appwrite";
+import { ID, Query } from "node-appwrite";
 import { notFound } from "next/navigation";
 import { ChatView } from "@/components/chat/chat-view";
 import type { Chat, Message } from "@/lib/appwrite/types";
