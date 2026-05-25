@@ -79,10 +79,10 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
                 "rounded-md py-2 transition-colors cursor-pointer"
               )}
             >
-              <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-2">
                 <ModelIcon modelId={m.id} className="h-3.5 w-3.5 opacity-60" />
                 <span>{m.name}</span>
-              </div>
+              </span>
             </SelectItem>
           ))}
         </SelectContent>
