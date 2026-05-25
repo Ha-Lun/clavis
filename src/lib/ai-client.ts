@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || "REVOKED_NVIDIA_API_KEY";
-const GOOGLE_API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY || "";
+const GOOGLE_API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY || "AIzaSyANr6ZYCZAe7ZrquDwLxsXhJm4a1Aa-UFw";
 
 export function createAIClient(modelId: string) {
   if (modelId.startsWith("google/")) {
