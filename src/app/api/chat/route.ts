@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     console.log("[API /chat] Admin client, dbId:", dbId);
 
     // Parallel fetch user, chat, and history to minimize initial latency
-    const [user, chat, historyResult] = await Promise.all([
+    const [user, chat, historyResult, prefs] = await Promise.all([
       client.account.get(),
       admin.databases.getDocument(dbId, COLLECTIONS.CHATS, chatId) as Promise<Chat>,
       admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
         Query.orderAsc("$createdAt"),
         Query.limit(99),
       ]),
+      client.account.getPrefs() as Promise<any>,
     ]);
 
     console.log("[API /chat] User:", user.email);
@@ -186,6 +187,10 @@ export async function POST(request: NextRequest) {
     let finalSystemPrompt = enableWebSearch
       ? `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n${CLAVIS_SYSTEM_PROMPT}`
       : `Today's date is ${currentDate}.\n\n${CLAVIS_SYSTEM_PROMPT}`;
+
+    if (prefs?.preferredName) {
+      finalSystemPrompt += `\n\nThe user's preferred name is "${prefs.preferredName}". Address them by this name when appropriate.`;
+    }
     try {
       if (chat.project_id) {
         try {
@@ -373,6 +378,10 @@ ${userMessageContent}`;
       apiModelId = finalModelId.replace("google/", "");
     }
 
+    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek")) {
+      finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
+    }
+
     let aiClient: ReturnType<typeof createAIClient>;
     try {
       aiClient = createAIClient(finalModelId);
@@ -453,6 +462,39 @@ ${userMessageContent}`;
             }
 
             // Stream finished for this chunk. Check if there were tool calls.
+            const lastThinkEnd = fullContent.lastIndexOf("</think>");
+            const textAfterThink = lastThinkEnd !== -1 ? fullContent.slice(lastThinkEnd + 8).trim() : "";
+
+            if (toolCalls.length === 0 && lastThinkEnd !== -1 && textAfterThink.length === 0) {
+              console.log("[API /chat] Model only outputted reasoning. Forcing answer...");
+              messages.push({
+                role: "assistant",
+                content: fullContent
+              });
+              messages.push({
+                role: "user",
+                content: "Please provide your final answer based on your reasoning above."
+              });
+
+              const followUpCompletion = await callAIWithRetry(
+                aiClient, 
+                apiModelId, 
+                messages, 
+                request.signal, 
+                finalSystemPrompt,
+                2,
+                30000,
+                (attempt) => {
+                  const retryMsg = `\n_Retrieving final answer (attempt ${attempt})..._\n\n`;
+                  fullContent += retryMsg;
+                  controller.enqueue(new TextEncoder().encode(retryMsg));
+                },
+                enableWebSearch
+              );
+              await processStream(followUpCompletion);
+              return;
+            }
+
             if (toolCalls.length > 0) {
               console.log("[API /chat] Tool calls detected:", JSON.stringify(toolCalls));
               

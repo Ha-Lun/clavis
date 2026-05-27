@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function HomePrompt() {
+export function HomePrompt({ userName }: { userName?: string }) {
   const [content, setContent] = useState("");
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,7 +116,7 @@ export function HomePrompt() {
           Clavis
         </h1>
         <p className="mt-3 text-[14px] text-muted-foreground/60 font-light tracking-wide">
-          Begin your inquiry.
+          {userName ? `Greetings, ${userName}. Begin your inquiry.` : "Begin your inquiry."}
         </p>
       </motion.div>
 

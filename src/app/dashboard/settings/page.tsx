@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { MODELS, DEFAULT_MODEL } from "@/lib/models";
 import { Loader2, Check } from "lucide-react";
@@ -19,6 +20,8 @@ import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
+  const [preferredName, setPreferredName] = useState("");
+  const [showReasoning, setShowReasoning] = useState(false);
   const [defaultModel, setDefaultModel] = useState(DEFAULT_MODEL);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -33,6 +36,8 @@ export default function SettingsPage() {
           setEmail(data.email ?? "");
           setDisplayName(data.name ?? data.email?.split("@")[0] ?? "");
           setDefaultModel(data.prefs?.defaultModel ?? DEFAULT_MODEL);
+          setPreferredName(data.prefs?.preferredName ?? "");
+          setShowReasoning(data.prefs?.showReasoning ?? false);
         }
       } catch {
         // Silently fail
@@ -48,7 +53,7 @@ export default function SettingsPage() {
       await fetch("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: displayName, prefs: { defaultModel } }),
+        body: JSON.stringify({ name: displayName, prefs: { defaultModel, preferredName, showReasoning } }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -120,6 +125,26 @@ export default function SettingsPage() {
                 )}
               />
             </div>
+
+            {/* Preferred name */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-preferred-name" className="text-[13px] font-medium text-foreground">
+                Preferred Name
+              </Label>
+              <p className="text-[12px] text-muted-foreground font-light mb-2">
+                What the AI should call you
+              </p>
+              <Input
+                id="settings-preferred-name"
+                value={preferredName}
+                onChange={(e) => setPreferredName(e.target.value)}
+                placeholder="What should the AI call you?"
+                className={cn(
+                  "h-10 bg-background border-border text-foreground text-[14px] font-light rounded-md",
+                  "focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
+                )}
+              />
+            </div>
           </div>
 
           <Separator className="bg-border" />
@@ -161,6 +186,22 @@ export default function SettingsPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex flex-row items-center justify-between rounded-lg border border-border p-4 bg-background">
+              <div className="space-y-0.5">
+                <Label htmlFor="settings-show-reasoning" className="text-[13px] font-medium text-foreground">
+                  Show Reasoning
+                </Label>
+                <p className="text-[12px] text-muted-foreground font-light">
+                  Display the AI's internal reasoning process if available
+                </p>
+              </div>
+              <Switch
+                id="settings-show-reasoning"
+                checked={showReasoning}
+                onCheckedChange={setShowReasoning}
+              />
             </div>
           </div>
 

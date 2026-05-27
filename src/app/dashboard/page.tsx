@@ -9,9 +9,19 @@ export default async function DashboardPage() {
     return null;
   }
 
+  let displayName = user.name || user.email.split("@")[0] || "User";
+  try {
+    const prefs = await client.account.getPrefs() as any;
+    if (prefs?.preferredName) {
+      displayName = prefs.preferredName;
+    }
+  } catch (error) {
+    console.error("Failed to fetch prefs", error);
+  }
+
   return (
     <div className="h-full overflow-y-auto scrollbar-thin p-6 lg:p-8 flex items-center justify-center relative">
-      <HomePrompt />
+      <HomePrompt userName={displayName} />
     </div>
   );
 }

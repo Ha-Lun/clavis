@@ -39,7 +39,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (body.prefs !== undefined) {
-      await client.account.updatePrefs(body.prefs);
+      const currentPrefs = await client.account.getPrefs();
+      await client.account.updatePrefs({ ...currentPrefs, ...body.prefs });
     }
 
     return NextResponse.json({ success: true });

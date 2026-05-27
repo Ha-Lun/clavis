@@ -50,13 +50,14 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
       <Select value={model} onValueChange={handleModelChange}>
         <SelectTrigger
           className={cn(
-            "h-7 min-w-[130px] max-w-[180px] gap-1.5 px-2.5",
+            "h-7 min-w-[130px] max-w-[180px] gap-1.5 px-2.5 py-0",
             "text-[11px] font-medium text-muted-foreground",
             "border border-border bg-transparent",
             "hover:bg-white/[0.04] hover:text-foreground hover:border-white/[0.10]",
             "rounded-md transition-all duration-150",
             "focus:ring-0 focus:ring-offset-0 focus:border-primary/40",
-            "shadow-none cursor-pointer"
+            "shadow-none cursor-pointer",
+            "[&>span]:flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:h-full"
           )}
           id="model-selector-trigger"
         >
