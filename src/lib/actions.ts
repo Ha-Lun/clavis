@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/appwrite/server";
 import { COLLECTIONS } from "@/lib/appwrite/config";
-import { createNvidiaClient } from "@/lib/nvidia";
+import { createAIClient } from "@/lib/ai-client";
 import { ID, Query } from "node-appwrite";
 import { DEFAULT_MODEL } from "@/lib/models";
 import { CLAVIS_SYSTEM_PROMPT } from "@/lib/prompts";
@@ -46,9 +46,10 @@ export async function processInitialMessage(chatId: string, message: string, mod
     console.log("[processInitialMessage] User message saved, calling AI...");
     
     // Call AI
-    const nvidia = createNvidiaClient();
-    const completion = await nvidia.chat.completions.create({
-      model: modelId,
+    const client = createAIClient(modelId);
+    const apiModelId = modelId.startsWith("google/") ? modelId.replace("google/", "") : modelId;
+    const completion = await client.chat.completions.create({
+      model: apiModelId,
       messages: [
         { role: "system", content: CLAVIS_SYSTEM_PROMPT },
         { role: "user", content: message },

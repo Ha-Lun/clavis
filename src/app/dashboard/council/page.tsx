@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History } from "lucide-react";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
-import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS } from "@/lib/council";
+import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS, SYNTHESIZER_MODEL } from "@/lib/council";
+import { getModelInfo } from "@/lib/models";
 import type { CouncilResult, CouncilProgressEvent } from "@/lib/council";
 
 interface CouncilHistoryItem {
@@ -515,7 +516,7 @@ export default function CouncilPage() {
                     >
                       <ThinkingSpinner className="h-3.5 w-3.5 text-amber-400 shrink-0" size="14px" />
                       <span className="text-[13px] text-amber-400 font-medium">
-                        Kimi K2.6 is synthesizing…
+                        {getModelInfo(SYNTHESIZER_MODEL).name} is synthesizing…
                       </span>
                     </motion.div>
                   )}

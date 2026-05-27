@@ -1,4 +1,4 @@
-import { createNvidiaClient } from "@/lib/nvidia";
+import { createAIClient } from "@/lib/ai-client";
 import { getModelInfo } from "@/lib/models";
 
 // ─── Types ────────────────────────────────────────
@@ -48,9 +48,10 @@ export type CouncilProgressEvent =
 
 // ─── Constants ────────────────────────────────────
 
-export const SYNTHESIZER_MODEL = "moonshotai/kimi-k2.6";
+export const SYNTHESIZER_MODEL = "google/gemini-3.5-flash";
 
 export const COUNCIL_MODELS = [
+  { id: "moonshotai/kimi-k2.6", name: "Kimi K2.6" },
   { id: "nvidia/nemotron-3-nano-30b-a3b", name: "Nemotron Nano" },
   { id: "mistralai/mistral-small-4-119b-2603", name: "Mistral Small 4" },
   { id: "minimaxai/minimax-m2.7", name: "MiniMax M2.7" },
@@ -58,7 +59,7 @@ export const COUNCIL_MODELS = [
   { id: "mistralai/mistral-medium-3.5-128b", name: "Mistral Medium 3.5" },
 ] as const;
 
-export const DEFAULT_COUNCIL_MODELS = COUNCIL_MODELS.slice(0, 3).map((m) => m.id);
+export const DEFAULT_COUNCIL_MODELS = ["moonshotai/kimi-k2.6", "nvidia/nemotron-3-nano-30b-a3b", "mistralai/mistral-small-4-119b-2603"];
 
 // ─── Synthesizer Prompt ───────────────────────────
 
@@ -109,7 +110,6 @@ The synthesizedPrompt should be cohesive, direct, and authoritative. Return ONLY
 // ─── Core Functions ───────────────────────────────
 
 async function queryModel(
-  nvidia: ReturnType<typeof createNvidiaClient>,
   model: string,
   query: string,
 ): Promise<CouncilModelResponse> {
@@ -117,9 +117,12 @@ async function queryModel(
   const startMs = Date.now();
 
   try {
+    const client = createAIClient(model);
+    const apiModelId = model.startsWith("google/") ? model.replace("google/", "") : model;
+
     const completion = await Promise.race([
-      nvidia.chat.completions.create({
-        model,
+      client.chat.completions.create({
+        model: apiModelId,
         messages: [
           { role: "system", content: "You are a knowledgeable AI assistant. Answer the user's question directly, clearly, and concisely. If web search results are provided, use them as your primary source of information and cite sources where relevant. Keep responses under 300 words without conversational filler or introductory preamble." },
           { role: "user", content: query },
@@ -189,7 +192,6 @@ export async function councilWithProgress(
   onProgress: (event: CouncilProgressEvent) => void,
 ): Promise<void> {
   const totalStart = Date.now();
-  const nvidia = createNvidiaClient();
   const total = models.length;
 
   // Always perform web search to enrich council queries
@@ -241,7 +243,7 @@ export async function councilWithProgress(
 
   await Promise.all(
     models.map(async (model, index) => {
-      const result = await queryModel(nvidia, model, enrichedQuery);
+      const result = await queryModel(model, enrichedQuery);
       modelResponses[index] = result;
       completedCount++;
 
@@ -278,8 +280,9 @@ export async function councilWithProgress(
   onProgress({ type: "synthesizing" });
 
   const synthesizerPrompt = buildSynthesizerPrompt(query, modelResponses);
+  const synthClient = createAIClient(SYNTHESIZER_MODEL);
   const synthCompletion = await Promise.race([
-    nvidia.chat.completions.create({
+    synthClient.chat.completions.create({
       model: SYNTHESIZER_MODEL,
       messages: [{ role: "user", content: synthesizerPrompt }],
       stream: false,
