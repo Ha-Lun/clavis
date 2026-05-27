@@ -52,22 +52,39 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
   }
 
   // Fetch chat and messages concurrently for faster navigation
-  let chatDoc;
-  let messagesResult;
+  let chatDoc: any;
+  let messagesResult: any = { documents: [] };
 
-  try {
-    const [chatRes, msgsRes] = await Promise.all([
-      admin.databases.getDocument(dbId, COLLECTIONS.CHATS, chatId),
-      admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
-        Query.equal("chat_id", chatId),
-        Query.orderAsc("$createdAt"),
-        Query.limit(100),
-      ]),
-    ]);
-    chatDoc = chatRes as unknown as Chat;
-    messagesResult = msgsRes;
-  } catch {
-    notFound();
+  if (chatId.startsWith("incognito-")) {
+    const { DEFAULT_MODEL } = await import("@/lib/models");
+    chatDoc = {
+      $id: chatId,
+      user_id: user.$id,
+      project_id: null,
+      title: "Incognito Chat",
+      model: DEFAULT_MODEL,
+      updatedAt: new Date().toISOString(),
+      $collectionId: "",
+      $databaseId: "",
+      $createdAt: new Date().toISOString(),
+      $permissions: []
+    };
+    isNewChat = true;
+  } else {
+    try {
+      const [chatRes, msgsRes] = await Promise.all([
+        admin.databases.getDocument(dbId, COLLECTIONS.CHATS, chatId),
+        admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
+          Query.equal("chat_id", chatId),
+          Query.orderAsc("$createdAt"),
+          Query.limit(100),
+        ]),
+      ]);
+      chatDoc = chatRes as unknown as Chat;
+      messagesResult = msgsRes;
+    } catch {
+      notFound();
+    }
   }
 
   if (chatDoc.user_id !== user.$id) {

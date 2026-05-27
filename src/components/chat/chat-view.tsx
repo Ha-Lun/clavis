@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
+import { Ghost } from "lucide-react";
 import { useChat } from "@/context/chat-context";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
@@ -132,16 +133,22 @@ interface ChatViewProps {
       abortControllerRef.current = new AbortController();
 
       try {
+        const chatId = chat.$id || (chat as any).id;
+        const isIncognito = chatId.startsWith("incognito-");
+        
+        const payload = {
+          chatId,
+          message: trimmedContent,
+          model: activeChat?.model || chat.model,
+          webSearch: (options as any).webSearch ?? true,
+          ...(isIncognito && { history: messages.map(m => ({ role: m.role, content: m.content })) })
+        };
+
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: abortControllerRef.current.signal,
-        body: JSON.stringify({
-             chatId: chat.$id || (chat as any).id,
-             message: trimmedContent,
-             model: activeChat?.model || chat.model,
-             webSearch: (options as any).webSearch ?? true,
-           }),
+          body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
@@ -279,6 +286,14 @@ interface ChatViewProps {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
     >
+      {chat.$id.startsWith("incognito-") && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="bg-primary/10 border border-primary/20 backdrop-blur-md text-primary text-[11px] tracking-wide px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(201,168,76,0.15)]">
+            <Ghost className="h-3 w-3" />
+            Incognito Mode Active
+          </div>
+        </div>
+      )}
       <div className="flex-1 overflow-hidden flex flex-col">
         <MessageList
           modelId={chat.model}

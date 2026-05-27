@@ -241,6 +241,21 @@ async function main() {
   await createIndex("files", "idx_user_id", IndexType.Key, ["user_id"]);
   await createIndex("files", "idx_chat_id", IndexType.Key, ["chat_id"]);
   await createIndex("files", "idx_project_id", IndexType.Key, ["project_id"]);
+  // ── Profiles Collection ──────────────────────────────────
+  await createCollection("profiles", "Profiles");
+  await createStringAttribute("profiles", "user_id", 36, true);
+  await createStringAttribute("profiles", "email", 256, true);
+  await createStringAttribute("profiles", "name", 256, false);
+  try {
+    await databases.createBooleanAttribute(DATABASE_ID, "profiles", "is_pro", true);
+    console.log(`   + attribute 'is_pro' (boolean)`);
+  } catch (err: any) {
+    if (err.code === 409) console.log(`   ⏭️ attribute 'is_pro' already exists`);
+    else throw err;
+  }
+  console.log("   ⏳ Waiting for attributes to sync...");
+  await wait(3000);
+  await createIndex("profiles", "idx_user_id", IndexType.Key, ["user_id"]);
 
   // ── Storage Bucket ───────────────────────────────────────
   try {

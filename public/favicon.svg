@@ -32,10 +32,10 @@
   </defs>
 
   <!-- Background: rounded square -->
-  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="160" fill="url(#bg)"/>
 
   <!-- Subtle border -->
-  <rect x="2" y="2" width="508" height="508" rx="106" fill="none" stroke="#A87C3E" stroke-opacity="0.12" stroke-width="2"/>
+  <rect x="2" y="2" width="508" height="508" rx="158" fill="none" stroke="#A87C3E" stroke-opacity="0.12" stroke-width="2"/>
 
   <!-- Key icon group — centered, elegant skeleton key -->
   <g transform="translate(256, 256)" filter="url(#glow)">

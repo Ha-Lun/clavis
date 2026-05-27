@@ -1,4 +1,5 @@
 import { createSessionClient } from "@/lib/appwrite/server";
+import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -40,7 +41,41 @@ export async function PATCH(request: NextRequest) {
 
     if (body.prefs !== undefined) {
       const currentPrefs = await client.account.getPrefs();
-      await client.account.updatePrefs({ ...currentPrefs, ...body.prefs });
+      const updatedPrefs = { ...currentPrefs, ...body.prefs };
+      await client.account.updatePrefs(updatedPrefs);
+
+      // Sync the user's profile with the database so admins can keep track
+      try {
+        const user = await client.account.get();
+        const profileData = {
+          user_id: user.$id,
+          email: user.email,
+          name: user.name,
+          is_pro: updatedPrefs.subscriptionTier === "pro",
+        };
+        
+        try {
+          // Attempt to update an existing profile
+          await client.databases.updateDocument(
+            DATABASE_ID,
+            COLLECTIONS.PROFILES,
+            user.$id,
+            profileData
+          );
+        } catch (updateErr: any) {
+          // If the profile doesn't exist (404), create it using the user's ID as the document ID
+          if (updateErr.code === 404) {
+            await client.databases.createDocument(
+              DATABASE_ID,
+              COLLECTIONS.PROFILES,
+              user.$id,
+              profileData
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to sync profile:", err);
+      }
     }
 
     return NextResponse.json({ success: true });

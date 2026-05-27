@@ -6,6 +6,7 @@ import { useChat } from "@/context/chat-context";
 import { MessageBubble } from "./message-bubble";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { getModelInfo } from "@/lib/models";
+import Link from "next/link";
 
 interface MessageListProps {
   modelId: string;
@@ -80,10 +81,12 @@ export function MessageList({ modelId, smoothContent }: MessageListProps) {
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-0">
         {/* Clavis header */}
         <div className="text-center mb-8">
-          <h2 className="font-cinzel text-[16px] font-normal tracking-[0.1em] text-muted-foreground/40">
-            CLAVIS
-          </h2>
-          <div className="mt-2 mx-auto w-12 h-px bg-primary/30" />
+          <Link href="/dashboard" className="inline-block group">
+            <h2 className="font-cinzel text-[16px] font-normal tracking-[0.1em] text-muted-foreground/40 transition-colors duration-300 group-hover:text-primary">
+              CLAVIS
+            </h2>
+            <div className="mt-2 mx-auto w-12 h-px bg-primary/30 transition-all duration-300 group-hover:w-16 group-hover:bg-primary/60" />
+          </Link>
         </div>
 
         <AnimatePresence initial={false}>

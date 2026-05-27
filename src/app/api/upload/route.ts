@@ -1,7 +1,7 @@
 import { createAdminClient, createSessionClient } from "@/lib/appwrite/server";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
-import { ID, InputFile } from "node-appwrite";
+import { ID, InputFile, Query } from "node-appwrite";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +26,26 @@ export async function POST(request: NextRequest) {
 
     // Use admin client for storage (bypasses per-user bucket permissions)
     const admin = await createAdminClient();
+    const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
+
+    // Check upload limits for free tier
+    const prefs: any = await client.account.getPrefs();
+    const tier = prefs.subscriptionTier || "free";
+    
+    if (tier !== "pro") {
+      const existingFiles = await admin.databases.listDocuments(
+        dbId,
+        COLLECTIONS.FILES,
+        [Query.equal("user_id", user.$id), Query.limit(1)]
+      );
+
+      if (existingFiles.total >= 5) {
+        return NextResponse.json(
+          { error: "Free tier limit reached (5 files max). Please upgrade to Pro to upload more files." },
+          { status: 403 }
+        );
+      }
+    }
 
     // Upload to storage
     const fileId = ID.unique();
@@ -72,7 +92,6 @@ export async function POST(request: NextRequest) {
 
     // Save file record
     const storagePath = `${user.$id}/${chatId || projectId}/${fileId}`;
-    const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
     const fileRecord = await admin.databases.createDocument(
       dbId,

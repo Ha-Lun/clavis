@@ -37,3 +37,10 @@ export interface FileRecord extends AppwriteDocument {
   sizeBytes: number | null;
   content: string | null;
 }
+
+export interface Profile extends AppwriteDocument {
+  user_id: string;
+  email: string;
+  name: string | null;
+  is_pro: boolean;
+}

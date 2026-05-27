@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus,
-  MessageSquare,
+  MessageCircle,
   FolderOpen,
   LogOut,
   Trash2,
@@ -42,6 +42,7 @@ interface SidebarProviderProps {
   initialProjects: Project[];
   userEmail: string;
   userId: string;
+  userTier: string;
 }
 
 export function SidebarProvider({
@@ -49,16 +50,19 @@ export function SidebarProvider({
   initialProjects,
   userEmail,
   userId,
+  userTier,
 }: SidebarProviderProps) {
   const { setChats } = useChat();
   const { setProjects } = useProjectStore();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
     if (saved !== null) {
       setIsCollapsed(saved === "true");
+    } else {
+      setIsCollapsed(true);
     }
   }, []);
 
@@ -83,6 +87,7 @@ export function SidebarProvider({
         <SidebarContent
           userEmail={userEmail}
           userId={userId}
+          userTier={userTier}
           onClose={() => setSidebarOpen(false)}
           isCollapsed={isCollapsed}
           toggleCollapse={toggleCollapse}
@@ -96,6 +101,7 @@ export function SidebarProvider({
           <SidebarContent
             userEmail={userEmail}
             userId={userId}
+            userTier={userTier}
             onClose={() => setSidebarOpen(false)}
             isCollapsed={false}
           />
@@ -108,12 +114,14 @@ export function SidebarProvider({
 function SidebarContent({
   userEmail,
   userId: _userId,
+  userTier,
   onClose,
   isCollapsed,
   toggleCollapse,
 }: {
   userEmail: string;
   userId: string;
+  userTier: string;
   onClose: () => void;
   isCollapsed: boolean;
   toggleCollapse?: () => void;
@@ -447,6 +455,42 @@ function SidebarContent({
         </Link>
       </div>
 
+      {/* Collapsed-only nav icons */}
+      {isCollapsed && (
+        <div className="px-2 pb-2 shrink-0 space-y-1.5">
+          <Link
+            href="/dashboard/chats"
+            onClick={onClose}
+            className={cn(
+              "h-9 w-9 mx-auto flex items-center justify-center rounded-full",
+              "text-[13px] font-medium",
+              "transition-colors duration-150",
+              pathname === "/dashboard/chats" || pathname.startsWith("/dashboard/chat/")
+                ? "bg-primary/[0.08] text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+            )}
+            title="Chat History"
+          >
+            <MessageCircle className="h-4 w-4 shrink-0" />
+          </Link>
+          <Link
+            href="/dashboard/projects"
+            onClick={onClose}
+            className={cn(
+              "h-9 w-9 mx-auto flex items-center justify-center rounded-full",
+              "text-[13px] font-medium",
+              "transition-colors duration-150",
+              pathname === "/dashboard/projects" || pathname.startsWith("/dashboard/projects/")
+                ? "bg-primary/[0.08] text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+            )}
+            title="Projects"
+          >
+            <FolderOpen className="h-3.5 w-3.5 shrink-0" />
+          </Link>
+        </div>
+      )}
+
       {/* Main scrollable content */}
       <ScrollArea className={cn("flex-1 w-full min-w-0", isCollapsed && "hidden")}>
         <div className="px-2 pb-4 space-y-5">
@@ -514,7 +558,7 @@ function SidebarContent({
                                 href={`/dashboard/chat/${chatId}`}
                                 className="flex items-center gap-2 pl-2 pr-12 py-1.5 absolute inset-0 min-w-0"
                               >
-                                <MessageSquare
+                                <MessageCircle
                                   className={cn(
                                     "h-3.5 w-3.5 shrink-0",
                                     isActive ? "text-primary" : "text-muted-foreground/40"
@@ -742,7 +786,14 @@ function SidebarContent({
                 transition={{ duration: 0.1 }}
                 className="flex-1 min-w-0"
               >
-                <p className="text-[12px] font-medium truncate text-foreground">{userEmail}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[12px] font-medium truncate text-foreground">{userEmail}</p>
+                  {userTier === "pro" && (
+                    <span className="px-1.5 py-0.5 rounded-[4px] bg-primary/20 text-[9px] font-bold text-primary tracking-widest uppercase shrink-0">
+                      Pro
+                    </span>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

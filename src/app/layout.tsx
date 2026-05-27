@@ -29,7 +29,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Clavis — Teaching Assistant",
+  title: "Clavis",
   description:
     "A patient, precise teaching assistant. Pose your question and receive structured, Socratic guidance.",
   keywords: ["AI", "teaching", "tutor", "assistant", "Socratic", "learning"],

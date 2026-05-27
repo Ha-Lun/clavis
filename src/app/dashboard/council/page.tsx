@@ -4,11 +4,12 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
-import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History } from "lucide-react";
+import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History, Lock } from "lucide-react";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS, SYNTHESIZER_MODEL } from "@/lib/council";
 import { getModelInfo } from "@/lib/models";
 import type { CouncilResult, CouncilProgressEvent } from "@/lib/council";
+import { SubscriptionModal } from "@/components/subscription-modal";
 
 interface CouncilHistoryItem {
   id: string;
@@ -39,6 +40,8 @@ export default function CouncilPage() {
   const [isFocused, setIsFocused] = useState(false);
   const [modelProgress, setModelProgress] = useState<ModelProgress[]>([]);
   const [phase, setPhase] = useState<"idle" | "searching" | "querying" | "synthesizing" | "done">("idle");
+  const [subscriptionTier, setSubscriptionTier] = useState<"free" | "pro">("free");
+  const [showSubModal, setShowSubModal] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const [history, setHistory] = useState<CouncilHistoryItem[]>([]);
@@ -55,6 +58,21 @@ export default function CouncilPage() {
   useEffect(() => {
     modelsRef.current = selectedModels;
   }, [selectedModels]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/user");
+        if (res.ok) {
+          const data = await res.json();
+          setSubscriptionTier(data.prefs?.subscriptionTier ?? "free");
+        }
+      } catch {
+        // Silently fail
+      }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("clavis_council_history");
@@ -326,37 +344,49 @@ export default function CouncilPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {COUNCIL_MODELS.map((model) => {
                 const isSelected = selectedModels.includes(model.id);
-                const isDisabled = !isSelected && selectedModels.length >= MAX_SELECTED;
+                const isLocked = "isPremium" in model && model.isPremium && subscriptionTier !== "pro";
+                const isMaxSelectedReached = !isSelected && selectedModels.length >= MAX_SELECTED;
+                const isDisabled = (isMaxSelectedReached && !isLocked) || isRunning;
 
                 return (
                   <button
                     key={model.id}
                     type="button"
-                    onClick={() => toggleModel(model.id)}
-                    disabled={isDisabled || isRunning}
+                    onClick={() => {
+                      if (isLocked) {
+                        setShowSubModal(true);
+                      } else {
+                        toggleModel(model.id);
+                      }
+                    }}
+                    disabled={isDisabled}
                     className={cn(
-                      "relative flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-all duration-150 cursor-pointer",
+                      "relative flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-all duration-150 cursor-pointer",
+                      isLocked && "border-border bg-card text-muted-foreground opacity-60 hover:border-primary/20 hover:bg-[#c9a84c]/[0.02]",
                       isSelected
                         ? "border-primary/40 bg-primary/[0.08] text-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-border hover:bg-white/[0.02]",
-                      (isDisabled || isRunning) && "opacity-35 cursor-not-allowed"
+                        : !isLocked && "border-border bg-card text-muted-foreground hover:border-border hover:bg-white/[0.02]",
+                      isDisabled && "opacity-35 cursor-not-allowed"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "h-4 w-4 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors",
-                        isSelected
-                          ? "bg-primary border-primary"
-                          : "border-muted-foreground/30 bg-transparent"
-                      )}
-                    >
-                      {isSelected && (
-                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                          <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className={cn(
+                          "h-4 w-4 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors",
+                          isSelected
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground/30 bg-transparent"
+                        )}
+                      >
+                        {isSelected && (
+                          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-[13px] font-normal truncate">{model.name}</span>
                     </div>
-                    <span className="text-[13px] font-normal truncate">{model.name}</span>
+                    {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                   </button>
                 );
               })}
@@ -768,6 +798,11 @@ export default function CouncilPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SubscriptionModal 
+        isOpen={showSubModal} 
+        onClose={() => setShowSubModal(false)} 
+      />
     </div>
   );
 }

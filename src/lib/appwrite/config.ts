@@ -8,6 +8,7 @@ export const COLLECTIONS = {
   CHATS: "chats",
   MESSAGES: "messages",
   FILES: "files",
+  PROFILES: "profiles",
 } as const;
 
 export const BUCKET_ID = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || "clavis-uploads";

@@ -128,13 +128,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { chatId, message, model, webSearch } = await request.json();
+    const { chatId, message, model, webSearch, history } = await request.json();
     const enableWebSearch = webSearch !== false; // Default to true
+    const isIncognito = chatId?.startsWith("incognito-");
     console.log("[API /chat] Request:", {
       chatId: chatId?.slice(0, 20),
       message: message?.slice(0, 30),
       model,
       webSearch: enableWebSearch,
+      isIncognito,
     });
 
     if (!chatId || !message || !model) {
@@ -150,16 +152,29 @@ export async function POST(request: NextRequest) {
     console.log("[API /chat] Admin client, dbId:", dbId);
 
     // Parallel fetch user, chat, and history to minimize initial latency
-    const [user, chat, historyResult, prefs] = await Promise.all([
-      client.account.get(),
-      admin.databases.getDocument(dbId, COLLECTIONS.CHATS, chatId) as Promise<Chat>,
-      admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
-        Query.equal("chat_id", chatId),
-        Query.orderAsc("$createdAt"),
-        Query.limit(99),
-      ]),
-      client.account.getPrefs() as Promise<any>,
-    ]);
+    let chat: any;
+    let historyResult: any = { documents: [] };
+    let prefs: any;
+
+    const [user] = await Promise.all([client.account.get()]);
+
+    if (isIncognito) {
+      prefs = await client.account.getPrefs();
+      chat = { user_id: user.$id, project_id: null };
+    } else {
+      const [chatRes, historyRes, prefsRes] = await Promise.all([
+        admin.databases.getDocument(dbId, COLLECTIONS.CHATS, chatId) as Promise<Chat>,
+        admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
+          Query.equal("chat_id", chatId),
+          Query.orderAsc("$createdAt"),
+          Query.limit(99),
+        ]),
+        client.account.getPrefs() as Promise<any>,
+      ]);
+      chat = chatRes;
+      historyResult = historyRes;
+      prefs = prefsRes;
+    }
 
     console.log("[API /chat] User:", user.email);
 
@@ -171,16 +186,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Save user message in the background - don't block the AI stream
-    const saveUserMsgPromise = admin.databases.createDocument(
-      dbId,
-      COLLECTIONS.MESSAGES,
-      ID.unique(),
-      {
-        chat_id: chatId,
-        role: "user",
-        content: message,
-      },
-    ).then(() => console.log("[API /chat] User message saved to DB"));
+    if (!isIncognito) {
+      admin.databases.createDocument(
+        dbId,
+        COLLECTIONS.MESSAGES,
+        ID.unique(),
+        {
+          chat_id: chatId,
+          role: "user",
+          content: message,
+        },
+      ).then(() => console.log("[API /chat] User message saved to DB"));
+    }
 
     // Verify chat belongs to user
     const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -262,11 +279,19 @@ export async function POST(request: NextRequest) {
       console.log("[API /chat] Context fetch error:", err);
     }
 
-    // Build message list from history (which was fetched in parallel at the start)
-    const messages: MessageParam[] = (historyResult.documents as unknown as Message[]).map((m) => ({
-      role: m.role as "system" | "user" | "assistant" | "tool",
-      content: m.content as string,
-    }));
+    // Build message list from history
+    let messages: MessageParam[] = [];
+    if (isIncognito && history) {
+      messages = history.map((m: any) => ({
+        role: m.role as "system" | "user" | "assistant" | "tool",
+        content: m.content as string,
+      }));
+    } else {
+      messages = (historyResult.documents as unknown as Message[]).map((m) => ({
+        role: m.role as "system" | "user" | "assistant" | "tool",
+        content: m.content as string,
+      }));
+    }
     // Add current user message to context
     let userMessageContent = message;
 
@@ -374,7 +399,8 @@ ${userMessageContent}`;
     }
 
     let apiModelId = finalModelId;
-    if (finalModelId.startsWith("google/")) {
+    const modelInfo = (await import("@/lib/models")).getModelInfo(finalModelId);
+    if (finalModelId.startsWith("google/") && !modelInfo.isPremium) {
       apiModelId = finalModelId.replace("google/", "");
     }
 
@@ -575,22 +601,24 @@ ${userMessageContent}`;
             );
 
             // Save complete assistant message
-            await admin.databases.createDocument(
-              dbId,
-              COLLECTIONS.MESSAGES,
-              ID.unique(),
-              {
-                chat_id: chatId,
-                role: "assistant",
-                content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
-              },
-            );
+            if (!isIncognito) {
+              await admin.databases.createDocument(
+                dbId,
+                COLLECTIONS.MESSAGES,
+                ID.unique(),
+                {
+                  chat_id: chatId,
+                  role: "assistant",
+                  content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
+                },
+              );
+            }
 
             controller.close();
           } catch (err: any) {
             if (err.name === "AbortError" || request.signal.aborted) {
               console.log("[API /chat] Stream aborted by client. Saving partial response...");
-              if (fullContent) {
+              if (fullContent && !isIncognito) {
                 try {
                   await admin.databases.createDocument(
                     dbId,
@@ -615,7 +643,7 @@ ${userMessageContent}`;
               controller.enqueue(new TextEncoder().encode(errorMessage));
               
               // Save what we have
-              if (fullContent) {
+              if (fullContent && !isIncognito) {
                 try {
                   await admin.databases.createDocument(
                     dbId,
@@ -672,19 +700,21 @@ ${userMessageContent}`;
           controller.enqueue(new TextEncoder().encode(finalErrorMsg));
           
           // Save error message to DB
-          try {
-            await admin.databases.createDocument(
-              dbId,
-              COLLECTIONS.MESSAGES,
-              ID.unique(),
-              {
-                chat_id: chatId,
-                role: "assistant",
-                content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
-              },
-            );
-          } catch (dbErr) {
-            console.error("[API /chat] Failed to save final error response:", dbErr);
+          if (!isIncognito) {
+            try {
+              await admin.databases.createDocument(
+                dbId,
+                COLLECTIONS.MESSAGES,
+                ID.unique(),
+                {
+                  chat_id: chatId,
+                  role: "assistant",
+                  content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
+                },
+              );
+            } catch (dbErr) {
+              console.error("[API /chat] Failed to save final error response:", dbErr);
+            }
           }
           
           controller.close();
