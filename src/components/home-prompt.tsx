@@ -205,7 +205,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
-              className="text-[11px] md:text-[12px] text-primary/80 font-medium tracking-wide bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10 backdrop-blur-md"
+              className="hidden sm:block text-[11px] md:text-[12px] text-primary/80 font-medium tracking-wide bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10 backdrop-blur-md"
             >
               Chats are not saved
             </motion.div>

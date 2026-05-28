@@ -255,7 +255,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                 id="web-search-toggle"
               >
                 <Globe className="h-3.5 w-3.5" />
-                <span className="text-[11px] font-medium tracking-tight">Search</span>
+                <span className="hidden sm:inline-block text-[11px] font-medium tracking-tight">Search</span>
               </button>
             </div>
 

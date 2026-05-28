@@ -340,21 +340,33 @@ export async function POST(request: NextRequest) {
               const arrayBuffer = await admin.storage.getFileDownload(BUCKET_ID, fileId);
               const buffer = Buffer.from(arrayBuffer);
               
-              if (file.name.toLowerCase().endsWith(".pdf")) {
-                console.log(`[API /chat] Parsing PDF content for ${file.name}`);
+              try {
+                const { exec } = await import("child_process");
+                const util = await import("util");
+                const fs = await import("fs/promises");
+                const path = await import("path");
+                const os = await import("os");
+                
+                const execAsync = util.promisify(exec);
+                const tempDir = os.tmpdir();
+                const ext = path.extname(file.name) || "";
+                const tempFileName = `chat-${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
+                const tempFilePath = path.join(tempDir, tempFileName);
+                
+                await fs.writeFile(tempFilePath, buffer);
+                
                 try {
-                  const pdfParseModule: any = await import('pdf-parse');
-                  const PDFParseClass = pdfParseModule.PDFParse || (pdfParseModule.default && pdfParseModule.default.PDFParse);
-                  if (!PDFParseClass) throw new Error("Could not find PDFParse constructor in module");
-                  
-                  const parser = new PDFParseClass({ data: buffer });
-                  const data = await parser.getText();
-                  text = data.text;
-                } catch (parseErr: any) {
-                  console.error(`[API /chat] PDFParse Error:`, parseErr);
-                  text = `[Error parsing PDF: ${parseErr.message}]`;
+                  const execEnv = { ...process.env, PATH: `${process.env.PATH || ''}:/home/hannes/.local/bin` };
+                  const { stdout } = await execAsync(`markitdown "${tempFilePath}"`, { maxBuffer: 1024 * 1024 * 10, env: execEnv });
+                  text = stdout.trim();
+                } catch (execErr: any) {
+                  console.error(`[API /chat] markitdown execution error for ${file.name}:`, execErr);
+                  text = buffer.toString('utf-8');
+                } finally {
+                  await fs.unlink(tempFilePath).catch(e => console.error("Temp file cleanup failed:", e));
                 }
-              } else {
+              } catch (err: any) {
+                console.error(`[API /chat] Text extraction setup error for ${file.name}:`, err);
                 text = buffer.toString('utf-8');
               }
             }
@@ -366,6 +378,12 @@ export async function POST(request: NextRequest) {
         } catch (err) {
           console.error(`[API /chat] Error fetching file ${file.name}:`, err);
         }
+      }
+
+      const MAX_ATTACHED_CHARS = 200000;
+      if (combinedFileContent.length > MAX_ATTACHED_CHARS) {
+        console.log(`[API /chat] Truncating attached files from ${combinedFileContent.length} to ${MAX_ATTACHED_CHARS} chars`);
+        combinedFileContent = combinedFileContent.slice(0, MAX_ATTACHED_CHARS) + "\n\n...[Content truncated due to size limits]...";
       }
 
       userMessageContent = `<system_instruction>

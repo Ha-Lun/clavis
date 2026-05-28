@@ -10,6 +10,7 @@ import type { Message } from "@/lib/appwrite/types";
 import { extractAttachments, extractFileRefs } from "@/lib/utils";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { getRoutingLabel } from "@/lib/modelRouter";
+import { useChat } from "@/context/chat-context";
 
 interface MessageBubbleProps {
   message: Message;
@@ -24,6 +25,7 @@ export function MessageBubble({
   isStreaming,
   modelName,
 }: MessageBubbleProps) {
+  const { showReasoning } = useChat();
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
 
@@ -158,19 +160,18 @@ export function MessageBubble({
                   code({ node, inline, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || "");
                     const isBlock = !inline && (match || String(children).includes("\n"));
-                    
-                    if (match && match[1] === "reasoning") {
+                                        if (match && match[1] === "reasoning") {
+                      if (!showReasoning) return null;
                       return (
-                        <details className="my-3 border-l-2 border-primary/30 bg-primary/[0.02] rounded-r-lg group/think">
-                          <summary className="flex items-center gap-2 px-4 py-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-[11px] font-medium text-muted-foreground uppercase tracking-wider hover:text-muted-foreground/90 transition-colors">
-                            <ChevronRight className="h-3.5 w-3.5 text-primary/50 transition-transform duration-200 group-open/think:rotate-90" />
-                            {isStreaming && <ThinkingSpinner className="h-3 w-3 text-primary/40" size="12px" />}
+                        <div className="my-3 border-l-2 border-primary/30 bg-primary/[0.02] rounded-r-lg">
+                          <div className="flex items-center gap-2 px-4 py-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider select-none">
+                            {isStreaming && <ThinkingSpinner className="h-3 w-3 text-primary/40 animate-spin" size="12px" />}
                             Thinking Process
-                          </summary>
+                          </div>
                           <div className="px-4 pb-3 text-muted-foreground/80 font-light text-[14px] leading-relaxed whitespace-pre-wrap font-sans italic">
                             {children}
                           </div>
-                        </details>
+                        </div>
                       );
                     }
 

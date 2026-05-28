@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import type { Chat, Message } from "@/lib/appwrite/types";
 
 interface ChatContextType {
@@ -9,6 +9,8 @@ interface ChatContextType {
   messages: Message[];
   isStreaming: boolean;
   streamingContent: string;
+  showReasoning: boolean;
+  setShowReasoning: (show: boolean) => void;
   setChats: (chats: Chat[]) => void;
   setActiveChat: (chat: Chat | null) => void;
   setMessages: (messages: Message[]) => void;
@@ -87,6 +89,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setActiveChat((prev) => (prev?.$id === chatId ? null : prev));
   }, []);
 
+  const [showReasoning, setShowReasoningState] = useState(false);
+
+  useEffect(() => {
+    const fetchUserPrefs = async () => {
+      try {
+        const res = await fetch("/api/user");
+        if (res.ok) {
+          const data = await res.json();
+          setShowReasoningState(data.prefs?.showReasoning ?? false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user prefs in ChatProvider:", err);
+      }
+    };
+    fetchUserPrefs();
+  }, []);
+
+  const setShowReasoning = useCallback(async (show: boolean) => {
+    setShowReasoningState(show);
+    try {
+      await fetch("/api/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prefs: { showReasoning: show } }),
+      });
+    } catch (err) {
+      console.error("Failed to update showReasoning preference:", err);
+    }
+  }, []);
+
   return (
     <ChatContext.Provider
       value={{
@@ -95,6 +127,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         messages,
         isStreaming,
         streamingContent,
+        showReasoning,
+        setShowReasoning,
         setChats,
         setActiveChat,
         setMessages: setMessagesWithLog,

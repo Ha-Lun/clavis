@@ -60,10 +60,12 @@ export default function SettingsPage() {
         body: JSON.stringify({ name: displayName, prefs: { defaultModel, preferredName, showReasoning, subscriptionTier } }),
       });
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => {
+        setSaved(false);
+        window.location.reload();
+      }, 1000);
     } catch {
       // Handle error silently
-    } finally {
       setLoading(false);
     }
   };

@@ -48,50 +48,64 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to storage
-    const fileId = ID.unique();
     const buffer = Buffer.from(await file.arrayBuffer());
     const inputFile = InputFile.fromBuffer(buffer, file.name);
-    await admin.storage.createFile(BUCKET_ID, fileId, inputFile);
+    const uploadedFile = await admin.storage.createFile(BUCKET_ID, ID.unique(), inputFile);
+    const actualFileId = uploadedFile.$id;
 
     // Build file URL
     const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!;
     const projectIdEnv = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!;
-    const fileUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${fileId}/view?project=${projectIdEnv}`;
+    const fileUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${actualFileId}/view?project=${projectIdEnv}`;
 
     // Text Extraction
     let extractedText = null;
-    
-    if (file.type === "application/pdf") {
-      try {
-        const pdfParseModule: any = await import('pdf-parse');
-        const PDFParseClass = pdfParseModule.PDFParse || (pdfParseModule.default && pdfParseModule.default.PDFParse);
-        if (!PDFParseClass) throw new Error("Could not find PDFParse constructor in module");
 
-        const parser = new PDFParseClass({ data: buffer });
-        const data = await parser.getText();
-        extractedText = data.text;
-      } catch (parseErr) {
-        console.error("PDF parsing error:", parseErr);
-      }
-    } else if (
-      file.type.startsWith("text/") || 
-      file.name.endsWith(".md") || 
-      file.name.endsWith(".py") || 
-      file.name.endsWith(".js") || 
-      file.name.endsWith(".ts") || 
-      file.name.endsWith(".tsx") || 
-      file.name.endsWith(".css") || 
-      file.name.endsWith(".json")
-    ) {
+    try {
+      const { exec } = await import("child_process");
+      const util = await import("util");
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const os = await import("os");
+
+      const execAsync = util.promisify(exec);
+
+      // Create a temporary file
+      const tempDir = os.tmpdir();
+      const ext = path.extname(file.name) || "";
+      const tempFileName = `upload-${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
+      const tempFilePath = path.join(tempDir, tempFileName);
+      
+      await fs.writeFile(tempFilePath, buffer);
+
       try {
-        extractedText = buffer.toString('utf-8');
-      } catch (err) {
-        console.error("Text extraction error:", err);
+        // Run markitdown
+        const execEnv = { ...process.env, PATH: `${process.env.PATH || ''}:/home/hannes/.local/bin` };
+        const { stdout } = await execAsync(`markitdown "${tempFilePath}"`, { maxBuffer: 1024 * 1024 * 10, env: execEnv });
+        extractedText = stdout.trim();
+      } catch (execErr: any) {
+        console.error("markitdown execution error:", execErr);
+        // Fallback for plain text if markitdown fails or is not installed
+        if (
+          file.type.startsWith("text/") || 
+          [".md", ".py", ".js", ".ts", ".tsx", ".css", ".json", ".txt"].some(e => file.name.endsWith(e))
+        ) {
+           extractedText = buffer.toString('utf-8');
+        }
+      } finally {
+        // Clean up
+        await fs.unlink(tempFilePath).catch(e => console.error("Temp file cleanup failed:", e));
       }
+    } catch (err) {
+      console.error("Text extraction setup error:", err);
+    }
+
+    if (extractedText && extractedText.length > 1000000) {
+      console.log(`[API /upload] Truncating DB saved content from ${extractedText.length} to 1M chars`);
+      extractedText = extractedText.slice(0, 1000000);
     }
 
     // Save file record
-    const storagePath = `${user.$id}/${chatId || projectId}/${fileId}`;
 
     const fileRecord = await admin.databases.createDocument(
       dbId,
@@ -101,9 +115,9 @@ export async function POST(request: NextRequest) {
         user_id: user.$id,
         chat_id: chatId || null,
         project_id: projectId || null,
-        file_id: fileId,
+        file_id: actualFileId,
         name: file.name,
-        storagePath,
+        storagePath: `${user.$id}/${chatId || projectId}/${actualFileId}`,
         mimeType: file.type || null,
         sizeBytes: file.size || null,
         content: extractedText,
