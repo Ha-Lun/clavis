@@ -18,6 +18,7 @@ import { MODELS, DEFAULT_MODEL } from "@/lib/models";
 import { Loader2, Check, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SubscriptionModal } from "@/components/subscription-modal";
+import { DowngradeModal } from "@/components/downgrade-modal";
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const [defaultModel, setDefaultModel] = useState(DEFAULT_MODEL);
   const [subscriptionTier, setSubscriptionTier] = useState<"free" | "pro">("free");
   const [showSubModal, setShowSubModal] = useState(false);
+  const [showDowngradeModal, setShowDowngradeModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [email, setEmail] = useState("");
@@ -311,7 +313,7 @@ export default function SettingsPage() {
                   if (subscriptionTier !== "pro") {
                     setShowSubModal(true);
                   } else {
-                    setSubscriptionTier("free");
+                    setShowDowngradeModal(true);
                   }
                 }}
               >
@@ -353,6 +355,12 @@ export default function SettingsPage() {
       <SubscriptionModal 
         isOpen={showSubModal} 
         onClose={() => setShowSubModal(false)} 
+      />
+
+      <DowngradeModal
+        isOpen={showDowngradeModal}
+        onClose={() => setShowDowngradeModal(false)}
+        onConfirm={() => setSubscriptionTier("free")}
       />
     </div>
   );

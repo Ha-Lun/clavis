@@ -1,18 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { login } from "@/lib/appwrite/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OAuthButtons } from "@/components/oauth-buttons";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError === "oauth_failed") {
+      setError("Authentication failed. Please try again.");
+    } else if (oauthError === "oauth_cancelled") {
+      setError("Authentication was cancelled.");
+    }
+  }, [searchParams]);
 
   const handleLogin = async (formData: FormData) => {
     setError("");
@@ -51,6 +63,19 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="bg-card border border-border rounded-xl p-6">
+          {/* OAuth Buttons */}
+          <OAuthButtons disabled={loading} />
+
+          {/* Divider */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-[11px]">
+              <span className="bg-card px-3 text-muted-foreground/60 font-light uppercase tracking-wider">or</span>
+            </div>
+          </div>
+
           <form action={handleLogin} className="space-y-4">
             {/* Error */}
             {error && (

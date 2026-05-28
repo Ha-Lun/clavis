@@ -7,6 +7,7 @@ import { signup } from "@/lib/appwrite/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OAuthButtons } from "@/components/oauth-buttons";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +63,19 @@ export default function SignupPage() {
 
         {/* Form */}
         <div className="bg-card border border-border rounded-xl p-6">
+          {/* OAuth Buttons */}
+          <OAuthButtons disabled={loading} />
+
+          {/* Divider */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-[11px]">
+              <span className="bg-card px-3 text-muted-foreground/60 font-light uppercase tracking-wider">or</span>
+            </div>
+          </div>
+
           <form action={handleSignup} className="space-y-4">
             {error && (
               <motion.div
