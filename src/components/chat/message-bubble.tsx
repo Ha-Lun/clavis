@@ -4,13 +4,14 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, FileText, ExternalLink, ChevronRight } from "lucide-react";
+import { Copy, Check, FileText, ExternalLink, ChevronRight, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { Message } from "@/lib/appwrite/types";
 import { extractAttachments, extractFileRefs } from "@/lib/utils";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { getRoutingLabel } from "@/lib/modelRouter";
 import { useChat } from "@/context/chat-context";
+import { ImageLightbox } from "./image-lightbox";
 
 interface MessageBubbleProps {
   message: Message;
@@ -27,6 +28,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const { showReasoning } = useChat();
   const [copied, setCopied] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const isUser = message.role === "user";
 
   // Parse the model from the HTML comment if present
@@ -258,6 +260,57 @@ export function MessageBubble({
                     </blockquote>
                   ),
                   hr: () => <hr className="border-border/60 my-5" />,
+                  img: ({ src, alt }) => {
+                    if (!src) return null;
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        className="my-4 group/img relative"
+                      >
+                        <div className="relative rounded-xl overflow-hidden border border-primary/15 bg-black/20 shadow-[0_0_30px_rgba(201,168,76,0.08)]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={src}
+                            alt={alt || "Generated image"}
+                            className="w-full max-w-[512px] h-auto rounded-xl cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
+                            onClick={() => setLightboxSrc(src)}
+                            loading="lazy"
+                          />
+                          {/* Overlay actions */}
+                          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-3 py-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-200">
+                            {alt && (
+                              <span className="text-[11px] text-white/70 font-light truncate max-w-[70%]">
+                                {alt}
+                              </span>
+                            )}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const res = await fetch(src);
+                                  const blob = await res.blob();
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = `clavis-generated-${Date.now()}.png`;
+                                  a.click();
+                                  URL.revokeObjectURL(url);
+                                } catch {
+                                  window.open(src, "_blank");
+                                }
+                              }}
+                              className="flex items-center gap-1 text-[11px] text-white/70 hover:text-white transition-colors cursor-pointer"
+                            >
+                              <Download className="h-3 w-3" />
+                              <span>Save</span>
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  },
                   table: ({ children }) => (
                     <div className="overflow-x-auto my-4">
                       <table className="w-full text-[13px] border-collapse">{children}</table>
@@ -319,6 +372,15 @@ export function MessageBubble({
           )}
         </div>
       </div>
+
+      {/* Image Lightbox */}
+      {lightboxSrc && (
+        <ImageLightbox
+          src={lightboxSrc}
+          alt="Generated image"
+          onClose={() => setLightboxSrc(null)}
+        />
+      )}
     </motion.div>
   );
 }

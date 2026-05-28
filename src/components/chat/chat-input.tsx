@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X, ArrowUp, Globe } from "lucide-react";
+import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X, ArrowUp, Globe, Image as ImageIcon } from "lucide-react";
 import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "./model-selector";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ChatInputProps {
-  onSend: (content: string, options?: { webSearch?: boolean }) => void;
+  onSend: (content: string, options?: { webSearch?: boolean; imageGen?: boolean }) => void;
   onStop?: () => void;
   isStreaming: boolean;
   chatId: string;
@@ -27,6 +27,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [imageGenEnabled, setImageGenEnabled] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,13 +49,13 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
         : attachmentString;
     }
 
-    onSend(finalContent, { webSearch: webSearchEnabled });
+    onSend(finalContent, { webSearch: webSearchEnabled, imageGen: imageGenEnabled });
     setContent("");
     setAttachments([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [content, isStreaming, onSend, attachments, webSearchEnabled]);
+  }, [content, isStreaming, onSend, attachments, webSearchEnabled, imageGenEnabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -256,6 +257,23 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
               >
                 <Globe className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline-block text-[11px] font-medium tracking-tight">Search</span>
+              </button>
+
+              {/* Image generation toggle */}
+              <button
+                type="button"
+                onClick={() => setImageGenEnabled((prev) => !prev)}
+                className={cn(
+                  "h-7 flex items-center gap-1.5 rounded-md px-2 transition-all duration-150 cursor-pointer",
+                  imageGenEnabled
+                    ? "bg-violet-500/15 text-violet-400 hover:bg-violet-500/20"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05]"
+                )}
+                id="image-gen-toggle"
+                title={imageGenEnabled ? "Image Generation: ON" : "Image Generation: OFF"}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline-block text-[11px] font-medium tracking-tight">Image</span>
               </button>
             </div>
 

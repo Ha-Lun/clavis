@@ -9,7 +9,7 @@ import {
   Layers,
   Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X, ArrowUp, Globe,
   Users, FolderPlus, FileText, Check, ChevronDown, Ghost,
-  Lightbulb, PenLine, Search, Code2, Sparkles
+  Lightbulb, PenLine, Search, Code2, Sparkles, Image as ImageIcon
 } from "lucide-react";
 import Link from "next/link";
 import { cn, Attachment } from "@/lib/utils";
@@ -60,6 +60,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const [isIncognito, setIsIncognito] = useState(false);
+  const [imageGenEnabled, setImageGenEnabled] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, offset: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -142,7 +143,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
         const attachmentString = attachments.map((a) => `📎 ${a.name}: ${a.url}`).join("\n");
         finalContent = finalContent ? `${finalContent}\n${attachmentString}` : attachmentString;
       }
-      router.push(`/dashboard/chat/${chatWithId.id}?msg=${encodeURIComponent(finalContent)}&ws=${webSearchEnabled ? '1' : '0'}`);
+      router.push(`/dashboard/chat/${chatWithId.id}?msg=${encodeURIComponent(finalContent)}&ws=${webSearchEnabled ? '1' : '0'}&ig=${imageGenEnabled ? '1' : '0'}`);
     } catch (err) {
       console.error("Failed to create chat:", err);
       setIsSubmitting(false);
@@ -428,6 +429,22 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                 title={webSearchEnabled ? "Web Search: ON" : "Web Search: OFF"}
               >
                 <Globe className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Image Generation Toggle */}
+              <button
+                type="button"
+                onClick={() => setImageGenEnabled((prev) => !prev)}
+                className={cn(
+                  "h-8 w-8 flex items-center justify-center rounded-md transition-colors cursor-pointer",
+                  imageGenEnabled
+                    ? "text-violet-400 bg-violet-500/10 hover:bg-violet-500/15"
+                    : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.05]"
+                )}
+                title={imageGenEnabled ? "Image Generation: ON" : "Image Generation: OFF"}
+                disabled={isSubmitting}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
               </button>
             </div>
 

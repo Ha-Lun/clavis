@@ -7,7 +7,7 @@ import type { Chat, Message } from "@/lib/appwrite/types";
 
 interface ChatPageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ msg?: string; ws?: string }>;
+  searchParams: Promise<{ msg?: string; ws?: string; ig?: string }>;
 }
 
 export default async function ChatPage({ params, searchParams }: ChatPageProps) {
@@ -102,6 +102,7 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
   // Pass initial message from URL to client
   const initialMessage = resolvedSearchParams.msg ? decodeURIComponent(resolvedSearchParams.msg) : null;
   const initialWebSearch = resolvedSearchParams.ws !== '0'; // default true unless explicitly '0'
+  const initialImageGen = resolvedSearchParams.ig === '1'; // default false unless explicitly '1'
 
   // Flag to tell ChatView to process initial message
   const shouldProcessInitial = !!(initialMessage && messages.length === 0);
@@ -124,5 +125,5 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
     allMessages = [...messages, initialUserMessage];
   }
 
-  return <ChatView chat={chat} initialMessages={allMessages} processInitial={shouldProcessInitial} initialWebSearch={initialWebSearch} isNewChat={isNewChat} />;
+  return <ChatView chat={chat} initialMessages={allMessages} processInitial={shouldProcessInitial} initialWebSearch={initialWebSearch} initialImageGen={initialImageGen} isNewChat={isNewChat} />;
 }

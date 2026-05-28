@@ -30,6 +30,7 @@ async function callAIWithRetry(
   timeoutMs: number = 30000,
   onRetry?: (attempt: number) => void,
   enableWebSearch: boolean = true,
+  enableImageGen: boolean = false,
 ) {
   let lastError: Error | null = null;
 
@@ -42,22 +43,50 @@ async function callAIWithRetry(
         setTimeout(() => reject(new Error("Request timed out")), timeoutMs),
       );
 
-      const webSearchTool = enableWebSearch ? [
-          {
-            type: "function" as const,
-            function: {
-              name: "web_search",
-              description: "Search the web for current, up-to-date information",
-              parameters: {
-                type: "object",
-                properties: {
-                  query: { type: "string", description: "The search query" }
-                },
-                required: ["query"]
-              }
+      const tools: any[] = [];
+      
+      if (enableWebSearch) {
+        tools.push({
+          type: "function" as const,
+          function: {
+            name: "web_search",
+            description: "Search the web for current, up-to-date information",
+            parameters: {
+              type: "object",
+              properties: {
+                query: { type: "string", description: "The search query" }
+              },
+              required: ["query"]
             }
           }
-        ] : undefined;
+        });
+      }
+      
+      if (enableImageGen) {
+        tools.push({
+          type: "function" as const,
+          function: {
+            name: "image_generation",
+            description: "Generate an image from a text description. Use this when the user asks you to create, generate, draw, design, or visualize an image. Craft a detailed, descriptive prompt for best results.",
+            parameters: {
+              type: "object",
+              properties: {
+                prompt: {
+                  type: "string",
+                  description: "A detailed text description of the image to generate. Be specific about style, composition, lighting, colors, and subject matter for best results."
+                },
+                negative_prompt: {
+                  type: "string",
+                  description: "Things to avoid in the generated image (e.g. 'blurry, low quality, text, watermark')"
+                }
+              },
+              required: ["prompt"]
+            }
+          }
+        });
+      }
+      
+      const activeTools = tools.length > 0 ? tools : undefined;
 
       const aiPromise = aiClient.chat.completions.create({
         model,
@@ -65,7 +94,7 @@ async function callAIWithRetry(
           { role: "system", content: systemPrompt },
           ...messages,
         ] as any[],
-        ...(webSearchTool ? { tools: webSearchTool } : {}),
+        ...(activeTools ? { tools: activeTools } : {}),
         stream: true,
         max_tokens: model.includes("qwen3.5") ? 16384 : 8192,
       }, { signal });
@@ -128,14 +157,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { chatId, message, model, webSearch, history } = await request.json();
+    const { chatId, message, model, webSearch, history, imageGen } = await request.json();
     const enableWebSearch = webSearch !== false; // Default to true
+    const enableImageGen = imageGen === true; // Default to false, must be explicitly enabled
     const isIncognito = chatId?.startsWith("incognito-");
     console.log("[API /chat] Request:", {
       chatId: chatId?.slice(0, 20),
       message: message?.slice(0, 30),
       model,
       webSearch: enableWebSearch,
+      imageGen: enableImageGen,
       isIncognito,
     });
 
@@ -533,7 +564,8 @@ ${userMessageContent}`;
                   fullContent += retryMsg;
                   controller.enqueue(new TextEncoder().encode(retryMsg));
                 },
-                enableWebSearch
+                enableWebSearch,
+                enableImageGen
               );
               await processStream(followUpCompletion);
               return;
@@ -588,6 +620,54 @@ ${userMessageContent}`;
                       content: `Error performing search: ${err.message}`
                     });
                   }
+                } else if (tc.function.name === "image_generation") {
+                  try {
+                    const args = JSON.parse(tc.function.arguments);
+                    console.log("[API /chat] Executing image_generation for:", args.prompt?.slice(0, 80));
+
+                    // Stream a status message to the user
+                    const genMsg = "\n\n🎨 *Generating image...*\n\n";
+                    fullContent += genMsg;
+                    controller.enqueue(new TextEncoder().encode(genMsg));
+
+                    // Call our internal image API
+                    const origin = request.headers.get("origin") || request.headers.get("host") || "";
+                    const protocol = request.headers.get("x-forwarded-proto") || "http";
+                    const baseUrl = origin.startsWith("http") ? origin : `${protocol}://${origin}`;
+
+                    const imageRes = await fetch(`${baseUrl}/api/image`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        "Cookie": request.headers.get("cookie") || "",
+                      },
+                      body: JSON.stringify({
+                        prompt: args.prompt,
+                        negative_prompt: args.negative_prompt || "blurry, low quality, text, watermark, distorted",
+                      }),
+                    });
+
+                    if (!imageRes.ok) {
+                      const errData = await imageRes.json().catch(() => ({}));
+                      throw new Error(errData.error || `Image generation failed: ${imageRes.status}`);
+                    }
+
+                    const imageData = await imageRes.json();
+                    console.log("[API /chat] Image generated successfully:", imageData.fileId);
+
+                    messages.push({
+                      role: "tool",
+                      tool_call_id: tc.id,
+                      content: `Image generated successfully. The image URL is: ${imageData.url}\nInclude this in your response as a markdown image: ![${args.prompt.slice(0, 60)}](${imageData.url})`
+                    });
+                  } catch (err: any) {
+                    console.error("[API /chat] Image generation failed:", err);
+                    messages.push({
+                      role: "tool",
+                      tool_call_id: tc.id,
+                      content: `Error generating image: ${err.message}`
+                    });
+                  }
                 }
               }
 
@@ -606,6 +686,7 @@ ${userMessageContent}`;
                   controller.enqueue(new TextEncoder().encode(retryMsg));
                 },
                 enableWebSearch,
+                enableImageGen,
               );
               await processStream(nextCompletion);
               return;
@@ -698,6 +779,7 @@ ${userMessageContent}`;
               controller.enqueue(new TextEncoder().encode(retryMsg));
             },
             enableWebSearch,
+            enableImageGen,
           );
           await processStream(completion);
         } catch (err: any) {

@@ -14,12 +14,13 @@ interface ChatViewProps {
   initialMessages: Message[];
   processInitial?: boolean;
   initialWebSearch?: boolean;
+  initialImageGen?: boolean;
   isNewChat?: boolean;
 }
 
   const MAX_MESSAGE_LENGTH = 30000;
 
-  export function ChatView({ chat, initialMessages, processInitial, initialWebSearch = true, isNewChat }: ChatViewProps) {
+  export function ChatView({ chat, initialMessages, processInitial, initialWebSearch = true, initialImageGen = false, isNewChat }: ChatViewProps) {
   const {
     messages,
     setMessages,
@@ -75,10 +76,10 @@ interface ChatViewProps {
   );
 
   const handleSend = useCallback(
-    async (content: string, skipUserMessageOrOptions: boolean | { webSearch?: boolean } = false, maybeOptions?: { webSearch?: boolean }) => {
+    async (content: string, skipUserMessageOrOptions: boolean | { webSearch?: boolean; imageGen?: boolean } = false, maybeOptions?: { webSearch?: boolean; imageGen?: boolean }) => {
       // Handle overloaded signature: (content, skip, options) or (content, options)
       let skipUserMessage = false;
-      let options: { webSearch?: boolean } = {};
+      let options: { webSearch?: boolean; imageGen?: boolean } = {};
       if (typeof skipUserMessageOrOptions === 'boolean') {
         skipUserMessage = skipUserMessageOrOptions;
         options = maybeOptions || {};
@@ -141,6 +142,7 @@ interface ChatViewProps {
           message: trimmedContent,
           model: activeChat?.model || chat.model,
           webSearch: (options as any).webSearch ?? true,
+          imageGen: (options as any).imageGen ?? false,
           ...(isIncognito && { history: messages.map(m => ({ role: m.role, content: m.content })) })
         };
 
@@ -265,7 +267,7 @@ interface ChatViewProps {
     if (processInitial && initialMessages.length > 0 && !hasTriggeredInitialSend.current) {
       hasTriggeredInitialSend.current = true;
       const initialContent = initialMessages[0].content;
-      handleSend(initialContent, true, { webSearch: initialWebSearch });
+      handleSend(initialContent, true, { webSearch: initialWebSearch, imageGen: initialImageGen });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.$id, initialMessages, isNewChat]);
