@@ -100,3 +100,23 @@ export async function logout() {
 
   redirect("/login");
 }
+
+export async function getOAuthURL(provider: string, origin: string) {
+  try {
+    const { account } = await createAdminClient();
+    const successUrl = `${origin}/api/oauth`;
+    const failureUrl = `${origin}/login?error=oauth_cancelled`;
+    
+    // createOAuth2Token returns the provider's authorization URL
+    // When the user completes login, Appwrite redirects to successUrl with userId and secret
+    const url = await account.createOAuth2Token(
+      provider as any, 
+      successUrl, 
+      failureUrl
+    );
+    return { url };
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    return { error: error.message ?? "OAuth initialization failed" };
+  }
+}

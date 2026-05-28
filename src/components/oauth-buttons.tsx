@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { account, OAuthProvider } from "@/lib/appwrite/client";
+import { getOAuthURL } from "@/lib/appwrite/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -31,15 +31,17 @@ interface OAuthButtonsProps {
 export function OAuthButtons({ disabled }: OAuthButtonsProps) {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-  const handleOAuth = (provider: OAuthProvider) => {
+  const handleOAuth = async (provider: string) => {
     setLoadingProvider(provider);
 
     const origin = window.location.origin;
-    // successUrl: Appwrite appends userId & secret as query params
-    const successUrl = `${origin}/api/oauth`;
-    const failureUrl = `${origin}/login?error=oauth_cancelled`;
+    const result = await getOAuthURL(provider, origin);
 
-    account.createOAuth2Session(provider, successUrl, failureUrl);
+    if (result.url) {
+      window.location.href = result.url;
+    } else {
+      window.location.href = `${origin}/login?error=oauth_failed`;
+    }
   };
 
   const isLoading = !!loadingProvider;
@@ -51,9 +53,9 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
         variant="outline"
         className="w-full h-10 text-[13px] font-medium bg-background border-border text-foreground hover:bg-muted/50 hover:border-primary/30 rounded-md cursor-pointer transition-all duration-200"
         disabled={disabled || isLoading}
-        onClick={() => handleOAuth(OAuthProvider.Google)}
+        onClick={() => handleOAuth("google")}
       >
-        {loadingProvider === OAuthProvider.Google ? (
+        {loadingProvider === "google" ? (
           <Loader2 className="mr-2.5 h-4 w-4 animate-spin" />
         ) : (
           <GoogleIcon className="mr-2.5 h-4 w-4" />
@@ -66,9 +68,9 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
         variant="outline"
         className="w-full h-10 text-[13px] font-medium bg-background border-border text-foreground hover:bg-muted/50 hover:border-primary/30 rounded-md cursor-pointer transition-all duration-200"
         disabled={disabled || isLoading}
-        onClick={() => handleOAuth(OAuthProvider.Github)}
+        onClick={() => handleOAuth("github")}
       >
-        {loadingProvider === OAuthProvider.Github ? (
+        {loadingProvider === "github" ? (
           <Loader2 className="mr-2.5 h-4 w-4 animate-spin" />
         ) : (
           <GitHubIcon className="mr-2.5 h-4 w-4" />
