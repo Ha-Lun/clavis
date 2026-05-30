@@ -39,8 +39,8 @@ export type MessageParam = {
 };
 
 export function routeModel(_messages: MessageParam[]): string {
-  // Auto mode now always routes directly to Gemini 3.5 Flash
-  return "google/gemini-3.5-flash";
+  // Auto mode now always routes directly to Mistral Small 4
+  return "mistralai/mistral-small-4-119b-2603";
 }
 
 export function getRoutingLabel(modelId: string): string {
