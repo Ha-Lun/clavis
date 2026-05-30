@@ -308,8 +308,8 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                   stroke="rgba(201,168,76,0.9)"
                   strokeWidth="1.5"
                   strokeLinecap="round"
-                  initial={{ pathLength: 0.15, pathOffset: mousePos.offset, opacity: 0 }}
-                  animate={{ pathOffset: mousePos.offset + 0.5, opacity: [0, 1, 1, 0] }}
+                  initial={{ pathLength: 0.15, pathOffset: mousePos.offset - 0.075, opacity: 0 }}
+                  animate={{ pathOffset: mousePos.offset - 0.075 + 0.5, opacity: [0, 1, 1, 0] }}
                   transition={{ duration: 1.2, ease: "easeOut" }}
                 />
                 {/* Counter-clockwise flow */}
@@ -320,8 +320,8 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                   stroke="rgba(201,168,76,0.9)"
                   strokeWidth="1.5"
                   strokeLinecap="round"
-                  initial={{ pathLength: 0.15, pathOffset: mousePos.offset - 0.15, opacity: 0 }}
-                  animate={{ pathOffset: mousePos.offset - 0.15 - 0.5, opacity: [0, 1, 1, 0] }}
+                  initial={{ pathLength: 0.15, pathOffset: mousePos.offset - 0.075, opacity: 0 }}
+                  animate={{ pathOffset: mousePos.offset - 0.075 - 0.5, opacity: [0, 1, 1, 0] }}
                   transition={{ duration: 1.2, ease: "easeOut" }}
                 />
               </svg>
