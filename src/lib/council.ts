@@ -284,9 +284,11 @@ export async function councilWithProgress(
 
   const synthesizerPrompt = buildSynthesizerPrompt(query, modelResponses);
   const synthClient = createAIClient(SYNTHESIZER_MODEL);
+  const synthApiModelId = SYNTHESIZER_MODEL.startsWith("google/") ? SYNTHESIZER_MODEL.replace("google/", "") : SYNTHESIZER_MODEL;
+  
   const synthCompletion = await Promise.race([
     synthClient.chat.completions.create({
-      model: SYNTHESIZER_MODEL,
+      model: synthApiModelId,
       messages: [{ role: "user", content: synthesizerPrompt }],
       stream: false,
       max_tokens: 2048,
