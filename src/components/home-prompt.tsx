@@ -95,8 +95,8 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || `Upload failed with status ${res.status}`);
       }
-      const { url } = await res.json();
-      setAttachments((prev) => [...prev, { name: file.name, url }]);
+      const { file: uploadedFile, url } = await res.json();
+      setAttachments((prev) => [...prev, { id: uploadedFile.$id, name: file.name, url }]);
     } catch (err: any) {
       console.error("Upload failed:", err);
       alert(`Upload failed: ${err.message}`);
@@ -106,8 +106,17 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
     }
   };
 
-  const removeAttachment = (url: string) => {
+  const removeAttachment = async (url: string) => {
+    const attachment = attachments.find((a) => a.url === url);
     setAttachments((prev) => prev.filter((a) => a.url !== url));
+    
+    if (attachment && attachment.id) {
+      try {
+        await fetch(`/api/files/${attachment.id}`, { method: "DELETE" });
+      } catch (err) {
+        console.error("Failed to delete attachment from server", err);
+      }
+    }
   };
 
   const handleSubmit = async (text: string = content) => {
@@ -135,6 +144,18 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
         if (!chat) throw new Error("Failed to create chat");
         chatWithId = { ...chat, id: chat.$id ?? chat.id };
         setChats([chatWithId, ...chats]);
+
+        // Link any uploaded files to the new chat
+        const fileIds = attachments.map(a => a.id).filter(Boolean);
+        if (fileIds.length > 0) {
+          await Promise.all(fileIds.map(id => 
+            fetch(`/api/files/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chat_id: chatWithId.id })
+            }).catch(e => console.error("Failed to link file to chat", e))
+          ));
+        }
       }
 
       let finalContent = trimmedContent;

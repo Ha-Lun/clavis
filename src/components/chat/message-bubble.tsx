@@ -292,9 +292,12 @@ export function MessageBubble({
             </div>
           )}
 
-          {/* Copy button — assistant messages */}
-          {!isUser && !isStreaming && message.content && (
-            <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+          {/* Copy button — User and Assistant messages */}
+          {!isStreaming && message.content && (
+            <div className={cn(
+              "mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-100 flex",
+              isUser ? "justify-end" : "justify-start"
+            )}>
               <button
                 onClick={handleCopy}
                 className={cn(

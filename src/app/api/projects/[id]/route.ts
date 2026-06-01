@@ -1,6 +1,7 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
-import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
+import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
+import { Query } from "node-appwrite";
 import { Project } from "@/lib/appwrite/types";
 
 export async function PATCH(
@@ -75,6 +76,33 @@ export async function DELETE(
 
     if (existing.user_id !== user.$id) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Cascade: delete all files associated with this project
+    try {
+      const projectFiles = await admin.databases.listDocuments(
+        dbId,
+        COLLECTIONS.FILES,
+        [Query.equal("project_id", params.id), Query.limit(100)]
+      );
+
+      for (const doc of projectFiles.documents) {
+        const fileDoc = doc as any;
+        try {
+          if (fileDoc.file_id) {
+            await admin.storage.deleteFile(BUCKET_ID, fileDoc.file_id).catch(() => {});
+          }
+          await admin.databases.deleteDocument(
+            dbId,
+            COLLECTIONS.FILES,
+            fileDoc.$id
+          );
+        } catch (err) {
+          console.log(`[DELETE project] Failed to delete file ${fileDoc.$id}`);
+        }
+      }
+    } catch (err) {
+      console.log(`[DELETE project] Failed to list project files`);
     }
 
     await admin.databases.deleteDocument(

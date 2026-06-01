@@ -6,6 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export interface Attachment {
+  id?: string;
   name: string;
   url: string;
 }

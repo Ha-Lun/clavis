@@ -132,6 +132,8 @@ interface ChatViewProps {
 
       abortControllerRef.current = new AbortController();
 
+      let fullContent = "";
+
       try {
         const chatId = chat.$id || (chat as any).id;
         const isIncognito = chatId.startsWith("incognito-");
@@ -169,7 +171,6 @@ interface ChatViewProps {
         if (!reader) throw new Error("No response stream");
 
         const decoder = new TextDecoder();
-        let fullContent = "";
 
         while (true) {
           const { done, value } = await reader.read();
@@ -192,13 +193,12 @@ interface ChatViewProps {
           chat_id: chat.$id,
           role: "assistant",
           content: fullContent,
-          model: finalModelId, // Storing the resolved model in the message
+          model: finalModelId,
         };
         addMessage(assistantMessage);
       } catch (err: any) {
         if (err.name === "AbortError") {
-          const partialContent = streamingContent;
-          if (partialContent) {
+          if (fullContent) {
             const partialMessage: Message = {
               $id: crypto.randomUUID(),
               $collectionId: "",
@@ -208,7 +208,7 @@ interface ChatViewProps {
               $permissions: [],
               chat_id: chat.$id,
               role: "assistant",
-              content: partialContent,
+              content: fullContent,
             };
             addMessage(partialMessage);
           }

@@ -90,8 +90,8 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
         throw new Error(errorData.error || `Upload failed with status ${res.status}`);
       }
 
-      const { url } = await res.json();
-      setAttachments((prev) => [...prev, { name: file.name, url }]);
+      const { file: uploadedFile, url } = await res.json();
+      setAttachments((prev) => [...prev, { id: uploadedFile.$id, name: file.name, url }]);
     } catch (err: any) {
       console.error("Upload failed:", err);
       alert(`Upload failed: ${err.message}`);
@@ -103,8 +103,17 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
     }
   };
 
-  const removeAttachment = (url: string) => {
+  const removeAttachment = async (url: string) => {
+    const attachment = attachments.find((a) => a.url === url);
     setAttachments((prev) => prev.filter((a) => a.url !== url));
+
+    if (attachment && attachment.id) {
+      try {
+        await fetch(`/api/files/${attachment.id}`, { method: "DELETE" });
+      } catch (err) {
+        console.error("Failed to delete attachment from server", err);
+      }
+    }
   };
 
   return (

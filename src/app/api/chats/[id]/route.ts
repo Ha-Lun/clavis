@@ -1,5 +1,5 @@
 import { createSessionClient, createAdminClient } from "@/lib/appwrite/server";
-import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
+import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
 import { Query } from "node-appwrite";
 import { Chat } from "@/lib/appwrite/types";
@@ -105,6 +105,31 @@ export async function DELETE(
         );
       } catch {
         // Ignore individual delete errors
+      }
+    }
+
+    // Cascade: delete all files associated with this chat
+    const chatFiles = await admin.databases.listDocuments(
+      dbId,
+      COLLECTIONS.FILES,
+      [Query.equal("chat_id", params.id), Query.limit(100)]
+    );
+
+    console.log("[DELETE chat] Found files to delete:", chatFiles.documents.length);
+
+    for (const doc of chatFiles.documents) {
+      const fileDoc = doc as any;
+      try {
+        if (fileDoc.file_id) {
+          await admin.storage.deleteFile(BUCKET_ID, fileDoc.file_id).catch(() => {});
+        }
+        await admin.databases.deleteDocument(
+          dbId,
+          COLLECTIONS.FILES,
+          fileDoc.$id
+        );
+      } catch (err) {
+        console.log(`[DELETE chat] Failed to delete file ${fileDoc.$id}`);
       }
     }
 
