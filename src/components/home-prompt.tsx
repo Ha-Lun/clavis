@@ -216,7 +216,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full w-full max-w-2xl mx-auto px-4 pb-16 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center size-full max-w-2xl mx-auto px-4 pb-16 overflow-hidden">
 
       {/* ─── Incognito Toggle (Top Right) ─── */}
       <div className="absolute top-4 right-4 md:fixed md:top-6 md:right-6 z-50 flex items-center gap-3">
@@ -242,7 +242,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
           )}
           title={isIncognito ? "Incognito Mode: ON" : "Incognito Mode: OFF"}
         >
-          <Ghost className="h-5 w-5" />
+          <Ghost className="size-5" />
         </button>
       </div>
 
@@ -268,8 +268,8 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
         className="mb-10 text-center flex flex-col items-center select-none"
       >
         {/* Small key icon */}
-        <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center mb-5">
-          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-primary" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+        <div className="size-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center mb-5">
+          <svg viewBox="0 0 24 24" fill="none" className="size-5 text-primary" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
             <circle cx="12" cy="6" r="4" />
             <circle cx="12" cy="6" r="1.5" />
             <path d="M12 10v11" />
@@ -318,7 +318,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
             {isHovered && !isFocused && (
               <svg 
                 key={`${mousePos.x}-${mousePos.y}`}
-                className="absolute inset-0 w-full h-full pointer-events-none z-0" 
+                className="absolute inset-0 size-full pointer-events-none z-0" 
                 style={{ overflow: "visible" }}
               >
                 {/* Clockwise flow */}
@@ -366,7 +366,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                       animate={{ opacity: 1, scale: 1 }}
                       className="flex items-center gap-1.5 bg-secondary border border-border rounded-md px-2.5 py-1"
                     >
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      <FileText className="size-3.5 text-muted-foreground" />
                       <span className="text-[12px] font-medium text-foreground max-w-[160px] truncate">
                         {file.name}
                       </span>
@@ -374,7 +374,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                         onClick={() => removeAttachment(file.url)}
                         className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="size-3" />
                       </button>
                     </motion.div>
                   ))}
@@ -410,27 +410,27 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
+                    className="size-8 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
                     disabled={uploading || isSubmitting}
                   >
                     {uploading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="size-3.5 animate-spin" />
                     ) : (
-                      <Paperclip className="h-3.5 w-3.5" />
+                      <Paperclip className="size-3.5" />
                     )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="bg-popover border-border">
                   <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="cursor-pointer gap-2 text-[13px]">
-                    <Upload className="h-3.5 w-3.5" />
+                    <Upload className="size-3.5" />
                     <span>Upload from computer</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer gap-2 text-[13px] opacity-40 pointer-events-none">
-                    <FileText className="h-3.5 w-3.5" />
+                    <FileText className="size-3.5" />
                     <span>Import from project</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer gap-2 text-[13px] opacity-40 pointer-events-none">
-                    <LinkIcon className="h-3.5 w-3.5" />
+                    <LinkIcon className="size-3.5" />
                     <span>Link URL</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -441,14 +441,14 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                 type="button"
                 onClick={() => setWebSearchEnabled((prev) => !prev)}
                 className={cn(
-                  "h-8 w-8 flex items-center justify-center rounded-md transition-colors cursor-pointer",
+                  "size-8 flex items-center justify-center rounded-md transition-colors cursor-pointer",
                   webSearchEnabled
                     ? "text-primary bg-primary/10 hover:bg-primary/15"
                     : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.05]"
                 )}
                 title={webSearchEnabled ? "Web Search: ON" : "Web Search: OFF"}
               >
-                <Globe className="h-3.5 w-3.5" />
+                <Globe className="size-3.5" />
               </button>
             </div>
 
@@ -463,7 +463,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                 whileTap={hasContent && !isSubmitting ? { scale: 0.92 } : {}}
                 transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 className={cn(
-                  "h-8 w-8 flex items-center justify-center rounded-md transition-all duration-100",
+                  "size-8 flex items-center justify-center rounded-md transition-all duration-100",
                   hasContent && !isSubmitting
                     ? "bg-primary text-primary-foreground shadow-glow cursor-pointer"
                     : "bg-secondary text-muted-foreground/30 cursor-default"
@@ -472,9 +472,9 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                 disabled={!hasContent || isSubmitting}
               >
                 {isSubmitting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <ArrowUp className="h-3.5 w-3.5" />
+                  <ArrowUp className="size-3.5" />
                 )}
               </motion.button>
             </div>
@@ -507,7 +507,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
                 "active:scale-95"
               )}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="size-3.5" />
               <span>{chip.label}</span>
             </motion.button>
           );

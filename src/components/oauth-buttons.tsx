@@ -56,9 +56,9 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
         onClick={() => handleOAuth("google")}
       >
         {loadingProvider === "google" ? (
-          <Loader2 className="mr-2.5 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2.5 size-4 animate-spin" />
         ) : (
-          <GoogleIcon className="mr-2.5 h-4 w-4" />
+          <GoogleIcon className="mr-2.5 size-4" />
         )}
         Continue with Google
       </Button>
@@ -71,9 +71,9 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
         onClick={() => handleOAuth("github")}
       >
         {loadingProvider === "github" ? (
-          <Loader2 className="mr-2.5 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2.5 size-4 animate-spin" />
         ) : (
-          <GitHubIcon className="mr-2.5 h-4 w-4" />
+          <GitHubIcon className="mr-2.5 size-4" />
         )}
         Continue with GitHub
       </Button>

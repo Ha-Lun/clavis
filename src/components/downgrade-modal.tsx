@@ -63,10 +63,10 @@ export function DowngradeModal({ isOpen, onClose, onConfirm }: DowngradeModalPro
         >
           {/* Header */}
           <div className="text-center space-y-2 pt-4 relative">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-destructive/5 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 size-48 bg-destructive/5 rounded-full blur-[80px] pointer-events-none" />
             
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 border border-destructive/30 text-destructive mb-2">
-              <AlertTriangle className="h-6 w-6" />
+            <div className="inline-flex size-12 items-center justify-center rounded-xl bg-destructive/10 border border-destructive/30 text-destructive mb-2">
+              <AlertTriangle className="size-6" />
             </div>
             <h2 className="text-[20px] font-semibold tracking-tight text-white font-cinzel">
               ARE YOU SURE?
@@ -82,8 +82,8 @@ export function DowngradeModal({ isOpen, onClose, onConfirm }: DowngradeModalPro
               const Icon = b.icon;
               return (
                 <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg border border-red-500/[0.03] bg-red-500/[0.01] hover:bg-white/[0.01] transition-colors">
-                  <div className="h-7 w-7 rounded-md bg-destructive/10 border border-destructive/20 flex items-center justify-center shrink-0">
-                    <Icon className="h-3.5 w-3.5 text-destructive/70" />
+                  <div className="size-7 rounded-md bg-destructive/10 border border-destructive/20 flex items-center justify-center shrink-0">
+                    <Icon className="size-3.5 text-destructive/70" />
                   </div>
                   <div className="space-y-0.5">
                     <h4 className="text-[12px] font-semibold text-white/90">{b.title}</h4>
@@ -105,7 +105,7 @@ export function DowngradeModal({ isOpen, onClose, onConfirm }: DowngradeModalPro
                 "text-black hover:shadow-glow cursor-pointer"
               )}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="mr-2 size-4" />
               Keep My Pro Privileges
             </Button>
 
@@ -120,8 +120,8 @@ export function DowngradeModal({ isOpen, onClose, onConfirm }: DowngradeModalPro
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  Downgrading...
+                  <Loader2 className="mr-2 size-3.5 animate-spin" />
+                  Downgrading&hellip;
                 </>
               ) : (
                 "Yes, downgrade to Free"

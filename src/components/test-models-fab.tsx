@@ -82,16 +82,16 @@ export function TestModelsFab() {
         <Button
           variant="outline"
           size="icon"
-          className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg bg-background/80 backdrop-blur-sm border-primary/20 hover:border-primary/50 text-primary transition-all duration-300 z-50 group"
+          className="fixed bottom-6 right-6 size-12 rounded-full shadow-lg bg-background/80 backdrop-blur-sm border-primary/20 hover:border-primary/50 text-primary transition-all duration-300 z-50 group"
         >
-          <FlaskConical className="h-6 w-6 group-hover:scale-110 transition-transform" />
+          <FlaskConical className="size-6 group-hover:scale-110 transition-transform" />
           <span className="sr-only">Test Models</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-background/95 backdrop-blur-md border-primary/10">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-primary flex items-center gap-2">
-            <FlaskConical className="h-5 w-5" />
+            <FlaskConical className="size-5" />
             Model Availability Test
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -115,22 +115,22 @@ export function TestModelsFab() {
               </div>
               <div className="flex items-center gap-3">
                 {model.status === "testing" && (
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <Loader2 className="size-4 animate-spin text-primary" />
                 )}
                 {model.status === "success" && (
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <CheckCircle2 className="size-4 text-green-500" />
                 )}
                 {model.status === "error" && (
-                  <XCircle className="h-4 w-4 text-red-500" />
+                  <XCircle className="size-4 text-red-500" />
                 )}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                  className="size-8 hover:bg-primary/10 hover:text-primary"
                   onClick={() => testModel(model.id)}
                   disabled={model.status === "testing" || isTestingAll}
                 >
-                  <Play className="h-3 w-3" />
+                  <Play className="size-3" />
                 </Button>
               </div>
             </div>
@@ -145,8 +145,8 @@ export function TestModelsFab() {
           >
             {isTestingAll ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Testing...
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Testing&hellip;
               </>
             ) : (
               "Test All Models"

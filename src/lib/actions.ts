@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/appwrite/server";
+import { createAdminClient, getUser } from "@/lib/appwrite/server";
 import { COLLECTIONS } from "@/lib/appwrite/config";
 import { createAIClient } from "@/lib/ai-client";
 import { ID, Query } from "node-appwrite";
@@ -11,6 +11,9 @@ import type { Message } from "@/lib/appwrite/types";
 
 
 export async function processInitialMessage(chatId: string, message: string, model?: string): Promise<Message[]> {
+  const user = await getUser();
+  if (!user) throw new Error("Unauthorized");
+
   console.log("[processInitialMessage] Starting for chat:", chatId, "msg:", message?.slice(0, 30));
   
   const admin = await createAdminClient();

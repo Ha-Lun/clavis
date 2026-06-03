@@ -119,11 +119,11 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="inline-flex items-center gap-2">
-                          <ModelIcon modelId={m.id} className="h-3.5 w-3.5 opacity-60" />
+                          <ModelIcon modelId={m.id} className="size-3.5 opacity-60" />
                           <span>{m.name}</span>
                         </span>
                         {isLocked && (
-                          <Lock className="h-3 w-3 ml-2 text-muted-foreground/30" />
+                          <Lock className="size-3 ml-2 text-muted-foreground/30" />
                         )}
                       </div>
                     </SelectItem>
@@ -156,11 +156,11 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="inline-flex items-center gap-2">
-                          <ModelIcon modelId={m.id} className="h-3.5 w-3.5 opacity-60" />
+                          <ModelIcon modelId={m.id} className="size-3.5 opacity-60" />
                           <span>{m.name}</span>
                         </span>
                         {isLocked && (
-                          <Lock className="h-3 w-3 ml-2 text-muted-foreground/30" />
+                          <Lock className="size-3 ml-2 text-muted-foreground/30" />
                         )}
                       </div>
                     </SelectItem>

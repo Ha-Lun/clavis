@@ -45,7 +45,7 @@ export function NewChatButton() {
         "disabled:opacity-50 disabled:cursor-not-allowed"
       )}
     >
-      {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+      {isLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
       New Chat
     </motion.button>
   );

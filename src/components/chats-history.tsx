@@ -102,7 +102,7 @@ export function ChatsHistory({ chats }: ChatsHistoryProps) {
         className="mt-6"
       >
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40" />
           <input
             type="text"
             value={search}
@@ -129,8 +129,8 @@ export function ChatsHistory({ chats }: ChatsHistoryProps) {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="mt-20 flex flex-col items-center text-center"
         >
-          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-            <Inbox className="h-5 w-5 text-primary/60" />
+          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+            <Inbox className="size-5 text-primary/60" />
           </div>
           <p className="text-[14px] text-muted-foreground/60 font-light">
             {search.trim() ? "No chats match your search." : "No conversations yet."}
@@ -203,12 +203,12 @@ function ChatRow({
           "hover:bg-foreground/[0.04]"
         )}
       >
-        <MessageCircle className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-colors duration-150" />
+        <MessageCircle className="size-3.5 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-colors duration-150" />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {showPin && (
-              <Pin className="h-2.5 w-2.5 shrink-0 text-primary/70" />
+              <Pin className="size-2.5 shrink-0 text-primary/70" />
             )}
             <span className="text-[13px] text-foreground truncate group-hover:text-foreground transition-colors">
               {chat.title}

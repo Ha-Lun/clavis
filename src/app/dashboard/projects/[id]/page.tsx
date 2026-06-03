@@ -52,13 +52,13 @@ export default async function ProjectDetailPage({
           href="/dashboard/projects"
           className="inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-primary transition-colors mb-6 font-medium"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="size-4" />
           All Projects
         </Link>
 
         <div className="flex items-center gap-4 mb-10">
-          <div className="h-12 w-12 rounded-[12px] bg-primary/10 flex items-center justify-center shadow-stripe-ambient">
-            <FolderOpen className="h-6 w-6 text-primary" />
+          <div className="size-12 rounded-[12px] bg-primary/10 flex items-center justify-center shadow-stripe-ambient">
+            <FolderOpen className="size-6 text-primary" />
           </div>
           <div>
             <h1 className="text-3xl font-light tracking-tight text-foreground">{project.name as string}</h1>

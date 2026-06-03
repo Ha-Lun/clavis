@@ -13,6 +13,7 @@ async function main() {
     console.log("Fetching model list from integrate.api.nvidia.com...");
     const list = await client.models.list();
     const modelIds = list.data.map(m => m.id);
+    const modelIdsSet = new Set(modelIds);
     console.log(`\nFound ${modelIds.length} models. Here are some of them:`);
     console.log(modelIds.slice(0, 30));
 
@@ -27,7 +28,7 @@ async function main() {
 
     console.log("\nTesting configured models responsiveness...");
     for (const model of testModels) {
-      const isAvailable = modelIds.includes(model);
+      const isAvailable = modelIdsSet.has(model);
       console.log(`\n--- Model: ${model} (In Catalog: ${isAvailable ? "YES" : "NO"}) ---`);
       if (!isAvailable) {
         // Try finding a matching one

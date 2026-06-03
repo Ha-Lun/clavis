@@ -36,13 +36,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Query too long (max 10,000 characters)" }, { status: 400 });
   }
 
-  const validModelIds: string[] = COUNCIL_MODELS.map((m) => m.id);
+  const validModelIds = new Set(COUNCIL_MODELS.map((m) => m.id));
   if (models) {
     if (!Array.isArray(models) || models.length < 2 || models.length > 5) {
       return NextResponse.json({ error: "Must provide 2-5 models" }, { status: 400 });
     }
     for (const m of models) {
-      if (!validModelIds.includes(m)) {
+      if (!validModelIds.has(m as any)) {
         return NextResponse.json({ error: `Invalid model: ${m}` }, { status: 400 });
       }
     }

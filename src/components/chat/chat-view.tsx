@@ -289,7 +289,7 @@ interface ChatViewProps {
       {chat.$id.startsWith("incognito-") && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
           <div className="bg-primary/10 border border-primary/20 backdrop-blur-md text-primary text-[11px] tracking-wide px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_rgba(201,168,76,0.15)]">
-            <Ghost className="h-3 w-3" />
+            <Ghost className="size-3" />
             Incognito Mode Active
           </div>
         </div>

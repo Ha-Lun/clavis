@@ -71,10 +71,10 @@ export function SubscriptionModal({ isOpen, onClose, onSuccess }: SubscriptionMo
             >
               {/* Header */}
               <div className="text-center space-y-2 pt-4 relative">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 size-48 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
                 
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a84c] to-[#a88636] text-black shadow-glow mb-2 animate-bounce duration-[3000ms]">
-                  <Crown className="h-6 w-6 fill-current" />
+                <div className="inline-flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#c9a84c] to-[#a88636] text-black shadow-glow mb-2 animate-bounce duration-[3000ms]">
+                  <Crown className="size-6 fill-current" />
                 </div>
                 <h2 className="text-[22px] font-semibold tracking-tight text-white font-cinzel">
                   CLAVIS <span className="text-[#c9a84c] font-normal">PRO</span>
@@ -90,8 +90,8 @@ export function SubscriptionModal({ isOpen, onClose, onSuccess }: SubscriptionMo
                   const Icon = b.icon;
                   return (
                     <div key={i} className="flex items-start gap-3.5 p-3 rounded-lg border border-white/[0.03] bg-white/[0.01] hover:bg-white/[0.02] transition-colors">
-                      <div className="h-8 w-8 rounded-md bg-[#c9a84c]/10 border border-[#c9a84c]/20 flex items-center justify-center shrink-0">
-                        <Icon className="h-4.5 w-4.5 text-[#c9a84c]" />
+                      <div className="size-8 rounded-md bg-[#c9a84c]/10 border border-[#c9a84c]/20 flex items-center justify-center shrink-0">
+                        <Icon className="size-4.5 text-[#c9a84c]" />
                       </div>
                       <div className="space-y-0.5">
                         <h4 className="text-[13px] font-semibold text-white">{b.title}</h4>
@@ -120,12 +120,12 @@ export function SubscriptionModal({ isOpen, onClose, onSuccess }: SubscriptionMo
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" />
-                      Securing connection...
+                      <Loader2 className="mr-2 size-4 animate-spin text-black" />
+                      Securing connection&hellip;
                     </>
                   ) : (
                     <>
-                      <Sparkles className="mr-2 h-4 w-4 fill-current" />
+                      <Sparkles className="mr-2 size-4 fill-current" />
                       Pay
                     </>
                   )}
@@ -142,8 +142,8 @@ export function SubscriptionModal({ isOpen, onClose, onSuccess }: SubscriptionMo
               animate={{ opacity: 1, scale: 1 }}
               className="p-10 text-center space-y-6 flex flex-col items-center justify-center"
             >
-              <div className="h-16 w-16 rounded-full bg-[#c9a84c]/10 border border-[#c9a84c]/30 flex items-center justify-center text-[#c9a84c] shadow-glow animate-pulse">
-                <Sparkles className="h-8 w-8" />
+              <div className="size-16 rounded-full bg-[#c9a84c]/10 border border-[#c9a84c]/30 flex items-center justify-center text-[#c9a84c] shadow-glow animate-pulse">
+                <Sparkles className="size-8" />
               </div>
               <div className="space-y-2">
                 <h3 className="text-[20px] font-semibold text-white font-cinzel tracking-widest">COMING SOON</h3>

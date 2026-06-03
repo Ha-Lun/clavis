@@ -314,7 +314,7 @@ function SidebarContent({
   const avatarInitial = userEmail.charAt(0).toUpperCase();
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden">
+    <div className="flex flex-col size-full overflow-hidden">
       {/* Header */}
       <div
         className={cn(
@@ -331,8 +331,8 @@ function SidebarContent({
           onClick={onClose}
         >
           {/* Roman-inspired key icon */}
-          <div className="h-6 w-6 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+          <div className="size-6 rounded-md bg-primary/15 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" className="size-3.5 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
               <circle cx="12" cy="6" r="4" />
               <circle cx="12" cy="6" r="1.5" />
               <path d="M12 10v11" />
@@ -355,18 +355,18 @@ function SidebarContent({
         </Link>
 
         <div className={cn("flex items-center shrink-0", isCollapsed && "hidden")}>
-          <ThemeToggle className="h-7 w-7" />
+          <ThemeToggle className="size-7" />
           {toggleCollapse && (
             <button
               type="button"
               onClick={toggleCollapse}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
+              className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? (
-                <PanelLeftOpen className="h-3.5 w-3.5" />
+                <PanelLeftOpen className="size-3.5" />
               ) : (
-                <PanelLeftClose className="h-3.5 w-3.5" />
+                <PanelLeftClose className="size-3.5" />
               )}
             </button>
           )}
@@ -377,10 +377,10 @@ function SidebarContent({
           <button
             type="button"
             onClick={toggleCollapse}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-all duration-200 opacity-0 scale-75 pointer-events-none group-hover/header:opacity-100 group-hover/header:scale-100 group-hover/header:pointer-events-auto cursor-pointer"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-all duration-200 opacity-0 scale-75 pointer-events-none group-hover/header:opacity-100 group-hover/header:scale-100 group-hover/header:pointer-events-auto cursor-pointer"
             title="Expand sidebar"
           >
-            <PanelLeftOpen className="h-3.5 w-3.5" />
+            <PanelLeftOpen className="size-3.5" />
           </button>
         )}
       </div>
@@ -403,9 +403,9 @@ function SidebarContent({
           )}
         >
           {isCreatingChat ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+            <Loader2 className="size-3.5 animate-spin shrink-0" />
           ) : (
-            <Plus className="h-3.5 w-3.5 shrink-0" />
+            <Plus className="size-3.5 shrink-0" />
           )}
           <AnimatePresence>
             {!isCollapsed && (
@@ -438,7 +438,7 @@ function SidebarContent({
               : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
           )}
         >
-          <Users className="h-3.5 w-3.5 shrink-0" />
+          <Users className="size-3.5 shrink-0" />
           <AnimatePresence>
             {!isCollapsed && (
               <motion.span
@@ -462,7 +462,7 @@ function SidebarContent({
             href="/dashboard/chats"
             onClick={onClose}
             className={cn(
-              "h-9 w-9 mx-auto flex items-center justify-center rounded-full",
+              "size-9 mx-auto flex items-center justify-center rounded-full",
               "text-[13px] font-medium",
               "transition-colors duration-150",
               pathname === "/dashboard/chats" || pathname.startsWith("/dashboard/chat/")
@@ -471,13 +471,13 @@ function SidebarContent({
             )}
             title="Chat History"
           >
-            <MessageCircle className="h-4 w-4 shrink-0" />
+            <MessageCircle className="size-4 shrink-0" />
           </Link>
           <Link
             href="/dashboard/projects"
             onClick={onClose}
             className={cn(
-              "h-9 w-9 mx-auto flex items-center justify-center rounded-full",
+              "size-9 mx-auto flex items-center justify-center rounded-full",
               "text-[13px] font-medium",
               "transition-colors duration-150",
               pathname === "/dashboard/projects" || pathname.startsWith("/dashboard/projects/")
@@ -486,7 +486,7 @@ function SidebarContent({
             )}
             title="Projects"
           >
-            <FolderOpen className="h-3.5 w-3.5 shrink-0" />
+            <FolderOpen className="size-3.5 shrink-0" />
           </Link>
         </div>
       )}
@@ -503,9 +503,9 @@ function SidebarContent({
               className="flex items-center gap-1 px-2 py-1 w-full text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest hover:text-muted-foreground transition-colors cursor-pointer"
             >
               {isChatsOpen ? (
-                <ChevronDown className="h-2.5 w-2.5" />
+                <ChevronDown className="size-2.5" />
               ) : (
-                <ChevronRight className="h-2.5 w-2.5" />
+                <ChevronRight className="size-2.5" />
               )}
               <span>Recent</span>
             </button>
@@ -560,7 +560,7 @@ function SidebarContent({
                               >
                                 <MessageCircle
                                   className={cn(
-                                    "h-3.5 w-3.5 shrink-0",
+                                    "size-3.5 shrink-0",
                                     isActive ? "text-primary" : "text-muted-foreground/40"
                                   )}
                                 />
@@ -595,23 +595,23 @@ function SidebarContent({
                                   type="button"
                                   onClick={(e) => handlePinChat(chatId, !chat.isPinned, e)}
                                   className={cn(
-                                    "h-6 w-6 flex items-center justify-center rounded transition-colors cursor-pointer",
+                                    "size-6 flex items-center justify-center rounded transition-colors cursor-pointer",
                                     chat.isPinned
                                       ? "text-primary hover:text-primary/70"
                                       : "text-muted-foreground/50 hover:text-muted-foreground"
                                   )}
                                   title={chat.isPinned ? "Unpin" : "Pin"}
                                 >
-                                  {chat.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                                  {chat.isPinned ? <PinOff className="size-3" /> : <Pin className="size-3" />}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={(e) => handleDeleteChat(chatId, e)}
-                                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground/50 hover:text-red-400 transition-colors cursor-pointer"
+                                  className="size-6 flex items-center justify-center rounded text-muted-foreground/50 hover:text-red-400 transition-colors cursor-pointer"
                                   title="Delete"
                                   aria-label="Delete chat"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="size-3" />
                                 </button>
                               </div>
                             </div>
@@ -633,9 +633,9 @@ function SidebarContent({
                 className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground/60 uppercase tracking-widest hover:text-muted-foreground transition-colors cursor-pointer"
               >
                 {isProjectsOpen ? (
-                  <ChevronDown className="h-2.5 w-2.5" />
+                  <ChevronDown className="size-2.5" />
                 ) : (
-                  <ChevronRight className="h-2.5 w-2.5" />
+                  <ChevronRight className="size-2.5" />
                 )}
                 <span>Projects</span>
               </button>
@@ -649,7 +649,7 @@ function SidebarContent({
                 title="New project"
                 aria-label="New project"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="size-3.5" />
               </button>
             </div>
 
@@ -699,7 +699,7 @@ function SidebarContent({
                               >
                                 <FolderOpen
                                   className={cn(
-                                    "h-3.5 w-3.5 shrink-0",
+                                    "size-3.5 shrink-0",
                                     isActive ? "text-primary" : "text-muted-foreground/40"
                                   )}
                                 />
@@ -732,23 +732,23 @@ function SidebarContent({
                                   type="button"
                                   onClick={(e) => handlePinProject(projectId, !project.isPinned, e)}
                                   className={cn(
-                                    "h-6 w-6 flex items-center justify-center rounded transition-colors cursor-pointer",
+                                    "size-6 flex items-center justify-center rounded transition-colors cursor-pointer",
                                     project.isPinned
                                       ? "text-primary hover:text-primary/70"
                                       : "text-muted-foreground/50 hover:text-muted-foreground"
                                   )}
                                   title={project.isPinned ? "Unpin" : "Pin"}
                                 >
-                                  {project.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                                  {project.isPinned ? <PinOff className="size-3" /> : <Pin className="size-3" />}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={(e) => handleDeleteProject(projectId, e)}
-                                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground/50 hover:text-red-400 transition-colors cursor-pointer"
+                                  className="size-6 flex items-center justify-center rounded text-muted-foreground/50 hover:text-red-400 transition-colors cursor-pointer"
                                   title="Delete"
                                   aria-label="Delete project"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="size-3" />
                                 </button>
                               </div>
                             </div>
@@ -773,7 +773,7 @@ function SidebarContent({
           isCollapsed && "flex-col gap-2"
         )}>
           {/* Avatar */}
-          <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center text-[11px] font-semibold text-primary shrink-0">
+          <div className="size-7 rounded-full bg-primary/15 flex items-center justify-center text-[11px] font-semibold text-primary shrink-0">
             {avatarInitial}
           </div>
 
@@ -801,20 +801,20 @@ function SidebarContent({
           <div className={cn("flex items-center gap-1 shrink-0", isCollapsed && "flex-col")}>
             <Link
               href="/dashboard/settings"
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
+              className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors cursor-pointer"
               title="Settings"
             >
-              <Settings className="h-3.5 w-3.5" />
+              <Settings className="size-3.5" />
             </Link>
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors rounded-md cursor-pointer"
+              className="size-7 text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] transition-colors rounded-md cursor-pointer"
               title="Sign out"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <LogOut className="size-3.5" />
             </Button>
           </div>
         </div>
@@ -838,14 +838,14 @@ function SidebarContent({
                   onClick={handleUndoProjectDelete}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-foreground/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
                 >
-                  <RotateCcw className="h-3.5 w-3.5" />
+                  <RotateCcw className="size-3.5" />
                   Undo
                 </button>
                 <button
                   onClick={() => setShowUndoProject(false)}
                   className="p-1.5 hover:bg-foreground/[0.05] rounded-lg transition-colors text-muted-foreground"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="size-4" />
                 </button>
               </div>
             </div>
@@ -863,14 +863,14 @@ function SidebarContent({
                   onClick={handleUndoChatDelete}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-foreground/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
                 >
-                  <RotateCcw className="h-3.5 w-3.5" />
+                  <RotateCcw className="size-3.5" />
                   Undo
                 </button>
                 <button
                   onClick={() => setShowUndoChat(false)}
                   className="p-1.5 hover:bg-foreground/[0.05] rounded-lg transition-colors text-muted-foreground"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="size-4" />
                 </button>
               </div>
             </div>

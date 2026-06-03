@@ -49,8 +49,8 @@ function LoginContent() {
       >
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 mb-4">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+          <div className="inline-flex size-9 items-center justify-center rounded-lg bg-primary/15 mb-4">
+            <svg viewBox="0 0 24 24" fill="none" className="size-5 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
               <circle cx="12" cy="6" r="4" />
               <circle cx="12" cy="6" r="1.5" />
               <path d="M12 10v11" />
@@ -134,7 +134,7 @@ function LoginContent() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 size-3.5 animate-spin" />
                     Signing in…
                   </>
                 ) : (
@@ -161,7 +161,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="size-6 animate-spin text-primary" />
       </div>
     }>
       <LoginContent />

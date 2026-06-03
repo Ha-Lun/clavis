@@ -32,6 +32,7 @@ async function callAIWithRetry(
   enableWebSearch: boolean = true,
 ) {
   let lastError: Error | null = null;
+  const isQwen = model.includes("qwen3.5");
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -67,7 +68,7 @@ async function callAIWithRetry(
         ] as any[],
         ...(webSearchTool ? { tools: webSearchTool } : {}),
         stream: true,
-        max_tokens: model.includes("qwen3.5") ? 16384 : 8192,
+        max_tokens: isQwen ? 16384 : 8192,
       }, { signal });
 
       const completion = await Promise.race([aiPromise, timeoutPromise]);

@@ -240,7 +240,7 @@ export default function SettingsPage() {
                               <div className="flex items-center justify-between w-full">
                                 <span>{m.name}</span>
                                 {isLocked && (
-                                  <Lock className="h-3 w-3 ml-2 text-muted-foreground/30" />
+                                  <Lock className="size-3 ml-2 text-muted-foreground/30" />
                                 )}
                               </div>
                             </SelectItem>
@@ -335,12 +335,12 @@ export default function SettingsPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 size-3.5 animate-spin" />
                     Saving…
                   </>
                 ) : saved ? (
                   <>
-                    <Check className="mr-2 h-3.5 w-3.5 text-green-400" />
+                    <Check className="mr-2 size-3.5 text-green-400" />
                     Saved
                   </>
                 ) : (

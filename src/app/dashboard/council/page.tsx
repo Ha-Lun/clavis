@@ -305,8 +305,8 @@ export default function CouncilPage() {
           >
             <div className="flex items-center justify-between gap-3 mb-2">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                  <Users className="h-4 w-4 text-primary" />
+                <div className="size-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Users className="size-4 text-primary" />
                 </div>
                 <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
                   Model Council
@@ -316,7 +316,7 @@ export default function CouncilPage() {
                 onClick={() => setShowHistory(prev => !prev)}
                 className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[12px] text-muted-foreground hover:bg-foreground/[0.02] transition-colors cursor-pointer font-medium"
               >
-                <History className="h-3.5 w-3.5" />
+                <History className="size-3.5" />
                 <span>{showHistory ? "Hide Logs" : "Show Logs"}</span>
               </button>
             </div>
@@ -372,21 +372,21 @@ export default function CouncilPage() {
                     <div className="flex items-center gap-2 min-w-0">
                       <div
                         className={cn(
-                          "h-4 w-4 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors",
+                          "size-4 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors",
                           isSelected
                             ? "bg-primary border-primary"
                             : "border-muted-foreground/30 bg-transparent"
                         )}
                       >
                         {isSelected && (
-                          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                          <svg viewBox="0 0 12 12" className="size-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5}>
                             <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
                       </div>
                       <span className="text-[13px] font-normal truncate">{model.name}</span>
                     </div>
-                    {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                    {isLocked && <Lock className="size-3.5 text-muted-foreground shrink-0" />}
                   </button>
                 );
               })}
@@ -436,7 +436,7 @@ export default function CouncilPage() {
                     onClick={handleStop}
                     id="stop-council-button"
                   >
-                    <XIcon className="h-3.5 w-3.5" />
+                    <XIcon className="size-3.5" />
                     <span>Stop Consultation</span>
                   </motion.button>
                 ) : (
@@ -454,7 +454,7 @@ export default function CouncilPage() {
                     disabled={!canRun}
                     id="run-council-button"
                   >
-                    <Users className="h-3.5 w-3.5" />
+                    <Users className="size-3.5" />
                     <span>Run Council</span>
                   </motion.button>
                 )}
@@ -473,7 +473,7 @@ export default function CouncilPage() {
               >
                 {/* Phase indicator */}
                 <div className="flex items-center gap-2 mb-3">
-                  <ThinkingSpinner className="h-3.5 w-3.5 text-primary" size="14px" />
+                  <ThinkingSpinner className="size-3.5 text-primary" size="14px" />
                   <span className="text-[13px] text-muted-foreground font-medium">
                     {phase === "searching" && "Searching the web…"}
                     {phase === "querying" && `Querying models (${completedCount}/${modelProgress.length})…`}
@@ -494,20 +494,20 @@ export default function CouncilPage() {
                       <div className="flex items-center gap-2.5 min-w-0">
                         {/* Status icon */}
                         {mp.status === "querying" && (
-                          <ThinkingSpinner className="h-3.5 w-3.5 text-primary shrink-0" size="14px" />
+                          <ThinkingSpinner className="size-3.5 text-primary shrink-0" size="14px" />
                         )}
                         {mp.status === "complete" && (
-                          <div className="h-3.5 w-3.5 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0">
-                            <Check className="h-2.5 w-2.5 text-emerald-400" />
+                          <div className="size-3.5 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0">
+                            <Check className="size-2.5 text-emerald-400" />
                           </div>
                         )}
                         {mp.status === "error" && (
-                          <div className="h-3.5 w-3.5 rounded-full bg-red-400/20 flex items-center justify-center shrink-0">
-                            <XIcon className="h-2.5 w-2.5 text-red-400" />
+                          <div className="size-3.5 rounded-full bg-red-400/20 flex items-center justify-center shrink-0">
+                            <XIcon className="size-2.5 text-red-400" />
                           </div>
                         )}
                         {mp.status === "idle" && (
-                          <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/20 shrink-0" />
+                          <div className="size-3.5 rounded-full border border-muted-foreground/20 shrink-0" />
                         )}
 
                         <span className={cn(
@@ -544,7 +544,7 @@ export default function CouncilPage() {
                       animate={{ opacity: 1, x: 0 }}
                       className="flex items-center gap-2.5 pt-2 mt-2 border-t border-border"
                     >
-                      <ThinkingSpinner className="h-3.5 w-3.5 text-amber-400 shrink-0" size="14px" />
+                      <ThinkingSpinner className="size-3.5 text-amber-400 shrink-0" size="14px" />
                       <span className="text-[13px] text-amber-400 font-medium">
                         {getModelInfo(SYNTHESIZER_MODEL).name} is synthesizing…
                       </span>
@@ -564,7 +564,7 @@ export default function CouncilPage() {
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3 p-4 rounded-lg border border-red-400/20 bg-red-400/[0.05]"
               >
-                <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+                <AlertTriangle className="size-4 text-red-400 shrink-0" />
                 <span className="text-[13px] text-red-400 font-normal">{error}</span>
               </motion.div>
             )}
@@ -586,13 +586,13 @@ export default function CouncilPage() {
                     const Icon = conf.icon;
                     return (
                       <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12px] font-semibold", conf.bg, conf.color)}>
-                        <Icon className="h-3.5 w-3.5" />
+                        <Icon className="size-3.5" />
                         {conf.label}
                       </div>
                     );
                   })()}
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-card text-[12px] text-muted-foreground font-normal">
-                    <Clock className="h-3 w-3" />
+                    <Clock className="size-3" />
                     {(result.totalLatencyMs / 1000).toFixed(1)}s total
                   </div>
                 </div>
@@ -644,7 +644,7 @@ export default function CouncilPage() {
                         className="p-4 rounded-lg border border-border bg-card space-y-3"
                       >
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          <div className="size-1.5 rounded-full bg-amber-400" />
                           <span className="text-[13px] font-semibold text-foreground">
                             {d.topic}
                           </span>
@@ -679,7 +679,7 @@ export default function CouncilPage() {
                       <div key={mr.model} className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className={cn(
-                            "h-1.5 w-1.5 rounded-full shrink-0",
+                            "size-1.5 rounded-full shrink-0",
                             mr.error ? "bg-red-400" : "bg-emerald-400"
                           )} />
                           <span className="text-[13px] text-foreground font-normal truncate">
@@ -702,7 +702,7 @@ export default function CouncilPage() {
                 {/* Individual Responses (collapsible) */}
                 <details className="group">
                   <summary className="flex items-center gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-[12px] font-semibold text-muted-foreground/50 uppercase tracking-widest hover:text-muted-foreground/70 transition-colors py-2">
-                    <svg className="h-3 w-3 transition-transform duration-200 group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="size-3 transition-transform duration-200 group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                     Individual Responses
@@ -753,7 +753,7 @@ export default function CouncilPage() {
                 className="p-1.5 rounded-md hover:bg-foreground/[0.05] text-primary transition-colors cursor-pointer"
                 title="New Inquiry"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="size-3.5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin">
@@ -789,7 +789,7 @@ export default function CouncilPage() {
                       className="absolute top-2.5 right-2.5 p-1 rounded hover:bg-foreground/[0.08] opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-red-400 transition-all cursor-pointer"
                       title="Delete Log"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="size-3" />
                     </button>
                   </div>
                 ))

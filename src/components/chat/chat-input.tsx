@@ -163,7 +163,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                       exit={{ opacity: 0, scale: 0.9 }}
                       className="flex items-center gap-1.5 bg-secondary border border-border rounded-md px-2.5 py-1"
                     >
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      <FileText className="size-3.5 text-muted-foreground" />
                       <span className="text-[12px] font-medium text-foreground max-w-[140px] truncate">
                         {file.name}
                       </span>
@@ -171,7 +171,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                         onClick={() => removeAttachment(file.url)}
                         className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="size-3" />
                       </button>
                     </motion.div>
                   ))}
@@ -218,7 +218,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   <button
                     type="button"
                     className={cn(
-                      "h-7 w-7 flex items-center justify-center rounded-md",
+                      "size-7 flex items-center justify-center rounded-md",
                       "text-muted-foreground/60 hover:text-muted-foreground",
                       "hover:bg-foreground/[0.05] transition-colors cursor-pointer"
                     )}
@@ -226,9 +226,9 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                     id="file-upload-button"
                   >
                     {uploading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="size-3.5 animate-spin" />
                     ) : (
-                      <Paperclip className="h-3.5 w-3.5" />
+                      <Paperclip className="size-3.5" />
                     )}
                   </button>
                 </DropdownMenuTrigger>
@@ -237,15 +237,15 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                     onClick={() => fileInputRef.current?.click()}
                     className="cursor-pointer gap-2 text-[13px]"
                   >
-                    <Upload className="h-3.5 w-3.5" />
+                    <Upload className="size-3.5" />
                     <span>Upload from computer</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer gap-2 text-[13px] opacity-40 pointer-events-none">
-                    <FileText className="h-3.5 w-3.5" />
+                    <FileText className="size-3.5" />
                     <span>Import from project</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer gap-2 text-[13px] opacity-40 pointer-events-none">
-                    <LinkIcon className="h-3.5 w-3.5" />
+                    <LinkIcon className="size-3.5" />
                     <span>Link URL</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -263,7 +263,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                 )}
                 id="web-search-toggle"
               >
-                <Globe className="h-3.5 w-3.5" />
+                <Globe className="size-3.5" />
                 <span className="hidden sm:inline-block text-[11px] font-medium tracking-tight">Search</span>
               </button>
             </div>
@@ -276,14 +276,14 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                 <motion.button
                   whileTap={{ scale: 0.92 }}
                   className={cn(
-                    "h-7 w-7 flex items-center justify-center rounded-md",
+                    "size-7 flex items-center justify-center rounded-md",
                     "bg-muted text-muted-foreground",
                     "hover:bg-muted/80 transition-colors cursor-pointer"
                   )}
                   onClick={onStop}
                   id="stop-message-button"
                 >
-                  <Square className="h-3 w-3 fill-current" />
+                  <Square className="size-3 fill-current" />
                 </motion.button>
               ) : (
                 <motion.button
@@ -291,7 +291,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   whileTap={hasContent ? { scale: 0.92 } : {}}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                   className={cn(
-                    "h-7 w-7 flex items-center justify-center rounded-md transition-all duration-100",
+                    "size-7 flex items-center justify-center rounded-md transition-all duration-100",
                     hasContent
                       ? "bg-primary text-primary-foreground shadow-glow cursor-pointer"
                       : "bg-secondary text-muted-foreground/40 cursor-default"
@@ -300,7 +300,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   disabled={!hasContent}
                   id="send-message-button"
                 >
-                  <ArrowUp className="h-3.5 w-3.5" />
+                  <ArrowUp className="size-3.5" />
                 </motion.button>
               )}
             </div>

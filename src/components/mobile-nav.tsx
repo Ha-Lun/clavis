@@ -16,14 +16,14 @@ export function MobileNav() {
           size="icon"
           onClick={toggleSidebar}
           id="mobile-menu-button"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+          className="size-7 text-muted-foreground hover:text-foreground cursor-pointer"
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="size-4" />
         </Button>
         <span className="font-cinzel text-[14px] font-normal tracking-[0.05em] text-foreground">Clavis</span>
       </div>
-      <Link href="/dashboard/chat/new" className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="New Chat">
-        <Plus className="h-4 w-4" />
+      <Link href="/dashboard/chat/new" className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="New Chat">
+        <Plus className="size-4" />
       </Link>
     </div>
   );

@@ -105,11 +105,11 @@ export function MessageBubble({
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 bg-primary/[0.08] hover:bg-primary/[0.14] border border-primary/[0.15] rounded-md px-2.5 py-1 transition-colors group/file cursor-pointer"
                     >
-                      <FileText className="h-3.5 w-3.5 text-primary/70" />
+                      <FileText className="size-3.5 text-primary/70" />
                       <span className="text-[12px] font-medium max-w-[140px] truncate text-foreground">
                         {file.name}
                       </span>
-                      <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover/file:opacity-60 transition-opacity text-muted-foreground" />
+                      <ExternalLink className="size-2.5 opacity-0 group-hover/file:opacity-60 transition-opacity text-muted-foreground" />
                     </a>
                   ))}
                 </div>
@@ -126,9 +126,9 @@ export function MessageBubble({
             <div className="min-w-0">
               {/* Clavis sender label */}
               <div className="flex items-center gap-1.5 mb-2">
-                <div className="h-5 w-5 rounded-md bg-primary/15 flex items-center justify-center">
+                <div className="size-5 rounded-md bg-primary/15 flex items-center justify-center">
                   {/* Roman-inspired key icon */}
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
+                  <svg viewBox="0 0 24 24" fill="none" className="size-3 text-primary" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" stroke="currentColor">
                     <circle cx="12" cy="6" r="4" />
                     <circle cx="12" cy="6" r="1.5" />
                     <path d="M12 10v11" />
@@ -146,7 +146,7 @@ export function MessageBubble({
                       key={i}
                       className="flex items-center gap-1 bg-primary/[0.06] border border-primary/[0.1] rounded-md px-2 py-0.5 text-[11px] text-primary/70 font-medium"
                     >
-                      <FileText className="h-2.5 w-2.5" />
+                      <FileText className="size-2.5" />
                       <span>{fileName}</span>
                     </div>
                   ))}
@@ -165,7 +165,7 @@ export function MessageBubble({
                       return (
                         <div className="my-3 border-l-2 border-primary/30 bg-primary/[0.02] rounded-r-lg">
                           <div className="flex items-center gap-2 px-4 py-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider select-none">
-                            {isStreaming && <ThinkingSpinner className="h-3 w-3 text-primary/40 animate-spin" size="12px" />}
+                            {isStreaming && <ThinkingSpinner className="size-3 text-primary/40 animate-spin" size="12px" />}
                             Thinking Process
                           </div>
                           <div className="px-4 pb-3 text-muted-foreground/80 font-light text-[14px] leading-relaxed whitespace-pre-wrap font-sans italic">
@@ -308,12 +308,12 @@ export function MessageBubble({
               >
                 {copied ? (
                   <>
-                    <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
+                    <Check className="size-3 text-green-600 dark:text-green-500" />
                     <span className="text-green-600 dark:text-green-500">Copied</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="h-3 w-3" />
+                    <Copy className="size-3" />
                     <span>Copy</span>
                   </>
                 )}
@@ -343,12 +343,12 @@ function CopyCodeButton({ code }: { code: string }) {
     >
       {copied ? (
         <>
-          <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
+          <Check className="size-3 text-green-600 dark:text-green-500" />
           <span className="text-green-600 dark:text-green-500">Copied</span>
         </>
       ) : (
         <>
-          <Copy className="h-3 w-3" />
+          <Copy className="size-3" />
           <span>Copy</span>
         </>
       )}

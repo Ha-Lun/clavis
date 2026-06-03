@@ -6,16 +6,24 @@ import { useState, useEffect } from "react";
  */
 export function useSmoothStream(rawContent: string, isStreaming: boolean, speed = 20) {
   const [smoothContent, setSmoothContent] = useState("");
+  const [prevRawContent, setPrevRawContent] = useState(rawContent);
+  const [prevIsStreaming, setPrevIsStreaming] = useState(isStreaming);
 
-  useEffect(() => {
-    if (!isStreaming && rawContent) {
-      // If stream finished, snap to full content immediately to avoid hanging
-      setSmoothContent(rawContent);
-      return;
-    }
+  // Adjust state during render when props change
+  if (rawContent !== prevRawContent || isStreaming !== prevIsStreaming) {
+    setPrevRawContent(rawContent);
+    setPrevIsStreaming(isStreaming);
 
     if (rawContent.length === 0) {
       setSmoothContent("");
+    } else if (!isStreaming && rawContent) {
+      setSmoothContent(rawContent);
+    }
+  }
+
+  useEffect(() => {
+    // If we've already snapped or reset during render, or there's no work to do, just return
+    if ((!isStreaming && rawContent) || rawContent.length === 0) {
       return;
     }
 

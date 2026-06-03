@@ -13,7 +13,7 @@ export default function NotFound() {
         </p>
         <Link href="/dashboard">
           <Button className="gap-2">
-            <Home className="h-4 w-4" />
+            <Home className="size-4" />
             Back to Dashboard
           </Button>
         </Link>

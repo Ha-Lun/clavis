@@ -202,15 +202,15 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
       <div className="flex items-center justify-between mb-6">
         <TabsList className="bg-secondary/50 p-1 rounded-xl">
           <TabsTrigger value="chats" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-6 py-2 text-[13px] font-medium transition-all">
-            <MessageSquare className="h-4 w-4 mr-2" />
+            <MessageSquare className="size-4 mr-2" />
             Chats
           </TabsTrigger>
           <TabsTrigger value="files" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-6 py-2 text-[13px] font-medium transition-all">
-            <FileText className="h-4 w-4 mr-2" />
+            <FileText className="size-4 mr-2" />
             Files
           </TabsTrigger>
           <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-6 py-2 text-[13px] font-medium transition-all">
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="size-4 mr-2" />
             Instructions
           </TabsTrigger>
         </TabsList>
@@ -223,11 +223,11 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
                 onClick={handleUndoDelete}
                 className="flex items-center gap-1 font-medium hover:underline"
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="size-3" />
                 Undo
               </button>
               <button onClick={() => setShowUndo(false)} className="p-0.5 hover:bg-accent/20 rounded">
-                <X className="h-3 w-3" />
+                <X className="size-3" />
               </button>
             </div>
           )}
@@ -239,9 +239,9 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
             className="h-9 gap-2 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-stripe-ambient px-4 font-normal"
           >
             {isCreatingChat ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
             )}
             New Chat
           </Button>
@@ -252,8 +252,8 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
         <div className="space-y-4">
           {localChats.length === 0 ? (
             <div className="text-center py-20 border border-dashed border-border rounded-[20px] bg-card/30">
-              <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-7 w-7 text-primary/40" />
+              <div className="size-14 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="size-7 text-primary/40" />
               </div>
               <h3 className="text-lg font-light text-foreground mb-1">No project chats</h3>
               <p className="text-muted-foreground text-[15px] font-light">
@@ -290,7 +290,7 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
                             onClick={(e) => handleDeleteChat(chatId, e)}
                             className="p-1 text-muted-foreground/40 hover:text-accent hover:bg-accent/10 rounded-md transition-all opacity-0 group-hover:opacity-100"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="size-3.5" />
                           </button>
                         </CardDescription>
                       </CardHeader>
@@ -323,9 +323,9 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
                 disabled={isUploading}
               >
                 {isUploading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <UploadCloud className="h-3.5 w-3.5" />
+                  <UploadCloud className="size-3.5" />
                 )}
                 Upload
               </Button>
@@ -340,7 +340,7 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
             </div>
           ) : files.length === 0 ? (
             <div className="text-center py-16 border border-dashed border-border rounded-[16px] bg-secondary/5">
-              <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+              <FileText className="size-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground text-[15px] font-light">
                 No files uploaded yet.
               </p>
@@ -352,7 +352,7 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
                   <CardHeader className="p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <FileText className="h-5 w-5 text-primary shrink-0" />
+                        <FileText className="size-5 text-primary shrink-0" />
                         <div className="overflow-hidden">
                           <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                           <p className="text-[11px] text-muted-foreground font-light">
@@ -367,13 +367,13 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
                           rel="noopener noreferrer"
                           className="p-2 text-muted-foreground hover:text-primary transition-colors"
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <ExternalLink className="size-4" />
                         </a>
                         <button
                           onClick={() => handleDeleteFile(file.$id)}
                           className="p-2 text-muted-foreground hover:text-accent transition-colors"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="size-4" />
                         </button>
                       </div>
                     </div>
@@ -406,9 +406,9 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
                 className="gap-2 bg-primary hover:bg-primary/90 text-white shadow-stripe-ambient rounded-lg px-6 font-normal"
               >
                 {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <Save className="h-4 w-4" />
+                  <Save className="size-4" />
                 )}
                 Save Changes
               </Button>
@@ -435,14 +435,14 @@ export function ProjectTabs({ project, chats: initialChats }: ProjectTabsProps) 
               onClick={handleUndoDelete}
               className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/[0.05] text-primary rounded-lg transition-colors text-[13px] font-semibold"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
+              <RotateCcw className="size-3.5" />
               Undo
             </button>
             <button 
               onClick={() => setShowUndo(false)}
               className="p-1.5 hover:bg-white/[0.05] rounded-lg transition-colors text-muted-foreground"
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           </div>
         </div>
