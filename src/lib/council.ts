@@ -48,9 +48,10 @@ export type CouncilProgressEvent =
 
 // ─── Constants ────────────────────────────────────
 
-export const SYNTHESIZER_MODEL = "google/gemini-3.5-flash";
+export const SYNTHESIZER_MODEL = "google/gemini-3.1-flash-lite";
 
 export const COUNCIL_MODELS = [
+  { id: "google/gemini-3.1-flash-lite", name: "Gemini 3.1 Flash" },
   { id: "moonshotai/kimi-k2.6", name: "Kimi K2.6" },
   { id: "nvidia/nemotron-3-nano-30b-a3b", name: "Nemotron Nano" },
   { id: "mistralai/mistral-small-4-119b-2603", name: "Mistral Small 4" },

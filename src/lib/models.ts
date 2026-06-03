@@ -1,6 +1,6 @@
 export type ModelId =
   | "auto"
-  | "google/gemini-3.5-flash"
+  | "google/gemini-3.1-flash-lite"
   | "mistralai/mistral-small-4-119b-2603"
   | "mistralai/mistral-medium-3.5-128b"
   | "qwen/qwen3.5-122b-a10b"
@@ -25,9 +25,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "Auto",
   },
   {
-    id: "google/gemini-3.5-flash",
-    name: "Gemini 3.5 Flash",
-    shortName: "Gemini 3.5",
+    id: "google/gemini-3.1-flash-lite",
+    name: "Gemini 3.1 Flash",
+    shortName: "Gemini 3.1",
   },
   {
     id: "nvidia/nemotron-3-nano-30b-a3b",
