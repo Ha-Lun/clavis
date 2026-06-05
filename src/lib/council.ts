@@ -51,15 +51,14 @@ export type CouncilProgressEvent =
 export const SYNTHESIZER_MODEL = "google/gemini-3.1-flash-lite";
 
 export const COUNCIL_MODELS = [
-  { id: "google/gemini-3.1-flash-lite", name: "Gemini 3.1 Flash" },
+  { id: "mistralai/mistral-medium-3.5-128b", name: "Mistral Medium 3.5" },
   { id: "moonshotai/kimi-k2.6", name: "Kimi K2.6" },
   { id: "nvidia/nemotron-3-nano-30b-a3b", name: "Nemotron Nano" },
   { id: "mistralai/mistral-small-4-119b-2603", name: "Mistral Small 4" },
   { id: "minimaxai/minimax-m2.7", name: "MiniMax M2.7" },
   { id: "qwen/qwen3.5-122b-a10b", name: "Qwen 3.5" },
-  { id: "mistralai/mistral-medium-3.5-128b", name: "Mistral Medium 3.5" },
-  { id: "openai/gpt-5.5", name: "GPT 5.5", isPremium: true },
   { id: "google/gemini-3.1-pro", name: "Gemini 3.1 Pro", isPremium: true },
+  { id: "openai/gpt-5.5", name: "GPT 5.5", isPremium: true },
   { id: "anthropic/opus-4.7", name: "Opus 4.7", isPremium: true },
 ] as const;
 

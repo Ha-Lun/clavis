@@ -26,6 +26,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,10 +71,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
     textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     setUploading(true);
     try {
       const formData = new FormData();
@@ -103,6 +101,42 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // If the mouse is still inside the container (e.g. over the textarea), don't remove highlighting
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
   const removeAttachment = async (url: string) => {
     const attachment = attachments.find((a) => a.url === url);
     setAttachments((prev) => prev.filter((a) => a.url !== url));
@@ -121,6 +155,10 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
       <div className="max-w-3xl mx-auto">
         {/* Main input container */}
         <motion.div
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           animate={{
             boxShadow: isStreaming
               ? [
@@ -128,7 +166,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                   "0 0 0 2px rgba(168,124,62,0.5), 0 0 20px rgba(168,124,62,0.15)",
                   "0 0 0 1px rgba(168,124,62,0.15), 0 0 0px rgba(168,124,62,0)"
                 ]
-              : isFocused
+              : isFocused || isDragging
                 ? "0 0 0 1px rgba(168,124,62,0.35), 0 0 20px rgba(168,124,62,0.08)"
                 : "0 0 0 1px rgba(0,0,0,0.0), 0 0 0px rgba(168,124,62,0.0)",
           }}
@@ -140,7 +178,8 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
           className={cn(
             "relative flex flex-col rounded-xl transition-colors duration-100",
             "bg-card border",
-            isStreaming ? "border-transparent" : isFocused ? "border-primary/40" : "border-border"
+            isStreaming ? "border-transparent" : isFocused || isDragging ? "border-primary/40" : "border-border",
+            isDragging && "ring-2 ring-primary/60 bg-primary/5"
           )}
         >
 

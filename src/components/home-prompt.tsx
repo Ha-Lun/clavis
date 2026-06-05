@@ -70,6 +70,8 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
   const greeting = getGreeting();
   const hasContent = content.trim().length > 0 || attachments.length > 0;
 
+  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
+
   // Auto-resize textarea
   const autoResize = useCallback(() => {
     const el = textareaRef.current;
@@ -82,9 +84,7 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
     autoResize();
   }, [content, autoResize]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFile = async (file: File) => {
     setUploading(true);
     try {
       const formData = new FormData();
@@ -105,6 +105,58 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  useEffect(() => {
+    let dragCounter = 0;
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer?.types.includes('Files')) {
+        dragCounter++;
+        setIsGlobalDragging(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        setIsGlobalDragging(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsGlobalDragging(false);
+      
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      await processFile(file);
+    };
+
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, []);
 
   const removeAttachment = async (url: string) => {
     const attachment = attachments.find((a) => a.url === url);
@@ -216,8 +268,24 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center size-full max-w-2xl mx-auto px-4 pb-16 overflow-hidden">
-
+    <>
+      <AnimatePresence>
+        {isGlobalDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm border-4 border-dashed border-primary/50 m-4 rounded-3xl"
+          >
+            <div className="flex flex-col items-center justify-center p-10 bg-card/80 rounded-2xl shadow-2xl pointer-events-none">
+              <Upload className="size-16 text-primary/70 mb-4 animate-bounce" />
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Drop to upload</h2>
+              <p className="text-muted-foreground">Attach this file to your new conversation</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="relative flex flex-col items-center justify-center size-full max-w-2xl mx-auto px-4 pb-16 overflow-hidden">
       {/* ─── Incognito Toggle (Top Right) ─── */}
       <div className="absolute top-4 right-4 md:fixed md:top-6 md:right-6 z-50 flex items-center gap-3">
         <AnimatePresence>
@@ -515,5 +583,6 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
       </motion.div>
 
     </div>
+    </>
   );
 }

@@ -2,6 +2,7 @@ import { createAdminClient, createSessionClient } from "@/lib/appwrite/server";
 import { DATABASE_ID, COLLECTIONS, BUCKET_ID } from "@/lib/appwrite/config";
 import { NextRequest, NextResponse } from "next/server";
 import { ID, InputFile, Query } from "node-appwrite";
+import { extractTextFromBuffer, MAX_EXTRACTED_CHARS } from "@/lib/extract-text";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,55 +59,24 @@ export async function POST(request: NextRequest) {
     const projectIdEnv = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!;
     const fileUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${actualFileId}/view?project=${projectIdEnv}`;
 
-    // Text Extraction
-    let extractedText = null;
-
-    try {
-      const { exec } = await import("child_process");
-      const util = await import("util");
-      const fs = await import("fs/promises");
-      const path = await import("path");
-      const os = await import("os");
-
-      const execAsync = util.promisify(exec);
-
-      // Create a temporary file
-      const tempDir = os.tmpdir();
-      const ext = path.extname(file.name) || "";
-      const tempFileName = `upload-${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
-      const tempFilePath = path.join(tempDir, tempFileName);
-      
-      await fs.writeFile(tempFilePath, buffer);
-
-      try {
-        // Run markitdown
-        const execEnv = { ...process.env, PATH: `${process.env.PATH || ''}:/home/hannes/.local/bin` };
-        const { stdout } = await execAsync(`markitdown "${tempFilePath}"`, { maxBuffer: 1024 * 1024 * 10, env: execEnv });
-        extractedText = stdout.trim();
-      } catch (execErr: any) {
-        console.error("markitdown execution error:", execErr);
-        // Fallback for plain text if markitdown fails or is not installed
-        if (
-          file.type.startsWith("text/") || 
-          [".md", ".py", ".js", ".ts", ".tsx", ".css", ".json", ".txt"].some(e => file.name.endsWith(e))
-        ) {
-           extractedText = buffer.toString('utf-8');
-        }
-      } finally {
-        // Clean up
-        await fs.unlink(tempFilePath).catch(e => console.error("Temp file cleanup failed:", e));
+    // Text Extraction using shared utility
+    console.log(`[API /upload] Extracting text from ${file.name} (${file.size} bytes, type: ${file.type})`);
+    const extraction = await extractTextFromBuffer(buffer, file.name, file.type);
+    
+    let extractedText = extraction.text;
+    
+    if (extractedText) {
+      console.log(`[API /upload] Extracted ${extractedText.length} chars via ${extraction.method} for ${file.name}`);
+      // Ensure we don't exceed Appwrite string attribute limit
+      if (extractedText.length > MAX_EXTRACTED_CHARS) {
+        console.log(`[API /upload] Truncating content from ${extractedText.length} to ${MAX_EXTRACTED_CHARS} chars`);
+        extractedText = extractedText.slice(0, MAX_EXTRACTED_CHARS);
       }
-    } catch (err) {
-      console.error("Text extraction setup error:", err);
-    }
-
-    if (extractedText && extractedText.length > 1000000) {
-      console.log(`[API /upload] Truncating DB saved content from ${extractedText.length} to 1M chars`);
-      extractedText = extractedText.slice(0, 1000000);
+    } else {
+      console.warn(`[API /upload] No text extracted from ${file.name}: ${extraction.error || "unknown reason"}`);
     }
 
     // Save file record
-
     const fileRecord = await admin.databases.createDocument(
       dbId,
       COLLECTIONS.FILES,
@@ -124,6 +94,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    console.log(`[API /upload] File record saved: ${fileRecord.$id}, content saved: ${!!extractedText}`);
     return NextResponse.json({ file: fileRecord, url: fileUrl });
   } catch (err: any) {
     console.error("Upload API error:", err);

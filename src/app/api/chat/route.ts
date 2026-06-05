@@ -6,6 +6,7 @@ import { NextRequest } from "next/server";
 import { ID, Query } from "node-appwrite";
 import { routeModel } from "@/lib/modelRouter";
 import { Chat, Project, FileRecord, Message } from "@/lib/appwrite/types";
+import { extractTextFromBuffer } from "@/lib/extract-text";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -244,6 +245,13 @@ export async function POST(request: NextRequest) {
           allFiles = chatFiles.documents as unknown as FileRecord[];
         }
 
+        // Diagnostic: log each file's content status
+        for (const f of allFiles) {
+          const contentLen = f.content?.length ?? 0;
+          const contentPreview = f.content ? f.content.slice(0, 100).replace(/\n/g, '\\n') : '<null>';
+          console.log(`[API /chat] File "${f.name}" (file_id: ${f.file_id}): content=${contentLen > 0 ? `${contentLen} chars` : 'EMPTY/NULL'}, preview: ${contentPreview}`);
+        }
+
         if (allFiles.length > 0) {
           // Deduplicate by $id
           const uniqueFiles = Array.from(new Map(allFiles.map(f => [f.$id, f])).values());
@@ -267,7 +275,44 @@ export async function POST(request: NextRequest) {
               filesContext += `File Contents:\n${contentBlocks}`;
             }
           } else {
-            filesContext += "Note: No readable text content was extracted from these files yet.";
+            // If no files have content, try on-the-fly extraction for files without content
+            console.log(`[API /chat] No files have stored content. Attempting on-the-fly extraction...`);
+            const filesWithoutContent = uniqueFiles.filter(f => !f.content);
+            
+            for (const f of filesWithoutContent) {
+              if (!f.file_id) continue;
+              try {
+                console.log(`[API /chat] On-the-fly extracting: ${f.name} (${f.file_id})`);
+                const arrayBuffer = await admin.storage.getFileDownload(BUCKET_ID, f.file_id);
+                const buffer = Buffer.from(arrayBuffer);
+                const extraction = await extractTextFromBuffer(buffer, f.name, f.mimeType);
+                
+                if (extraction.text) {
+                  console.log(`[API /chat] Extracted ${extraction.text.length} chars for ${f.name} via ${extraction.method}`);
+                  filesContext += `--- START FILE: ${f.name} ---\n${extraction.text}\n--- END FILE: ${f.name} ---\n\n`;
+                  
+                  // Save back to DB for future requests
+                  try {
+                    await admin.databases.updateDocument(dbId, COLLECTIONS.FILES, f.$id, {
+                      content: extraction.text.length > 999_999 ? extraction.text.slice(0, 999_999) : extraction.text
+                    });
+                    console.log(`[API /chat] Saved extracted content back to DB for ${f.name}`);
+                  } catch (saveErr: any) {
+                    console.error(`[API /chat] Failed to save extracted content to DB:`, saveErr.message);
+                  }
+                } else {
+                  console.warn(`[API /chat] On-the-fly extraction failed for ${f.name}: ${extraction.error}`);
+                }
+              } catch (err: any) {
+                console.error(`[API /chat] Failed to extract ${f.name}:`, err.message);
+              }
+            }
+            
+            if (filesContext.includes('--- START FILE:')) {
+              console.log(`[API /chat] Successfully extracted content on-the-fly for some files`);
+            } else {
+              filesContext += "Note: No readable text content was extracted from these files yet.";
+            }
           }
 
           finalSystemPrompt += `\n\nProject/Chat Files Context:\n${filesContext}`;
@@ -276,6 +321,7 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error("[API /chat] Failed to fetch files for context:", err);
       }
+
     } catch (err) {
       console.log("[API /chat] Context fetch error:", err);
     }
@@ -318,6 +364,7 @@ export async function POST(request: NextRequest) {
             
             let text = "";
             let fetchedFromDb = false;
+            let dbFileId = "";
 
             // First, try to get it from the database where it was extracted during upload
             try {
@@ -326,10 +373,13 @@ export async function POST(request: NextRequest) {
                 Query.limit(1)
               ]);
               const fileDocs = fileRecordsResult.documents as unknown as FileRecord[];
-              if (fileDocs.length > 0 && fileDocs[0].content) {
-                text = fileDocs[0].content;
-                fetchedFromDb = true;
-                console.log(`[API /chat] Successfully retrieved content from DB for ${file.name}`);
+              if (fileDocs.length > 0) {
+                dbFileId = fileDocs[0].$id;
+                if (fileDocs[0].content) {
+                  text = fileDocs[0].content;
+                  fetchedFromDb = true;
+                  console.log(`[API /chat] Successfully retrieved content from DB for ${file.name}`);
+                }
               }
             } catch (dbErr) {
               console.error(`[API /chat] Failed to fetch file content from DB:`, dbErr);
@@ -338,40 +388,38 @@ export async function POST(request: NextRequest) {
             // Fallback: download and parse it on the fly
             if (!fetchedFromDb) {
               console.log(`[API /chat] Content not in DB, downloading and parsing on the fly...`);
-              const arrayBuffer = await admin.storage.getFileDownload(BUCKET_ID, fileId);
-              const buffer = Buffer.from(arrayBuffer);
-              
               try {
-                const { exec } = await import("child_process");
-                const util = await import("util");
-                const fs = await import("fs/promises");
-                const path = await import("path");
-                const os = await import("os");
+                const arrayBuffer = await admin.storage.getFileDownload(BUCKET_ID, fileId);
+                const buffer = Buffer.from(arrayBuffer);
+                const extraction = await extractTextFromBuffer(buffer, file.name);
+                text = extraction.text || "";
                 
-                const execAsync = util.promisify(exec);
-                const tempDir = os.tmpdir();
-                const ext = path.extname(file.name) || "";
-                const tempFileName = `chat-${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
-                const tempFilePath = path.join(tempDir, tempFileName);
-                
-                await fs.writeFile(tempFilePath, buffer);
-                
-                try {
-                  const execEnv = { ...process.env, PATH: `${process.env.PATH || ''}:/home/hannes/.local/bin` };
-                  const { stdout } = await execAsync(`markitdown "${tempFilePath}"`, { maxBuffer: 1024 * 1024 * 10, env: execEnv });
-                  text = stdout.trim();
-                } catch (execErr: any) {
-                  console.error(`[API /chat] markitdown execution error for ${file.name}:`, execErr);
-                  text = buffer.toString('utf-8');
-                } finally {
-                  await fs.unlink(tempFilePath).catch(e => console.error("Temp file cleanup failed:", e));
+                if (text) {
+                  console.log(`[API /chat] On-the-fly extraction success for ${file.name}: ${text.length} chars via ${extraction.method}`);
+                  
+                  // Save back to DB for future requests
+                  if (dbFileId) {
+                    try {
+                      await admin.databases.updateDocument(dbId, COLLECTIONS.FILES, dbFileId, {
+                        content: text.length > 999_999 ? text.slice(0, 999_999) : text
+                      });
+                      console.log(`[API /chat] Saved extracted content back to DB for ${file.name}`);
+                    } catch (saveErr: any) {
+                      console.error(`[API /chat] Failed to save extracted content to DB:`, saveErr.message);
+                    }
+                  }
+                } else {
+                  console.warn(`[API /chat] On-the-fly extraction returned no text for ${file.name}: ${extraction.error}`);
                 }
               } catch (err: any) {
-                console.error(`[API /chat] Text extraction setup error for ${file.name}:`, err);
-                text = buffer.toString('utf-8');
+                console.error(`[API /chat] On-the-fly extraction failed for ${file.name}:`, err.message);
+                text = "";
               }
             }
             
+            const textPreview = text ? text.slice(0, 100).replace(/\n/g, '\\n') : '<null/empty>';
+            console.log(`[API /chat] Final text for ${file.name}: length=${text.length}, preview=${textPreview}`);
+
             combinedFileContent += `\n--- File: ${file.name} ---\n${text}\n`;
           } else {
             console.error(`[API /chat] Could not extract fileId from URL: ${file.url}`);

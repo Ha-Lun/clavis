@@ -4,12 +4,14 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
-import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History, Lock } from "lucide-react";
+import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History, Lock, Paperclip, X } from "lucide-react";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS, SYNTHESIZER_MODEL } from "@/lib/council";
 import { getModelInfo } from "@/lib/models";
 import type { CouncilResult, CouncilProgressEvent } from "@/lib/council";
+import { Attachment } from "@/lib/utils";
 import { SubscriptionModal } from "@/components/subscription-modal";
+import { Button } from "@/components/ui/button";
 
 interface CouncilHistoryItem {
   id: string;
@@ -42,6 +44,10 @@ export default function CouncilPage() {
   const [phase, setPhase] = useState<"idle" | "searching" | "querying" | "synthesizing" | "done">("idle");
   const [subscriptionTier, setSubscriptionTier] = useState<"free" | "pro">("free");
   const [showSubModal, setShowSubModal] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const [history, setHistory] = useState<CouncilHistoryItem[]>([]);
@@ -119,7 +125,7 @@ export default function CouncilPage() {
     setPhase("idle");
   }, []);
 
-  const hasQuery = query.trim().length > 0;
+  const hasQuery = query.trim().length > 0 || attachments.length > 0;
   const hasEnoughModels = selectedModels.length === MAX_SELECTED;
   const canRun = hasQuery && hasEnoughModels && !isRunning;
 
@@ -133,12 +139,93 @@ export default function CouncilPage() {
     });
   }, []);
 
+  const processFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("chatId", "council"); // use dummy council ID
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${res.status}`);
+      }
+
+      const { file: uploadedFile, url } = await res.json();
+      setAttachments((prev) => [...prev, { id: uploadedFile.$id, name: file.name, url }]);
+    } catch (err: any) {
+      console.error("Upload failed:", err);
+      alert(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const removeAttachment = async (url: string) => {
+    setAttachments((prev) => prev.filter((a) => a.url !== url));
+  };
+
   const handleRun = useCallback(async () => {
-    if (!canRun) return;
+    let finalQuery = query.trim();
+    if (!finalQuery && attachments.length === 0) return;
+    if (selectedModels.length === 0) return;
+    
+    if (attachments.length > 0) {
+      const attachmentString = attachments
+        .map((a) => `📎 ${a.name}: ${a.url}`)
+        .join("\n");
+      finalQuery = finalQuery
+        ? `${finalQuery}\n${attachmentString}`
+        : attachmentString;
+    }
+
     setIsRunning(true);
     setError(null);
     setResult(null);
-    setPhase("querying");
+    setPhase("searching");
 
     // Initialize progress for selected models
     const initialProgress: ModelProgress[] = selectedModels.map((id) => {
@@ -153,7 +240,7 @@ export default function CouncilPage() {
       const res = await fetch("/api/council", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim(), models: selectedModels }),
+        body: JSON.stringify({ query: finalQuery, models: selectedModels }),
         signal: abortRef.current.signal,
       });
 
@@ -399,17 +486,53 @@ export default function CouncilPage() {
               Query
             </h2>
             <motion.div
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               animate={{
-                boxShadow: isFocused
+                boxShadow: isFocused || isDragging
                   ? "0 0 0 1px rgba(168,124,62,0.35), 0 0 24px rgba(168,124,62,0.08)"
                   : "0 0 0 1px rgba(0,0,0,0)",
               }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               className={cn(
                 "relative flex flex-col rounded-xl bg-card transition-colors duration-100 border",
-                isFocused ? "border-primary/40" : "border-border"
+                isFocused || isDragging ? "border-primary/40" : "border-border",
+                isDragging && "ring-2 ring-primary/60 bg-primary/5"
               )}
             >
+              {/* Attachments */}
+              <AnimatePresence>
+                {attachments.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex flex-wrap gap-2 px-4 pt-3"
+                  >
+                    {attachments.map((file) => (
+                      <div
+                        key={file.url}
+                        className="flex items-center gap-2 bg-muted/50 border border-border rounded-md pl-2 pr-1 py-1 group"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-medium text-foreground truncate max-w-[120px]">
+                            {file.name}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => removeAttachment(file.url)}
+                          className="p-1 hover:bg-muted rounded-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <textarea
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -426,7 +549,29 @@ export default function CouncilPage() {
                 )}
                 disabled={isRunning}
               />
-              <div className="flex items-center justify-end gap-2 px-4 pb-3">
+              <div className="flex items-center justify-between px-4 pb-3">
+                <div className="flex items-center gap-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.txt,.csv,.json,.md"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading || isRunning}
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Paperclip className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
                 {isRunning ? (
                   <motion.button
                     whileHover={{ scale: 1.03 }}
