@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X, ArrowUp, Globe } from "lucide-react";
@@ -27,6 +27,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +108,52 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
     await processFile(file);
   };
 
+  useEffect(() => {
+    let dragCounter = 0;
+
+    const handleWindowDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer?.types.includes('Files')) {
+        dragCounter++;
+        setIsGlobalDragging(true);
+      }
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        setIsGlobalDragging(false);
+      }
+    };
+
+    const handleWindowDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleWindowDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsGlobalDragging(false);
+      
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      await processFile(file);
+    };
+
+    window.addEventListener('dragenter', handleWindowDragEnter);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleWindowDragEnter);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, []);
+
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -151,8 +198,25 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
   };
 
   return (
-    <div className="px-4 pb-6 pt-2">
-      <div className="max-w-3xl mx-auto">
+    <>
+      <AnimatePresence>
+        {isGlobalDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm border-4 border-dashed border-primary/50 m-4 rounded-3xl"
+          >
+            <div className="flex flex-col items-center justify-center p-10 bg-card/80 rounded-2xl shadow-2xl pointer-events-none">
+              <Upload className="size-16 text-primary/70 mb-4 animate-bounce" />
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Drop to upload</h2>
+              <p className="text-muted-foreground">Attach this file to your conversation</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="px-4 pb-6 pt-2">
+        <div className="max-w-3xl mx-auto">
         {/* Main input container */}
         <motion.div
           onDragEnter={handleDragEnter}
@@ -351,5 +415,6 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
         </p>
       </div>
     </div>
+    </>
   );
 }

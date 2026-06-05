@@ -9,7 +9,8 @@ export type ModelId =
   | "nvidia/nemotron-3-nano-30b-a3b"
   | "openai/gpt-5.5"
   | "google/gemini-3.1-pro"
-  | "anthropic/opus-4.7";
+  | "anthropic/opus-4.7"
+  | "nvidia/nemotron-3-ultra-550b-a55b";
 
 export interface ModelInfo {
   id: ModelId;
@@ -31,8 +32,13 @@ export const MODELS: ModelInfo[] = [
   },
   {
     id: "nvidia/nemotron-3-nano-30b-a3b",
-    name: "Nemotron Nano",
-    shortName: "Nemotron",
+    name: "Nemotron Nano Omni",
+    shortName: "Nemotron Omni",
+  },
+  {
+    id: "nvidia/nemotron-3-ultra-550b-a55b",
+    name: "Nemotron Ultra",
+    shortName: "Nemotron Ultra",
   },
   {
     id: "moonshotai/kimi-k2.6",

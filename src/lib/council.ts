@@ -53,7 +53,8 @@ export const SYNTHESIZER_MODEL = "google/gemini-3.1-flash-lite";
 export const COUNCIL_MODELS = [
   { id: "mistralai/mistral-medium-3.5-128b", name: "Mistral Medium 3.5" },
   { id: "moonshotai/kimi-k2.6", name: "Kimi K2.6" },
-  { id: "nvidia/nemotron-3-nano-30b-a3b", name: "Nemotron Nano" },
+  { id: "nvidia/nemotron-3-nano-30b-a3b", name: "Nemotron Nano Omni" },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b", name: "Nemotron Ultra" },
   { id: "mistralai/mistral-small-4-119b-2603", name: "Mistral Small 4" },
   { id: "minimaxai/minimax-m2.7", name: "MiniMax M2.7" },
   { id: "qwen/qwen3.5-122b-a10b", name: "Qwen 3.5" },

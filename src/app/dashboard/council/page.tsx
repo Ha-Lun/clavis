@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
-import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History, Lock, Paperclip, X } from "lucide-react";
+import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History, Lock, Paperclip, X, Upload } from "lucide-react";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS, SYNTHESIZER_MODEL } from "@/lib/council";
 import { getModelInfo } from "@/lib/models";
@@ -47,6 +47,7 @@ export default function CouncilPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -174,6 +175,52 @@ export default function CouncilPage() {
     if (!file) return;
     await processFile(file);
   };
+
+  useEffect(() => {
+    let dragCounter = 0;
+
+    const handleWindowDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer?.types.includes('Files')) {
+        dragCounter++;
+        setIsGlobalDragging(true);
+      }
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        setIsGlobalDragging(false);
+      }
+    };
+
+    const handleWindowDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleWindowDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsGlobalDragging(false);
+      
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      await processFile(file);
+    };
+
+    window.addEventListener('dragenter', handleWindowDragEnter);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleWindowDragEnter);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, []);
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -379,7 +426,24 @@ export default function CouncilPage() {
   const completedCount = modelProgress.filter((m) => m.status === "complete" || m.status === "error").length;
 
   return (
-    <div className="h-full flex overflow-hidden bg-background">
+    <>
+      <AnimatePresence>
+        {isGlobalDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm border-4 border-dashed border-primary/50 m-4 rounded-3xl"
+          >
+            <div className="flex flex-col items-center justify-center p-10 bg-card/80 rounded-2xl shadow-2xl pointer-events-none">
+              <Upload className="size-16 text-primary/70 mb-4 animate-bounce" />
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Drop to upload</h2>
+              <p className="text-muted-foreground">Attach this file to your new query</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="h-full flex overflow-hidden bg-background">
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-10 lg:py-14">
         <div className="max-w-3xl mx-auto">
@@ -949,5 +1013,6 @@ export default function CouncilPage() {
         onClose={() => setShowSubModal(false)} 
       />
     </div>
+    </>
   );
 }
