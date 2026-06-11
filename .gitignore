@@ -26,6 +26,11 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# scratch files and development utilities
+scratch/
+scratch-*.js
+scratch-*.ts
+
 # vercel
 .vercel
 

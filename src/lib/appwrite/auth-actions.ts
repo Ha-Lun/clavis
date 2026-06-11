@@ -19,10 +19,11 @@ export async function login(formData: FormData) {
     const session = await account.createEmailPasswordSession(email, password);
 
     const cookieStore = await cookies();
+    const isSecure = process.env.NODE_ENV === "production" || process.env.FORCE_SECURE_COOKIES === "true";
     cookieStore.set(SESSION_COOKIE, session.secret, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isSecure,
+      sameSite: "strict",
       expires: new Date(session.expire),
       path: "/",
     });
@@ -59,10 +60,11 @@ export async function signup(formData: FormData) {
     const session = await account.createEmailPasswordSession(email, password);
 
     const cookieStore = await cookies();
+    const isSecure = process.env.NODE_ENV === "production" || process.env.FORCE_SECURE_COOKIES === "true";
     cookieStore.set(SESSION_COOKIE, session.secret, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isSecure,
+      sameSite: "strict",
       expires: new Date(session.expire),
       path: "/",
     });

@@ -1,6 +1,12 @@
 const OpenAI = require("openai");
 
-const API_KEY = process.env.NVIDIA_API_KEY || "REVOKED_NVIDIA_API_KEY";
+const API_KEY = process.env.NVIDIA_API_KEY;
+
+if (!API_KEY) {
+  console.error("Error: NVIDIA_API_KEY is not set in environment variables");
+  console.error("Set NVIDIA_API_KEY in .env.local before running this script");
+  process.exit(1);
+}
 
 const client = new OpenAI({
   apiKey: API_KEY,
