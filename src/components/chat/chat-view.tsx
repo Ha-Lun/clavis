@@ -6,6 +6,8 @@ import { Ghost } from "lucide-react";
 import { useChat } from "@/context/chat-context";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
+import { parseAskUserBlock } from "@/lib/ask-user-parser";
+import { AskUserWidget } from "./ask-user-widget";
 import { useSmoothStream } from "@/hooks/use-smooth-stream";
 import type { Chat, Message } from "@/lib/appwrite/types";
 
@@ -279,6 +281,23 @@ interface ChatViewProps {
     };
   }, []);
 
+  // Determine if there's an active askUserBlock
+  let activeAskUserBlock = null;
+  let isPartialBlock = false;
+  
+  if (isStreaming && smoothContent) {
+    const { askUserBlock, isPartial } = parseAskUserBlock(smoothContent, true);
+    activeAskUserBlock = askUserBlock;
+    isPartialBlock = isPartial;
+  } else if (messages.length > 0) {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg.role === "assistant") {
+      const { askUserBlock, isPartial } = parseAskUserBlock(lastMsg.content, false);
+      activeAskUserBlock = askUserBlock;
+      isPartialBlock = isPartial;
+    }
+  }
+
   return (
     <motion.div
       className="flex flex-col h-full"
@@ -298,16 +317,29 @@ interface ChatViewProps {
         <MessageList
           modelId={chat.model}
           smoothContent={smoothContent}
+          onSend={handleSend}
         />
       </div>
       <div className="flex flex-col">
-        <ChatInput
-          onSend={handleSend}
-          onStop={handleStop}
-          isStreaming={isStreaming}
-          chatId={chat.$id}
-          currentModel={chat.model}
-        />
+        {!isPartialBlock && activeAskUserBlock ? (
+          <div className="p-4 w-full">
+            <div className="max-w-3xl mx-auto w-full">
+              <AskUserWidget
+                block={activeAskUserBlock}
+                onSend={handleSend}
+                isStreaming={isStreaming}
+              />
+            </div>
+          </div>
+        ) : (
+          <ChatInput
+            onSend={handleSend}
+            onStop={handleStop}
+            isStreaming={isStreaming}
+            chatId={chat.$id}
+            currentModel={chat.model}
+          />
+        )}
       </div>
     </motion.div>
   );

@@ -11,6 +11,7 @@ import Link from "next/link";
 interface MessageListProps {
   modelId: string;
   smoothContent?: string;
+  onSend?: (message: string, skipUserMessageOrOptions?: boolean | { webSearch?: boolean }, maybeOptions?: { webSearch?: boolean }) => void;
 }
 
 function toRoman(num: number): string {
@@ -29,7 +30,7 @@ function toRoman(num: number): string {
   return result;
 }
 
-export function MessageList({ modelId, smoothContent }: MessageListProps) {
+export function MessageList({ modelId, smoothContent, onSend }: MessageListProps) {
   const { messages, isStreaming, streamingContent } = useChat();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -114,6 +115,7 @@ export function MessageList({ modelId, smoothContent }: MessageListProps) {
                     message={message}
                     index={index}
                     modelName={message.role === "assistant" ? modelName : undefined}
+                    onSend={onSend}
                   />
                 </div>
               </div>
@@ -137,6 +139,7 @@ export function MessageList({ modelId, smoothContent }: MessageListProps) {
               }}
               index={messages.length}
               isStreaming
+              onSend={onSend}
             />
           </div>
         )}

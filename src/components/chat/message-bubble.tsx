@@ -11,12 +11,14 @@ import { extractAttachments, extractFileRefs } from "@/lib/utils";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { getRoutingLabel } from "@/lib/modelRouter";
 import { useChat } from "@/context/chat-context";
+import { parseAskUserBlock } from "@/lib/ask-user-parser";
 
 interface MessageBubbleProps {
   message: Message;
   index: number;
   isStreaming?: boolean;
   modelName?: string;
+  onSend?: (content: string) => void;
 }
 
 export function MessageBubble({
@@ -24,6 +26,7 @@ export function MessageBubble({
   index,
   isStreaming,
   modelName,
+  onSend,
 }: MessageBubbleProps) {
   const { showReasoning } = useChat();
   const [copied, setCopied] = useState(false);
@@ -42,8 +45,10 @@ export function MessageBubble({
   const { attachments, cleanContent: contentWithoutAttachments } = extractAttachments(rawContent);
   const { fileRefs, cleanContent } = extractFileRefs(contentWithoutAttachments);
 
+  const { cleanContent: finalContent, askUserBlock, isPartial } = parseAskUserBlock(cleanContent, isStreaming);
+
   // Handle <think> tags that some reasoning models stream in their content
-  let displayContent = cleanContent;
+  let displayContent = finalContent;
   if (displayContent.includes('<think>')) {
     displayContent = displayContent.replace(/<think>\n?/g, '~~~reasoning\n');
     displayContent = displayContent.replace(/<\/think>\n?/g, '\n~~~\n\n');
