@@ -47,10 +47,9 @@ const SURPRISE_PROMPTS = [
 
 interface HomePromptProps {
   userName?: string;
-  userTier?: string;
 }
 
-export function HomePrompt({ userName, userTier }: HomePromptProps) {
+export function HomePrompt({ userName }: HomePromptProps) {
   const [content, setContent] = useState("");
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -348,11 +347,6 @@ export function HomePrompt({ userName, userTier }: HomePromptProps) {
         <h1 className="text-[26px] md:text-[30px] font-light tracking-tight text-foreground leading-normal text-center">
           <span className="mr-2 select-none">{greeting.emoji}</span>
           {greeting.text}{userName ? `, ${userName}` : ""}
-          {userTier === "pro" && (
-            <span className="ml-3 inline-flex items-center justify-center align-middle px-2 py-0.5 rounded bg-primary/15 border border-primary/20 text-[10px] font-bold text-primary tracking-widest uppercase shadow-[0_0_10px_rgba(201,168,76,0.1)] select-none relative -top-[2px] h-5">
-              Pro
-            </span>
-          )}
         </h1>
       </motion.div>
 

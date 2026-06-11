@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useChat } from "@/context/chat-context";
 import { MODELS } from "@/lib/models";
-import { Lock } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { ModelIcon } from "./model-icon";
 import { cn } from "@/lib/utils";
-import { SubscriptionModal } from "@/components/subscription-modal";
 
 interface ModelSelectorProps {
   chatId?: string;
@@ -25,31 +22,8 @@ interface ModelSelectorProps {
 export function ModelSelector({ chatId, currentModel, className, onModelChange }: ModelSelectorProps) {
   const { activeChat, updateChatModel } = useChat();
   const model = activeChat?.model ?? currentModel;
-  const [subscriptionTier, setSubscriptionTier] = useState<"free" | "pro">("free");
-  const [showSubModal, setShowSubModal] = useState(false);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/user");
-        if (res.ok) {
-          const data = await res.json();
-          setSubscriptionTier(data.prefs?.subscriptionTier ?? "free");
-        }
-      } catch {
-        // Silently fail
-      }
-    };
-    fetchUser();
-  }, []);
 
   const handleModelChange = async (newModel: string) => {
-    const selectedModelInfo = MODELS.find((m) => m.id === newModel);
-    if (selectedModelInfo?.isPremium && subscriptionTier !== "pro") {
-      setShowSubModal(true);
-      return;
-    }
-
     if (onModelChange) {
       onModelChange(newModel);
       return;
@@ -96,86 +70,29 @@ export function ModelSelector({ chatId, currentModel, className, onModelChange }
             "overflow-hidden p-0"
           )}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-[1.1fr_0.9fr] divide-y sm:divide-y-0 sm:divide-x divide-neutral-800/50">
-            {/* Standard Models Column */}
-            <div className="p-2 space-y-1">
-              <div className="text-[10px] font-semibold text-neutral-400/60 tracking-wider uppercase px-2.5 py-1.5 mb-1">
-                Standard Models
-              </div>
-              <div className="space-y-0.5">
-                {MODELS.filter((m) => !m.isPremium).map((m) => {
-                  const isLocked = m.isPremium && subscriptionTier !== "pro";
-                  return (
-                    <SelectItem
-                      key={m.id}
-                      value={m.id}
-                      disabled={isLocked}
-                      className={cn(
-                        "text-[12px] font-light pl-8 pr-2.5 py-1.5 rounded-md transition-colors w-full cursor-pointer",
-                        isLocked 
-                          ? "text-muted-foreground/30 cursor-not-allowed" 
-                          : "text-muted-foreground hover:bg-white/[0.04] focus:bg-white/[0.04] focus:text-foreground"
-                      )}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="inline-flex items-center gap-2">
-                          <ModelIcon modelId={m.id} className="size-3.5 opacity-60" />
-                          <span>{m.name}</span>
-                        </span>
-                        {isLocked && (
-                          <Lock className="size-3 ml-2 text-muted-foreground/30" />
-                        )}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Premium Models Column */}
-            <div className="p-2 bg-gradient-to-b from-[#c9a84c]/[0.02] to-transparent space-y-1">
-              <div className="text-[10px] font-semibold text-[#c9a84c] tracking-wider uppercase px-2.5 py-1.5 mb-1 flex items-center justify-between">
-                <span>Premium Models</span>
-                <span className="text-[8px] bg-[#c9a84c]/10 text-[#c9a84c] border border-[#c9a84c]/20 rounded px-1.5 py-0.5 font-normal uppercase tracking-normal">
-                  Pro
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                {MODELS.filter((m) => m.isPremium).map((m) => {
-                  const isLocked = m.isPremium && subscriptionTier !== "pro";
-                  return (
-                    <SelectItem
-                      key={m.id}
-                      value={m.id}
-                      className={cn(
-                        "text-[12px] font-light pl-8 pr-2.5 py-1.5 rounded-md transition-colors w-full cursor-pointer",
-                        isLocked 
-                          ? "text-muted-foreground/45 hover:bg-white/[0.04] focus:bg-white/[0.04]" 
-                          : "text-muted-foreground hover:bg-white/[0.04] focus:bg-white/[0.04] focus:text-foreground"
-                      )}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="inline-flex items-center gap-2">
-                          <ModelIcon modelId={m.id} className="size-3.5 opacity-60" />
-                          <span>{m.name}</span>
-                        </span>
-                        {isLocked && (
-                          <Lock className="size-3 ml-2 text-muted-foreground/30" />
-                        )}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </div>
+          <div className="p-2 space-y-1">
+            <div className="space-y-0.5">
+              {MODELS.map((m) => (
+                <SelectItem
+                  key={m.id}
+                  value={m.id}
+                  className={cn(
+                    "text-[12px] font-light pl-8 pr-2.5 py-1.5 rounded-md transition-colors w-full cursor-pointer",
+                    "text-muted-foreground hover:bg-white/[0.04] focus:bg-white/[0.04] focus:text-foreground"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="inline-flex items-center gap-2">
+                      <ModelIcon modelId={m.id} className="size-3.5 opacity-60" />
+                      <span>{m.name}</span>
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
             </div>
           </div>
         </SelectContent>
       </Select>
-      
-      <SubscriptionModal 
-        isOpen={showSubModal} 
-        onClose={() => setShowSubModal(false)} 
-      />
     </div>
   );
 }

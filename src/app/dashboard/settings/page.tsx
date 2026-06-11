@@ -15,19 +15,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { MODELS, DEFAULT_MODEL } from "@/lib/models";
-import { Loader2, Check, Lock } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SubscriptionModal } from "@/components/subscription-modal";
-import { DowngradeModal } from "@/components/downgrade-modal";
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [showReasoning, setShowReasoning] = useState(false);
   const [defaultModel, setDefaultModel] = useState(DEFAULT_MODEL);
-  const [subscriptionTier, setSubscriptionTier] = useState<"free" | "pro">("free");
-  const [showSubModal, setShowSubModal] = useState(false);
-  const [showDowngradeModal, setShowDowngradeModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [email, setEmail] = useState("");
@@ -43,7 +38,6 @@ export default function SettingsPage() {
           setDefaultModel(data.prefs?.defaultModel ?? DEFAULT_MODEL);
           setPreferredName(data.prefs?.preferredName ?? "");
           setShowReasoning(data.prefs?.showReasoning ?? false);
-          setSubscriptionTier(data.prefs?.subscriptionTier ?? "free");
         }
       } catch {
         // Silently fail
@@ -59,7 +53,7 @@ export default function SettingsPage() {
       await fetch("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: displayName, prefs: { defaultModel, preferredName, showReasoning, subscriptionTier } }),
+        body: JSON.stringify({ name: displayName, prefs: { defaultModel, preferredName, showReasoning } }),
       });
       setSaved(true);
       setTimeout(() => {
@@ -174,14 +168,7 @@ export default function SettingsPage() {
               </p>
               <Select
                 value={defaultModel}
-                onValueChange={(value) => {
-                  const selectedModelInfo = MODELS.find((m) => m.id === value);
-                  if (selectedModelInfo?.isPremium && subscriptionTier !== "pro") {
-                    setShowSubModal(true);
-                    return;
-                  }
-                  setDefaultModel(value as typeof defaultModel);
-                }}
+                onValueChange={(value) => setDefaultModel(value as typeof defaultModel)}
               >
                 <SelectTrigger
                   id="settings-default-model"
@@ -196,58 +183,16 @@ export default function SettingsPage() {
                     "overflow-hidden p-0"
                   )}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-[1.1fr_0.9fr] divide-y sm:divide-y-0 sm:divide-x divide-neutral-800/50">
-                    {/* Standard Models Column */}
-                    <div className="p-2 space-y-1">
-                      <div className="text-[10px] font-semibold text-neutral-400/60 tracking-wider uppercase px-2.5 py-1.5 mb-1">
-                        Standard Models
-                      </div>
-                      <div className="space-y-0.5">
-                        {MODELS.filter((m) => !m.isPremium).map((m) => (
-                          <SelectItem
-                            key={m.id}
-                            value={m.id}
-                            className="text-foreground text-[12px] font-light pl-8 pr-2.5 py-1.5 rounded-md hover:bg-white/[0.04] focus:bg-white/[0.04] cursor-pointer"
-                          >
-                            {m.name}
-                          </SelectItem>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Premium Models Column */}
-                    <div className="p-2 bg-gradient-to-b from-[#c9a84c]/[0.02] to-transparent space-y-1">
-                      <div className="text-[10px] font-semibold text-[#c9a84c] tracking-wider uppercase px-2.5 py-1.5 mb-1 flex items-center justify-between">
-                        <span>Premium Models</span>
-                        <span className="text-[8px] bg-[#c9a84c]/10 text-[#c9a84c] border border-[#c9a84c]/20 rounded px-1.5 py-0.5 font-normal uppercase tracking-normal">
-                          Pro
-                        </span>
-                      </div>
-                      <div className="space-y-0.5">
-                        {MODELS.filter((m) => m.isPremium).map((m) => {
-                          const isLocked = subscriptionTier !== "pro";
-                          return (
-                            <SelectItem
-                              key={m.id}
-                              value={m.id}
-                              className={cn(
-                                "text-foreground text-[12px] font-light pl-8 pr-2.5 py-1.5 rounded-md transition-colors w-full cursor-pointer flex items-center justify-between",
-                                isLocked 
-                                  ? "text-muted-foreground/45 hover:bg-white/[0.04] focus:bg-white/[0.04]" 
-                                  : "hover:bg-white/[0.04] focus:bg-white/[0.04] focus:text-foreground"
-                              )}
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <span>{m.name}</span>
-                                {isLocked && (
-                                  <Lock className="size-3 ml-2 text-muted-foreground/30" />
-                                )}
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </div>
-                    </div>
+                  <div className="p-2 space-y-1">
+                    {MODELS.map((m) => (
+                      <SelectItem
+                        key={m.id}
+                        value={m.id}
+                        className="text-foreground text-[12px] font-light pl-8 pr-2.5 py-1.5 rounded-md hover:bg-white/[0.04] focus:bg-white/[0.04] cursor-pointer"
+                      >
+                        {m.name}
+                      </SelectItem>
+                    ))}
                   </div>
                 </SelectContent>
               </Select>
@@ -267,58 +212,6 @@ export default function SettingsPage() {
                 checked={showReasoning}
                 onCheckedChange={setShowReasoning}
               />
-            </div>
-          </div>
-
-          <Separator className="bg-border" />
-
-          {/* Subscription */}
-          <div className="space-y-1 pb-2">
-            <h2 className="text-[12px] font-medium text-muted-foreground/60 uppercase tracking-widest">
-              Subscription
-            </h2>
-          </div>
-
-          <div className="space-y-5 p-5 rounded-lg border border-border bg-card">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <Label className="text-[13px] font-medium text-foreground">
-                  Current Plan
-                </Label>
-                <div className="flex items-center gap-2 mt-1 mb-1">
-                  <span className={cn(
-                    "text-[12px] font-medium px-2 py-0.5 rounded-md",
-                    subscriptionTier === "pro" 
-                      ? "bg-primary/20 text-primary border border-primary/30" 
-                      : "bg-secondary text-muted-foreground border border-border"
-                  )}>
-                    {subscriptionTier === "pro" ? "Pro Tier" : "Free Tier"}
-                  </span>
-                </div>
-                <p className="text-[12px] text-muted-foreground font-light mt-1">
-                  {subscriptionTier === "pro" 
-                    ? "You have unlimited uploads and access to premium models."
-                    : "Upgrade to Pro for unlimited uploads and premium models."}
-                </p>
-              </div>
-              <Button
-                variant={subscriptionTier === "pro" ? "outline" : "default"}
-                className={cn(
-                  "h-9 px-4 text-[13px] font-medium rounded-md cursor-pointer",
-                  subscriptionTier === "pro" 
-                    ? "bg-transparent text-foreground border-border hover:bg-secondary hover:text-foreground" 
-                    : "bg-primary text-white hover:bg-primary/90 shadow-glow"
-                )}
-                onClick={() => {
-                  if (subscriptionTier !== "pro") {
-                    setShowSubModal(true);
-                  } else {
-                    setShowDowngradeModal(true);
-                  }
-                }}
-              >
-                {subscriptionTier === "pro" ? "Cancel Subscription" : "Upgrade to Pro"}
-              </Button>
             </div>
           </div>
 
@@ -351,17 +244,6 @@ export default function SettingsPage() {
           </div>
         </motion.div>
       </div>
-      
-      <SubscriptionModal 
-        isOpen={showSubModal} 
-        onClose={() => setShowSubModal(false)} 
-      />
-
-      <DowngradeModal
-        isOpen={showDowngradeModal}
-        onClose={() => setShowDowngradeModal(false)}
-        onConfirm={() => setSubscriptionTier("free")}
-      />
     </div>
   );
 }

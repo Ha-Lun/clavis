@@ -67,8 +67,6 @@ export default async function DashboardLayout({
     // Continue with empty arrays — don't crash the whole layout
   }
 
-  const tier = (user.prefs as any)?.subscriptionTier || "free";
-
   return (
     <div className="h-screen flex overflow-hidden animate-fade-in bg-background">
       <SidebarProvider
@@ -76,7 +74,6 @@ export default async function DashboardLayout({
         initialProjects={projects}
         userEmail={user.email}
         userId={user.$id}
-        userTier={tier}
       />
       <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <MobileNav />

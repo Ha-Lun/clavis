@@ -4,13 +4,12 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
-import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History, Lock, Paperclip, X, Upload } from "lucide-react";
+import { Loader2, Clock, Users, AlertTriangle, CheckCircle2, HelpCircle, Check, X as XIcon, Plus, Trash2, History, Paperclip, X, Upload } from "lucide-react";
 import { ThinkingSpinner } from "@/components/ui/thinking-spinner";
 import { COUNCIL_MODELS, DEFAULT_COUNCIL_MODELS, SYNTHESIZER_MODEL } from "@/lib/council";
 import { getModelInfo } from "@/lib/models";
 import type { CouncilResult, CouncilProgressEvent } from "@/lib/council";
 import { Attachment } from "@/lib/utils";
-import { SubscriptionModal } from "@/components/subscription-modal";
 import { Button } from "@/components/ui/button";
 
 interface CouncilHistoryItem {
@@ -42,8 +41,6 @@ export default function CouncilPage() {
   const [isFocused, setIsFocused] = useState(false);
   const [modelProgress, setModelProgress] = useState<ModelProgress[]>([]);
   const [phase, setPhase] = useState<"idle" | "searching" | "querying" | "synthesizing" | "done">("idle");
-  const [subscriptionTier, setSubscriptionTier] = useState<"free" | "pro">("free");
-  const [showSubModal, setShowSubModal] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -65,21 +62,6 @@ export default function CouncilPage() {
   useEffect(() => {
     modelsRef.current = selectedModels;
   }, [selectedModels]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/user");
-        if (res.ok) {
-          const data = await res.json();
-          setSubscriptionTier(data.prefs?.subscriptionTier ?? "free");
-        }
-      } catch {
-        // Silently fail
-      }
-    };
-    fetchUser();
-  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("clavis_council_history");
@@ -495,28 +477,20 @@ export default function CouncilPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {COUNCIL_MODELS.map((model) => {
                 const isSelected = selectedModels.includes(model.id);
-                const isLocked = "isPremium" in model && model.isPremium && subscriptionTier !== "pro";
                 const isMaxSelectedReached = !isSelected && selectedModels.length >= MAX_SELECTED;
-                const isDisabled = (isMaxSelectedReached && !isLocked) || isRunning;
+                const isDisabled = isMaxSelectedReached || isRunning;
 
                 return (
                   <button
                     key={model.id}
                     type="button"
-                    onClick={() => {
-                      if (isLocked) {
-                        setShowSubModal(true);
-                      } else {
-                        toggleModel(model.id);
-                      }
-                    }}
+                    onClick={() => toggleModel(model.id)}
                     disabled={isDisabled}
                     className={cn(
                       "relative flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-all duration-150 cursor-pointer",
-                      isLocked && "border-border bg-card text-muted-foreground opacity-60 hover:border-primary/20 hover:bg-[#c9a84c]/[0.02]",
                       isSelected
                         ? "border-primary/40 bg-primary/[0.08] text-foreground"
-                        : !isLocked && "border-border bg-card text-muted-foreground hover:border-border hover:bg-white/[0.02]",
+                        : "border-border bg-card text-muted-foreground hover:border-border hover:bg-white/[0.02]",
                       isDisabled && "opacity-35 cursor-not-allowed"
                     )}
                   >
@@ -537,7 +511,6 @@ export default function CouncilPage() {
                       </div>
                       <span className="text-[13px] font-normal truncate">{model.name}</span>
                     </div>
-                    {isLocked && <Lock className="size-3.5 text-muted-foreground shrink-0" />}
                   </button>
                 );
               })}
@@ -1008,10 +981,6 @@ export default function CouncilPage() {
         )}
       </AnimatePresence>
 
-      <SubscriptionModal 
-        isOpen={showSubModal} 
-        onClose={() => setShowSubModal(false)} 
-      />
     </div>
     </>
   );

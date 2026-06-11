@@ -466,8 +466,7 @@ ${userMessageContent}`;
     }
 
     let apiModelId = finalModelId;
-    const modelInfo = (await import("@/lib/models")).getModelInfo(finalModelId);
-    if (finalModelId.startsWith("google/") && !modelInfo.isPremium) {
+    if (finalModelId.startsWith("google/")) {
       apiModelId = finalModelId.replace("google/", "");
     }
 

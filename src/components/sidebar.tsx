@@ -42,7 +42,6 @@ interface SidebarProviderProps {
   initialProjects: Project[];
   userEmail: string;
   userId: string;
-  userTier: string;
 }
 
 export function SidebarProvider({
@@ -50,7 +49,6 @@ export function SidebarProvider({
   initialProjects,
   userEmail,
   userId,
-  userTier,
 }: SidebarProviderProps) {
   const { setChats } = useChat();
   const { setProjects } = useProjectStore();
@@ -87,7 +85,6 @@ export function SidebarProvider({
         <SidebarContent
           userEmail={userEmail}
           userId={userId}
-          userTier={userTier}
           onClose={() => setSidebarOpen(false)}
           isCollapsed={isCollapsed}
           toggleCollapse={toggleCollapse}
@@ -101,7 +98,6 @@ export function SidebarProvider({
           <SidebarContent
             userEmail={userEmail}
             userId={userId}
-            userTier={userTier}
             onClose={() => setSidebarOpen(false)}
             isCollapsed={false}
           />
@@ -114,14 +110,12 @@ export function SidebarProvider({
 function SidebarContent({
   userEmail,
   userId: _userId,
-  userTier,
   onClose,
   isCollapsed,
   toggleCollapse,
 }: {
   userEmail: string;
   userId: string;
-  userTier: string;
   onClose: () => void;
   isCollapsed: boolean;
   toggleCollapse?: () => void;
@@ -788,11 +782,6 @@ function SidebarContent({
               >
                 <div className="flex items-center gap-2">
                   <p className="text-[12px] font-medium truncate text-foreground">{userEmail}</p>
-                  {userTier === "pro" && (
-                    <span className="px-1.5 py-0.5 rounded-[4px] bg-primary/20 text-[9px] font-bold text-primary tracking-widest uppercase shrink-0">
-                      Pro
-                    </span>
-                  )}
                 </div>
               </motion.div>
             )}

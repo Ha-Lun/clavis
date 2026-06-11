@@ -7,16 +7,12 @@ export type ModelId =
   | "minimaxai/minimax-m2.7"
   | "moonshotai/kimi-k2.6"
   | "nvidia/nemotron-3-nano-30b-a3b"
-  | "openai/gpt-5.5"
-  | "google/gemini-3.1-pro"
-  | "anthropic/opus-4.7"
   | "nvidia/nemotron-3-ultra-550b-a55b";
 
 export interface ModelInfo {
   id: ModelId;
   name: string;
   shortName: string;
-  isPremium?: boolean;
 }
 
 export const MODELS: ModelInfo[] = [
@@ -64,24 +60,6 @@ export const MODELS: ModelInfo[] = [
     id: "mistralai/mistral-small-4-119b-2603",
     name: "Mistral Small 4",
     shortName: "Mistral",
-  },
-  {
-    id: "openai/gpt-5.5",
-    name: "GPT 5.5",
-    shortName: "GPT 5.5",
-    isPremium: true,
-  },
-  {
-    id: "google/gemini-3.1-pro",
-    name: "Gemini 3.1 Pro",
-    shortName: "Gemini 3.1",
-    isPremium: true,
-  },
-  {
-    id: "anthropic/opus-4.7",
-    name: "Opus 4.7",
-    shortName: "Opus",
-    isPremium: true,
   },
 ];
 
