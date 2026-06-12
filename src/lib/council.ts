@@ -56,7 +56,7 @@ export const COUNCIL_MODELS = [
   { id: "nvidia/nemotron-3-nano-30b-a3b", name: "Nemotron Nano Omni" },
   { id: "nvidia/nemotron-3-ultra-550b-a55b", name: "Nemotron Ultra" },
   { id: "mistralai/mistral-small-4-119b-2603", name: "Mistral Small 4" },
-  { id: "minimaxai/minimax-m2.7", name: "MiniMax M2.7" },
+  { id: "minimaxai/minimax-m3", name: "MiniMax M3" },
   { id: "qwen/qwen3.5-122b-a10b", name: "Qwen 3.5" },
 ] as const;
 

@@ -4,7 +4,7 @@ export type ModelId =
   | "mistralai/mistral-small-4-119b-2603"
   | "mistralai/mistral-medium-3.5-128b"
   | "qwen/qwen3.5-122b-a10b"
-  | "minimaxai/minimax-m2.7"
+  | "minimaxai/minimax-m3"
   | "moonshotai/kimi-k2.6"
   | "nvidia/nemotron-3-nano-30b-a3b"
   | "nvidia/nemotron-3-ultra-550b-a55b";
@@ -42,8 +42,8 @@ export const MODELS: ModelInfo[] = [
     shortName: "Kimi",
   },
   {
-    id: "minimaxai/minimax-m2.7",
-    name: "MiniMax M2.7",
+    id: "minimaxai/minimax-m3",
+    name: "MiniMax M3",
     shortName: "MiniMax",
   },
   {

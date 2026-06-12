@@ -49,7 +49,7 @@ Clavis is a high-end AI orchestration platform engineered for synthesis and adva
 | Nemotron Nano Omni | NVIDIA | General |
 | Nemotron Ultra | NVIDIA | General |
 | Kimi K2.6 | Moonshot | Council |
-| MiniMax M2.7 | MiniMax | Council |
+| MiniMax M3 | MiniMax | Council |
 | Qwen 3.5 | Qwen | Council |
 | Mistral Medium 3.5 | Mistral | Council |
 | Mistral Small 4 | Mistral | Council |

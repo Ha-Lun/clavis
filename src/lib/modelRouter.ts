@@ -8,7 +8,7 @@
  *      library, framework, stack trace, undefined, null pointer, runtime, build.
  *    - Structural: Contains backticks (`) or bracket/brace density > 2 per 50 characters.
  *
- * 2. Creative / Long-form Writing (MiniMax M2.7)
+ * 2. Creative / Long-form Writing (MiniMax M3)
  *    - Keywords: write, story, essay, poem, article, blog, draft, novel, narrative, screenplay,
  *      summarize, translate, proofread, edit my, rewrite, creative, fiction, character, plot,
  *      lyrics, caption, cover letter.
