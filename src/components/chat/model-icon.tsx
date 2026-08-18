@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils";
+import { Brain } from "lucide-react";
+
 
 interface ModelIconProps {
   modelId: string;
@@ -192,6 +194,36 @@ export function ModelIcon({ modelId, className, size = 16 }: ModelIconProps) {
         className={cn("shrink-0 select-none", className)}
       >
         <path d="M10.212 8.976V7.62c.127-.01.256-.017.388-.021 3.596-.117 5.957 3.184 5.957 3.184s-2.548 3.647-5.282 3.647a3.227 3.227 0 01-1.063-.175v-4.109c1.4.174 1.681.812 2.523 2.258l1.873-1.627a4.905 4.905 0 00-3.67-1.846 6.594 6.594 0 00-.729.044m0-4.476v2.025c.13-.01.259-.019.388-.024 5.002-.174 8.261 4.226 8.261 4.226s-3.743 4.69-7.643 4.69c-.338 0-.675-.031-1.007-.092v1.25c.278.038.558.057.838.057 3.629 0 6.253-1.91 8.794-4.169.421.347 2.146 1.193 2.501 1.564-2.416 2.083-8.048 3.763-11.24 3.763-.308 0-.603-.02-.894-.048V19.5H24v-15H10.21zm0 9.756v1.068c-3.356-.616-4.287-4.21-4.287-4.21a7.173 7.173 0 014.287-2.138v1.172h-.005a3.182 3.182 0 00-2.502 1.178s.615 2.276 2.507 2.931m-5.961-3.3c1.436-1.935 3.604-3.148 5.961-3.336V6.523C5.81 6.887 2 10.723 2 10.723s2.158 6.427 8.21 7.015v-1.166C5.77 16 4.25 10.958 4.25 10.958h-.002z" fill="#76B900" fillRule="evenodd"></path>
+      </svg>
+    );
+  }
+
+  // Muse Logo
+  if (modelId.includes("muse")) {
+    return (
+      <svg width={iconSize} height={iconSize} fill="currentColor" viewBox="0 0 16 16" className={cn("shrink-0 select-none", className)}>
+        <path fillRule="evenodd" d="M8.217 5.243C9.145 3.988 10.171 3 11.483 3 13.96 3 16 6.153 16.001 9.907c0 2.29-.986 3.725-2.757 3.725-1.543 0-2.395-.866-3.924-3.424l-.667-1.123-.118-.197a55 55 0 0 0-.53-.877l-1.178 2.08c-1.673 2.925-2.615 3.541-3.923 3.541C1.086 13.632 0 12.217 0 9.973 0 6.388 1.995 3 4.598 3q.477-.001.924.122c.31.086.611.22.913.407.577.359 1.154.915 1.782 1.714m1.516 2.224q-.378-.615-.727-1.133L9 6.326c.845-1.305 1.543-1.954 2.372-1.954 1.723 0 3.102 2.537 3.102 5.653 0 1.188-.39 1.877-1.195 1.877-.773 0-1.142-.51-2.61-2.87zM4.846 4.756c.725.1 1.385.634 2.34 2.001A212 212 0 0 0 5.551 9.3c-1.357 2.126-1.826 2.603-2.581 2.603-.777 0-1.24-.682-1.24-1.9 0-2.602 1.298-5.264 2.846-5.264q.137 0 .27.018"/>
+      </svg>
+    );
+  }
+
+  // Inkling Logo
+  if (modelId.includes("inkling")) {
+    return <Brain size={iconSize} className={cn("shrink-0 select-none", className)} />;
+  }
+
+  // Stepfun Logo
+  if (modelId.includes("stepfun") || modelId.includes("step")) {
+    return (
+      <svg width={iconSize} height={iconSize} style={{flex: "none", lineHeight: 1}} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className={cn("shrink-0 select-none", className)}>
+        <title>Stepfun</title>
+        <path d="M22.012 0h1.032v.927H24v.968h-.956V3.78h-1.032V1.896h-1.878v-.97h1.878V0zM2.6 12.371V1.87h.969v10.502h-.97zm10.423.66h10.95v.918h-6.208v9.579h-4.742V13.03zM5.629 3.333v12.356H0v4.51h10.386V8L20.859 8l-.003-4.668-15.227.001z" fill="url(#lobe-icons-stepfun-_R_0_)" fillRule="evenodd"></path>
+        <defs>
+          <linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-stepfun-_R_0_" x1="1.646" x2="18.342" y1="1.916" y2="22.091">
+            <stop stopColor="#01A9FF"></stop>
+            <stop offset="1" stopColor="#0160FF"></stop>
+          </linearGradient>
+        </defs>
       </svg>
     );
   }
