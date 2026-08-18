@@ -1,12 +1,12 @@
 export type ModelId =
   | "auto"
   | "google/gemini-3.1-flash-lite"
-  | "mistralai/mistral-small-4-119b-2603"
-  | "mistralai/mistral-medium-3.5-128b"
-  | "qwen/qwen3.5-122b-a10b"
+  | "meta/muse-glimmer-30b"
+  | "thinkingmachines/inkling"
+  | "z-ai/glm-5.2"
+  | "stepfun-ai/step-3.7-flash"
+  | "nvidia/nemotron-3.5-lightning-30b-a3b"
   | "minimaxai/minimax-m3"
-  | "moonshotai/kimi-k2.6"
-  | "nvidia/nemotron-3-nano-30b-a3b"
   | "nvidia/nemotron-3-ultra-550b-a55b";
 
 export interface ModelInfo {
@@ -27,9 +27,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "Gemini 3.1",
   },
   {
-    id: "nvidia/nemotron-3-nano-30b-a3b",
-    name: "Nemotron Nano Omni",
-    shortName: "Nemotron Omni",
+    id: "nvidia/nemotron-3.5-lightning-30b-a3b",
+    name: "Nemotron 3.5 Lightning",
+    shortName: "Nemotron Lightning",
   },
   {
     id: "nvidia/nemotron-3-ultra-550b-a55b",
@@ -37,9 +37,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "Nemotron Ultra",
   },
   {
-    id: "moonshotai/kimi-k2.6",
-    name: "Kimi K2.6",
-    shortName: "Kimi",
+    id: "meta/muse-glimmer-30b",
+    name: "Muse Glimmer 30B",
+    shortName: "Muse Glimmer",
   },
   {
     id: "minimaxai/minimax-m3",
@@ -47,19 +47,19 @@ export const MODELS: ModelInfo[] = [
     shortName: "MiniMax",
   },
   {
-    id: "qwen/qwen3.5-122b-a10b",
-    name: "Qwen 3.5",
-    shortName: "Qwen",
+    id: "thinkingmachines/inkling",
+    name: "Inkling",
+    shortName: "Inkling",
   },
   {
-    id: "mistralai/mistral-medium-3.5-128b",
-    name: "Mistral Medium 3.5",
-    shortName: "Mistral Med",
+    id: "z-ai/glm-5.2",
+    name: "GLM 5.2",
+    shortName: "GLM 5.2",
   },
   {
-    id: "mistralai/mistral-small-4-119b-2603",
-    name: "Mistral Small 4",
-    shortName: "Mistral",
+    id: "stepfun-ai/step-3.7-flash",
+    name: "Step 3.7 Flash",
+    shortName: "Step 3.7 Flash",
   },
 ];
 

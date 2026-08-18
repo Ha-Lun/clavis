@@ -51,16 +51,22 @@ export type CouncilProgressEvent =
 export const SYNTHESIZER_MODEL = "google/gemini-3.1-flash-lite";
 
 export const COUNCIL_MODELS = [
-  { id: "mistralai/mistral-medium-3.5-128b", name: "Mistral Medium 3.5" },
-  { id: "moonshotai/kimi-k2.6", name: "Kimi K2.6" },
-  { id: "nvidia/nemotron-3-nano-30b-a3b", name: "Nemotron Nano Omni" },
+  { id: "meta/muse-glimmer-30b", name: "Muse Glimmer 30B" },
+  { id: "thinkingmachines/inkling", name: "Inkling" },
+  { id: "z-ai/glm-5.2", name: "GLM 5.2" },
+  { id: "stepfun-ai/step-3.7-flash", name: "Step 3.7 Flash" },
+  { id: "nvidia/nemotron-3.5-lightning-30b-a3b", name: "Nemotron 3.5 Lightning" },
   { id: "nvidia/nemotron-3-ultra-550b-a55b", name: "Nemotron Ultra" },
-  { id: "mistralai/mistral-small-4-119b-2603", name: "Mistral Small 4" },
   { id: "minimaxai/minimax-m3", name: "MiniMax M3" },
-  { id: "qwen/qwen3.5-122b-a10b", name: "Qwen 3.5" },
 ] as const;
 
-export const DEFAULT_COUNCIL_MODELS = ["moonshotai/kimi-k2.6", "nvidia/nemotron-3-nano-30b-a3b", "mistralai/mistral-small-4-119b-2603"];
+export const COUNCIL_AVAILABLE_MODELS = COUNCIL_MODELS;
+
+export const DEFAULT_COUNCIL_MODELS = [
+  "meta/muse-glimmer-30b",
+  "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "stepfun-ai/step-3.7-flash",
+];
 
 // ─── Synthesizer Prompt ───────────────────────────
 
