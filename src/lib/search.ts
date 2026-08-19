@@ -1,4 +1,4 @@
-const SCRAPER_API_URL = "http://100.126.82.90:8731/api/v1/scrape";
+const SCRAPER_API_URL = "https://scraper.lundstromslogiska.se/api/v1/scrape";
 const SCRAPER_API_KEY = "sdgfyuasdf24b35784tbiske832bskdfba76f82q435ukerfb8sdftya873bfi3475623485gbwsidbf8sd7f873245e";
 
 export async function performWebSearch(query: string): Promise<string> {
