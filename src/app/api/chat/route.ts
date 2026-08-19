@@ -598,7 +598,7 @@ ${userMessageContent}`;
               });
 
               for (const tc of toolCalls) {
-                if (tc.function.name === "web_search") {
+                if (tc.function.name === "web_search" || tc.function.name === "search") {
                   try {
                     const args = JSON.parse(tc.function.arguments);
                     console.log("[API /chat] Executing web_search for:", args.query);
@@ -620,6 +620,13 @@ ${userMessageContent}`;
                       content: `Error performing search: ${err.message}`
                     });
                   }
+                } else {
+                  console.error(`[API /chat] Unknown tool called: ${tc.function.name}`);
+                  messages.push({
+                    role: "tool",
+                    tool_call_id: tc.id,
+                    content: `Error: Unknown tool "${tc.function.name}"`
+                  });
                 }
               }
 
