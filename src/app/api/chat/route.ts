@@ -602,23 +602,11 @@ ${userMessageContent}`;
                     const args = JSON.parse(tc.function.arguments);
                     console.log("[API /chat] Executing web_search for:", args.query);
                     
-                    const searchRes = await fetch("https://api.tavily.com/search", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${process.env.TAVILY_API_KEY || ""}`
-                      },
-                      body: JSON.stringify({
-                        query: args.query,
-                        search_depth: "basic",
-                        max_results: 5
-                      })
-                    });
+                    const { performWebSearch } = await import("@/lib/search");
+                    const searchData = await performWebSearch(args.query);
+                    if (searchData.length === 0) throw new Error(`Search API failed or returned no results`);
                     
-                    if (!searchRes.ok) throw new Error(`Search API failed with status ${searchRes.status}`);
-                    const searchData = await searchRes.json();
-                    
-                    const formattedResults = searchData.results
+                    const formattedResults = searchData
                       .map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}`)
                       .join("\n\n");
                       

@@ -205,43 +205,26 @@ export async function councilWithProgress(
   let enrichedQuery = query;
   onProgress({ type: "web_searching" });
 
-  if (!process.env.TAVILY_API_KEY) {
-    console.warn("[Council] TAVILY_API_KEY is not configured, skipping web search");
-    onProgress({ type: "web_search_complete", resultCount: 0 });
-  } else {
-    try {
-      console.log("[Council] Performing web search for:", query.slice(0, 80));
-      const searchRes = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.TAVILY_API_KEY}`
-        },
-        body: JSON.stringify({
-          query: query,
-          search_depth: "basic",
-          max_results: 5
-        })
-      });
+  try {
+    console.log("[Council] Performing web search for:", query.slice(0, 80));
+    const { performWebSearch } = await import("@/lib/search");
+    const results = await performWebSearch(query);
 
-      if (searchRes.ok) {
-        const searchData = await searchRes.json();
-        const results = searchData.results || [];
-        const formattedResults = results
-          .map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}`)
-          .join("\n\n");
+    if (results.length > 0) {
+      const formattedResults = results
+        .map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}`)
+        .join("\n\n");
 
-        enrichedQuery = `Query: ${query}\n\n<web_search_results>\n${formattedResults}\n</web_search_results>\n\nPlease answer the query using the provided web search results for up-to-date context. Cite sources where relevant.`;
-        console.log(`[Council] Web search returned ${results.length} results`);
-        onProgress({ type: "web_search_complete", resultCount: results.length });
-      } else {
-        console.error(`[Council] Web search failed with status ${searchRes.status}`);
-        onProgress({ type: "web_search_complete", resultCount: 0 });
-      }
-    } catch (err) {
-      console.error("[Council] Web search failed:", err);
+      enrichedQuery = `Query: ${query}\n\n<web_search_results>\n${formattedResults}\n</web_search_results>\n\nPlease answer the query using the provided web search results for up-to-date context. Cite sources where relevant.`;
+      console.log(`[Council] Web search returned ${results.length} results`);
+      onProgress({ type: "web_search_complete", resultCount: results.length });
+    } else {
+      console.error(`[Council] Web search returned no results`);
       onProgress({ type: "web_search_complete", resultCount: 0 });
     }
+  } catch (err) {
+    console.error("[Council] Web search failed:", err);
+    onProgress({ type: "web_search_complete", resultCount: 0 });
   }
 
   // Emit querying events for all models
