@@ -1,5 +1,6 @@
 import { createAIClient } from "@/lib/ai-client";
 import { getModelInfo } from "@/lib/models";
+import { performWebSearch } from "@/lib/search";
 
 // ─── Types ────────────────────────────────────────
 
@@ -207,17 +208,13 @@ export async function councilWithProgress(
 
   try {
     console.log("[Council] Performing web search for:", query.slice(0, 80));
-    const { performWebSearch } = await import("@/lib/search");
-    const results = await performWebSearch(query);
+    const formattedResults = await performWebSearch(query);
 
-    if (results.length > 0) {
-      const formattedResults = results
-        .map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}`)
-        .join("\n\n");
-
+    if (formattedResults) {
       enrichedQuery = `Query: ${query}\n\n<web_search_results>\n${formattedResults}\n</web_search_results>\n\nPlease answer the query using the provided web search results for up-to-date context. Cite sources where relevant.`;
-      console.log(`[Council] Web search returned ${results.length} results`);
-      onProgress({ type: "web_search_complete", resultCount: results.length });
+      const resultCount = (formattedResults.match(/Source:/g) || []).length;
+      console.log(`[Council] Web search returned ${resultCount} results`);
+      onProgress({ type: "web_search_complete", resultCount });
     } else {
       console.error(`[Council] Web search returned no results`);
       onProgress({ type: "web_search_complete", resultCount: 0 });

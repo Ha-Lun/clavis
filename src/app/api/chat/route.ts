@@ -7,6 +7,7 @@ import { ID, Query } from "node-appwrite";
 import { routeModel } from "@/lib/modelRouter";
 import { Chat, Project, FileRecord, Message } from "@/lib/appwrite/types";
 import { extractTextFromBuffer } from "@/lib/extract-text";
+import { performWebSearch } from "@/lib/search";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -602,14 +603,9 @@ ${userMessageContent}`;
                     const args = JSON.parse(tc.function.arguments);
                     console.log("[API /chat] Executing web_search for:", args.query);
                     
-                    const { performWebSearch } = await import("@/lib/search");
-                    const searchData = await performWebSearch(args.query);
-                    if (searchData.length === 0) throw new Error(`Search API failed or returned no results`);
+                    const formattedResults = await performWebSearch(args.query);
+                    if (!formattedResults) throw new Error(`Search API failed or returned no results`);
                     
-                    const formattedResults = searchData
-                      .map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}`)
-                      .join("\n\n");
-                      
                     messages.push({
                       role: "tool",
                       tool_call_id: tc.id,
