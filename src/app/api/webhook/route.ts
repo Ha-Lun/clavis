@@ -4,6 +4,7 @@ import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
 import { CLAVIS_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest, NextResponse } from "next/server";
 import { ID, Query } from "node-appwrite";
+import { performWebSearch } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
 
@@ -16,10 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { message, chatId, model = "google/gemini-3.1-flash-lite" } = await request.json();
+    let { message, chatId, model = "auto", webSearch = false } = await request.json();
 
     if (!message || !chatId) {
       return NextResponse.json({ error: "Missing message or chatId" }, { status: 400 });
+    }
+
+    // Default the model to a working Google model if auto/missing and NVIDIA key is not configured
+    if ((!model || model === "auto" || model === "google/gemini-3.1-flash-lite") && !process.env.NVIDIA_API_KEY) {
+      model = "google/gemini-2.5-flash";
     }
 
     const admin = await createAdminClient();
@@ -65,16 +71,70 @@ export async function POST(request: NextRequest) {
 
     const aiClient = createAIClient(model);
     
-    const completion = await aiClient.chat.completions.create({
+    const webSearchTool = webSearch ? [
+      {
+        type: "function" as const,
+        function: {
+          name: "web_search",
+          description: "Search the web for current, up-to-date information",
+          parameters: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "The search query" }
+            },
+            required: ["query"]
+          }
+        }
+      }
+    ] : undefined;
+
+    let completion = await aiClient.chat.completions.create({
       model: apiModelId,
       messages: [
         { role: "system", content: CLAVIS_SYSTEM_PROMPT },
         ...messages,
       ] as any[],
+      ...(webSearchTool ? { tools: webSearchTool } : {}),
       stream: false,
     });
 
-    const responseContent = (completion as any).choices?.[0]?.message?.content ?? "";
+    const responseMessage = (completion as any).choices?.[0]?.message;
+    let responseContent = responseMessage?.content ?? "";
+
+    if (responseMessage?.tool_calls?.length) {
+      messages.push(responseMessage);
+      
+      for (const tc of responseMessage.tool_calls) {
+        if (tc.function.name === "web_search" || tc.function.name === "search") {
+          try {
+            const args = JSON.parse(tc.function.arguments);
+            const formattedResults = await performWebSearch(args.query);
+            messages.push({
+              role: "tool",
+              tool_call_id: tc.id,
+              content: `Search Results for "${args.query}":\n\n${formattedResults}`
+            });
+          } catch (err: any) {
+            messages.push({
+              role: "tool",
+              tool_call_id: tc.id,
+              content: `Error performing search: ${err.message}`
+            });
+          }
+        }
+      }
+
+      const secondCompletion = await aiClient.chat.completions.create({
+        model: apiModelId,
+        messages: [
+          { role: "system", content: CLAVIS_SYSTEM_PROMPT },
+          ...messages,
+        ] as any[],
+        stream: false,
+      });
+
+      responseContent = (secondCompletion as any).choices?.[0]?.message?.content ?? "";
+    }
 
     try {
       await admin.databases.createDocument(

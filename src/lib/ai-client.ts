@@ -1,10 +1,9 @@
 import OpenAI from "openai";
 import { getModelInfo } from "./models";
 
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
-const GOOGLE_API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY;
-
 export function createAIClient(modelId: string) {
+  const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+  const GOOGLE_API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY;
   const modelInfo = getModelInfo(modelId);
 
   if (modelId.startsWith("google/")) {
