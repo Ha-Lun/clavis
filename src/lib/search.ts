@@ -60,7 +60,7 @@ export async function performWebSearch(query: string): Promise<string> {
   const scrapePromises = topUrls.map(async (url) => {
     const payload = {
       url,
-      scraper_type: "dynamic",
+      scraper_type: "static",
       selectors: {
         title: "title",
         content: "body",
