@@ -5,6 +5,7 @@ import { CLAVIS_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest, NextResponse } from "next/server";
 import { ID, Query } from "node-appwrite";
 import { performWebSearch } from "@/lib/search";
+import { routeModel } from "@/lib/modelRouter";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +22,6 @@ export async function POST(request: NextRequest) {
 
     if (!message || !chatId) {
       return NextResponse.json({ error: "Missing message or chatId" }, { status: 400 });
-    }
-
-    // Default the model to a working Google model if auto/missing and NVIDIA key is not configured
-    if ((!model || model === "auto" || model === "google/gemini-3.1-flash-lite") && !process.env.NVIDIA_API_KEY) {
-      model = "google/gemini-2.5-flash";
     }
 
     const admin = await createAdminClient();
@@ -64,12 +60,23 @@ export async function POST(request: NextRequest) {
 
     messages.push({ role: "user", content: message });
 
-    let apiModelId = model;
-    if (model.startsWith("google/")) {
-      apiModelId = model.replace("google/", "");
+    let finalModelId = model;
+    if (!finalModelId || finalModelId === "auto") {
+      finalModelId = routeModel(messages);
     }
 
-    const aiClient = createAIClient(model);
+    if (!process.env.NVIDIA_API_KEY && process.env.GROQ_API_KEY) {
+      finalModelId = "openai/gpt-oss-120b";
+    } else if (!process.env.NVIDIA_API_KEY && !finalModelId.startsWith("google/")) {
+      finalModelId = "google/gemini-2.5-flash";
+    }
+
+    let apiModelId = finalModelId;
+    if (finalModelId.startsWith("google/")) {
+      apiModelId = finalModelId.replace("google/", "");
+    }
+
+    const aiClient = createAIClient(finalModelId);
     
     const webSearchTool = webSearch ? [
       {
@@ -144,7 +151,7 @@ export async function POST(request: NextRequest) {
         {
           chat_id: chatId,
           role: "assistant",
-          content: responseContent + `\n\n<!-- model: ${model} -->`,
+          content: responseContent + `\n\n<!-- model: ${finalModelId} -->`,
         }
       );
     } catch (e) {
