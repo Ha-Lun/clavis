@@ -33,6 +33,8 @@ export async function performWebSearch(query: string): Promise<string> {
 
   const rawUrls: string[] = searchData.result?.urls || [];
   const urls = rawUrls.map(u => {
+    if (!u || typeof u !== 'string') return "";
+    
     if (u.includes('duckduckgo.com/l/?uddg=')) {
       try {
         const urlObj = new URL(u.startsWith('//') ? `https:${u}` : u);
@@ -42,10 +44,17 @@ export async function performWebSearch(query: string): Promise<string> {
         // ignore
       }
     }
+    
+    if (u.startsWith('//')) {
+      return `https:${u}`;
+    }
+    if (u.startsWith('/')) {
+      return `https://duckduckgo.com${u}`;
+    }
     return u;
   });
 
-  const topUrls = urls.slice(0, 3);
+  const topUrls = urls.filter(u => u !== "").slice(0, 3);
 
   // Step 2: Concurrently scrape URLs
   const scrapePromises = topUrls.map(async (url) => {
