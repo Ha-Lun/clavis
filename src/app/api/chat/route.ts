@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { chatId, message, model, webSearch, history } = await request.json();
-    const enableWebSearch = webSearch !== false; // Default to true
+    const enableWebSearch = true;
     const isIncognito = chatId?.startsWith("incognito-");
     console.log("[API /chat] Request:", {
       chatId: chatId?.slice(0, 20),
