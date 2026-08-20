@@ -143,6 +143,8 @@ export async function POST(request: NextRequest) {
       responseContent = (secondCompletion as any).choices?.[0]?.message?.content ?? "";
     }
 
+    const responseWithAttribution = `${responseContent.trim()}\n\n---\n_Model: ${finalModelId}_`;
+
     try {
       await admin.databases.createDocument(
         dbId,
@@ -158,7 +160,10 @@ export async function POST(request: NextRequest) {
       console.warn("Could not save assistant message:", e);
     }
 
-    return NextResponse.json({ response: responseContent });
+    return NextResponse.json({ 
+      response: responseWithAttribution,
+      model: finalModelId
+    });
   } catch (err: any) {
     console.error("Webhook error:", err);
     return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
