@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Brain } from "lucide-react";
+import { Waves } from "lucide-react";
 
 
 interface ModelIconProps {
@@ -128,26 +128,6 @@ export function ModelIcon({ modelId, className, size = 16 }: ModelIconProps) {
     );
   }
 
-  // MiniMax Logo
-  if (modelId.includes("minimax")) {
-    return (
-      <svg 
-        width={iconSize} 
-        height={iconSize} 
-        viewBox="0 0 24 24" 
-        xmlns="http://www.w3.org/2000/svg" 
-        className={cn("shrink-0 select-none", className)}
-      >
-        <defs>
-          <linearGradient id="minimax-gradient" x1="0%" x2="100.182%" y1="50.057%" y2="50.057%">
-            <stop offset="0%" stopColor="#E2167E"></stop>
-            <stop offset="100%" stopColor="#FE603C"></stop>
-          </linearGradient>
-        </defs>
-        <path d="M16.278 2c1.156 0 2.093.927 2.093 2.07v12.501a.74.74 0 00.744.709.74.74 0 00.743-.709V9.099a2.06 2.06 0 012.071-2.049A2.06 2.06 0 0124 9.1v6.561a.649.649 0 01-.652.645.649.649 0 01-.653-.645V9.1a.762.762 0 00-.766-.758.762.762 0 00-.766.758v7.472a2.037 2.037 0 01-2.048 2.026 2.037 2.037 0 01-2.048-2.026v-12.5a.785.785 0 00-.788-.753.785.785 0 00-.789.752l-.001 15.904A2.037 2.037 0 0113.441 22a2.037 2.037 0 01-2.048-2.026V18.04c0-.356.292-.645.652-.645.36 0 .652.289.652.645v1.934c0 .263.142.506.372.638.23.131.514.131.744 0a.734.734 0 00.372-.638V4.07c0-1.143.937-2.07 2.093-2.07zm-5.674 0c1.156 0 2.093.927 2.093 2.07v11.523a.648.648 0 01-.652.645.648.648 0 01-.652-.645V4.07a.785.785 0 00-.789-.78.785.785 0 00-.789.78v14.013a2.06 2.06 0 01-2.07 2.048 2.06 2.06 0 01-2.071-2.048V9.1a.762.762 0 00-.766-.758.762.762 0 00-.766.758v3.8a2.06 2.06 0 01-2.071 2.049A2.06 2.06 0 010 12.9v-1.378c0-.357.292-.646.652-.646.36 0 .653.29.653.646V12.9c0 .418.343.757.766.757s.766-.339.766-.757V9.099a2.06 2.06 0 012.07-2.048 2.06 2.06 0 012.071 2.048v8.984c0 .419.343.758.767.758.423 0 .766-.339.766-.758V4.07c0-1.143.937-2.07 2.093-2.07z" fill="url(#minimax-gradient)" fillRule="nonzero"></path>
-      </svg>
-    );
-  }
 
   // Qwen Logo
   if (modelId.includes("qwen")) {
@@ -164,24 +144,6 @@ export function ModelIcon({ modelId, className, size = 16 }: ModelIconProps) {
     );
   }
 
-  // ZhiPu / GLM Logo
-  if (
-    modelId.includes("z-ai") ||
-    modelId.includes("glm") ||
-    modelId.includes("zhipu")
-  ) {
-    return (
-      <svg 
-        width={iconSize} 
-        height={iconSize} 
-        viewBox="0 0 24 24" 
-        xmlns="http://www.w3.org/2000/svg" 
-        className={cn("shrink-0 select-none", className)}
-      >
-        <path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12z" fill="#504AF4"/><path d="M12 7c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5zm0 8.5c-1.933 0-3.5-1.567-3.5-3.5s1.567-3.5 3.5-3.5 3.5 1.567 3.5 3.5-1.567 3.5-3.5 3.5z" fill="#fff"/>
-      </svg>
-    );
-  }
 
   // Nvidia Logo
   if (modelId.includes("nvidia") || modelId.includes("nemotron")) {
@@ -207,25 +169,9 @@ export function ModelIcon({ modelId, className, size = 16 }: ModelIconProps) {
     );
   }
 
-  // Inkling Logo
-  if (modelId.includes("inkling")) {
-    return <Brain size={iconSize} className={cn("shrink-0 select-none", className)} />;
-  }
-
-  // Stepfun Logo
-  if (modelId.includes("stepfun") || modelId.includes("step")) {
-    return (
-      <svg width={iconSize} height={iconSize} style={{flex: "none", lineHeight: 1}} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className={cn("shrink-0 select-none", className)}>
-        <title>Stepfun</title>
-        <path d="M22.012 0h1.032v.927H24v.968h-.956V3.78h-1.032V1.896h-1.878v-.97h1.878V0zM2.6 12.371V1.87h.969v10.502h-.97zm10.423.66h10.95v.918h-6.208v9.579h-4.742V13.03zM5.629 3.333v12.356H0v4.51h10.386V8L20.859 8l-.003-4.668-15.227.001z" fill="url(#lobe-icons-stepfun-_R_0_)" fillRule="evenodd"></path>
-        <defs>
-          <linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-stepfun-_R_0_" x1="1.646" x2="18.342" y1="1.916" y2="22.091">
-            <stop stopColor="#01A9FF"></stop>
-            <stop offset="1" stopColor="#0160FF"></stop>
-          </linearGradient>
-        </defs>
-      </svg>
-    );
+  // Poolside Logo
+  if (modelId.includes("poolside")) {
+    return <Waves size={iconSize} className={cn("shrink-0 select-none text-[#c9a84c]", className)} />;
   }
 
   // Fallback

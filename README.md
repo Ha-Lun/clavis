@@ -7,7 +7,7 @@ Clavis is a high-end AI orchestration platform engineered for synthesis and adva
 ## The Clavis Intelligence Engine
 
 ### The Model Council (Synthesis Engine)
-*   **Parallel Orchestration:** Simultaneously queries a curated ensemble of 7 models — Mistral, Qwen, Kimi, MiniMax, and Nemotron — via NVIDIA NIM.
+*   **Parallel Orchestration:** Simultaneously queries a curated ensemble of models — Mistral, Qwen, Kimi, and Nemotron — via NVIDIA NIM.
 *   **Kimi Synthesis:** Utilizes Moonshot Kimi to aggregate and synthesize parallel outputs, resolving contradictions and extracting the most accurate insights.
 *   **The Golden Response:** Produces a definitive, synthesized answer that represents the consensus of the council.
 *   **Confidence & Analysis:** Provides transparent consensus/disagreement analysis and confidence scoring for every complex query.
@@ -49,7 +49,6 @@ Clavis is a high-end AI orchestration platform engineered for synthesis and adva
 | Nemotron Nano Omni | NVIDIA | General |
 | Nemotron Ultra | NVIDIA | General |
 | Kimi K2.6 | Moonshot | Council |
-| MiniMax M3 | MiniMax | Council |
 | Qwen 3.5 | Qwen | Council |
 | Mistral Medium 3.5 | Mistral | Council |
 | Mistral Small 4 | Mistral | Council |

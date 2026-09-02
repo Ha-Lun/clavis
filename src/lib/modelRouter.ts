@@ -1,7 +1,7 @@
 /**
  * Model Routing:
  *
- * Default Fallback (Step 3.7 Flash)
+ * Default Fallback (Laguna XS 2)
  */
 
 import { getModelInfo } from "./models";
@@ -14,8 +14,8 @@ export type MessageParam = {
 };
 
 export function routeModel(_messages: MessageParam[]): string {
-  // Auto mode routes directly to Step 3.7 Flash
-  return "stepfun-ai/step-3.7-flash";
+  // Auto mode routes directly to Laguna XS 2
+  return "poolside/laguna-xs-2";
 }
 
 export function getRoutingLabel(modelId: string): string {

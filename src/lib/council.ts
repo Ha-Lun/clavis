@@ -53,12 +53,11 @@ export const SYNTHESIZER_MODEL = "google/gemini-3.1-flash-lite";
 
 export const COUNCIL_MODELS = [
   { id: "meta/muse-glimmer-30b", name: "Muse Glimmer 30B" },
-  { id: "thinkingmachines/inkling", name: "Inkling" },
-  { id: "z-ai/glm-5.2", name: "GLM 5.2" },
-  { id: "stepfun-ai/step-3.7-flash", name: "Step 3.7 Flash" },
+  { id: "poolside/laguna-xs-2", name: "Laguna XS 2" },
+  { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning", name: "Nemotron 3 Nano Omni Reasoning" },
+  { id: "nvidia/nemotron-3-super-120b-a12b", name: "Nemotron 3 Super 120B" },
   { id: "nvidia/nemotron-3.5-lightning-30b-a3b", name: "Nemotron 3.5 Lightning" },
   { id: "nvidia/nemotron-3-ultra-550b-a55b", name: "Nemotron Ultra" },
-  { id: "minimaxai/minimax-m3", name: "MiniMax M3" },
 ] as const;
 
 export const COUNCIL_AVAILABLE_MODELS = COUNCIL_MODELS;
@@ -66,7 +65,7 @@ export const COUNCIL_AVAILABLE_MODELS = COUNCIL_MODELS;
 export const DEFAULT_COUNCIL_MODELS = [
   "meta/muse-glimmer-30b",
   "nvidia/nemotron-3.5-lightning-30b-a3b",
-  "stepfun-ai/step-3.7-flash",
+  "poolside/laguna-xs-2",
 ];
 
 // ─── Synthesizer Prompt ───────────────────────────

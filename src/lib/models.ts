@@ -2,12 +2,11 @@ export type ModelId =
   | "auto"
   | "google/gemini-3.1-flash-lite"
   | "meta/muse-glimmer-30b"
-  | "thinkingmachines/inkling"
-  | "z-ai/glm-5.2"
-  | "stepfun-ai/step-3.7-flash"
   | "nvidia/nemotron-3.5-lightning-30b-a3b"
-  | "minimaxai/minimax-m3"
-  | "nvidia/nemotron-3-ultra-550b-a55b";
+  | "nvidia/nemotron-3-ultra-550b-a55b"
+  | "poolside/laguna-xs-2"
+  | "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+  | "nvidia/nemotron-3-super-120b-a12b";
 
 export interface ModelInfo {
   id: ModelId;
@@ -42,24 +41,19 @@ export const MODELS: ModelInfo[] = [
     shortName: "Muse Glimmer",
   },
   {
-    id: "minimaxai/minimax-m3",
-    name: "MiniMax M3",
-    shortName: "MiniMax",
+    id: "poolside/laguna-xs-2",
+    name: "Laguna XS 2",
+    shortName: "Laguna XS 2",
   },
   {
-    id: "thinkingmachines/inkling",
-    name: "Inkling",
-    shortName: "Inkling",
+    id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+    name: "Nemotron 3 Nano Omni Reasoning",
+    shortName: "Nemotron Nano Omni",
   },
   {
-    id: "z-ai/glm-5.2",
-    name: "GLM 5.2",
-    shortName: "GLM 5.2",
-  },
-  {
-    id: "stepfun-ai/step-3.7-flash",
-    name: "Step 3.7 Flash",
-    shortName: "Step 3.7 Flash",
+    id: "nvidia/nemotron-3-super-120b-a12b",
+    name: "Nemotron 3 Super 120B",
+    shortName: "Nemotron Super",
   },
 ];
 
