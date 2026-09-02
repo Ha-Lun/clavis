@@ -49,11 +49,11 @@ export type CouncilProgressEvent =
 
 // ─── Constants ────────────────────────────────────
 
-export const SYNTHESIZER_MODEL = "google/gemini-3.1-flash-lite";
+export const SYNTHESIZER_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
 
 export const COUNCIL_MODELS = [
   { id: "meta/muse-glimmer-30b", name: "Muse Glimmer 30B" },
-  { id: "poolside/laguna-xs-2", name: "Laguna XS 2" },
+  { id: "poolside/laguna-xs-2.1", name: "Laguna XS 2.1" },
   { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning", name: "Nemotron 3 Nano Omni Reasoning" },
   { id: "nvidia/nemotron-3-super-120b-a12b", name: "Nemotron 3 Super 120B" },
   { id: "nvidia/nemotron-3.5-lightning-30b-a3b", name: "Nemotron 3.5 Lightning" },
@@ -65,7 +65,7 @@ export const COUNCIL_AVAILABLE_MODELS = COUNCIL_MODELS;
 export const DEFAULT_COUNCIL_MODELS = [
   "meta/muse-glimmer-30b",
   "nvidia/nemotron-3.5-lightning-30b-a3b",
-  "poolside/laguna-xs-2",
+  "poolside/laguna-xs-2.1",
 ];
 
 // ─── Synthesizer Prompt ───────────────────────────
@@ -125,11 +125,10 @@ async function queryModel(
 
   try {
     const client = createAIClient(model);
-    const apiModelId = model.startsWith("google/") ? model.replace("google/", "") : model;
 
     const completion = await Promise.race([
       client.chat.completions.create({
-        model: apiModelId,
+        model: model,
         messages: [
           { role: "system", content: "You are a knowledgeable AI assistant. Answer the user's question directly, clearly, and concisely. If web search results are provided, use them as your primary source of information and cite sources where relevant. Keep responses under 300 words without conversational filler or introductory preamble." },
           { role: "user", content: query },
@@ -273,11 +272,10 @@ export async function councilWithProgress(
 
   const synthesizerPrompt = buildSynthesizerPrompt(query, modelResponses);
   const synthClient = createAIClient(SYNTHESIZER_MODEL);
-  const synthApiModelId = SYNTHESIZER_MODEL.startsWith("google/") ? SYNTHESIZER_MODEL.replace("google/", "") : SYNTHESIZER_MODEL;
   
   const synthCompletion = await Promise.race([
     synthClient.chat.completions.create({
-      model: synthApiModelId,
+      model: SYNTHESIZER_MODEL,
       messages: [{ role: "user", content: synthesizerPrompt }],
       stream: false,
       max_tokens: 2048,

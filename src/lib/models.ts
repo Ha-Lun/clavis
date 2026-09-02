@@ -1,10 +1,9 @@
 export type ModelId =
   | "auto"
-  | "google/gemini-3.1-flash-lite"
   | "meta/muse-glimmer-30b"
   | "nvidia/nemotron-3.5-lightning-30b-a3b"
   | "nvidia/nemotron-3-ultra-550b-a55b"
-  | "poolside/laguna-xs-2"
+  | "poolside/laguna-xs-2.1"
   | "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
   | "nvidia/nemotron-3-super-120b-a12b";
 
@@ -19,11 +18,6 @@ export const MODELS: ModelInfo[] = [
     id: "auto",
     name: "Auto",
     shortName: "Auto",
-  },
-  {
-    id: "google/gemini-3.1-flash-lite",
-    name: "Gemini 3.1 Flash",
-    shortName: "Gemini 3.1",
   },
   {
     id: "nvidia/nemotron-3.5-lightning-30b-a3b",
@@ -41,9 +35,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "Muse Glimmer",
   },
   {
-    id: "poolside/laguna-xs-2",
-    name: "Laguna XS 2",
-    shortName: "Laguna XS 2",
+    id: "poolside/laguna-xs-2.1",
+    name: "Laguna XS 2.1",
+    shortName: "Laguna XS 2.1",
   },
   {
     id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",

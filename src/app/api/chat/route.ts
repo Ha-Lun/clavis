@@ -466,10 +466,7 @@ ${userMessageContent}`;
       console.log(`[API /chat] Auto-routed to model: ${finalModelId}`);
     }
 
-    let apiModelId = finalModelId;
-    if (finalModelId.startsWith("google/")) {
-      apiModelId = finalModelId.replace("google/", "");
-    }
+    const apiModelId = finalModelId;
 
     if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";

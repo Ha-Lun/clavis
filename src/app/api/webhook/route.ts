@@ -67,14 +67,11 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.NVIDIA_API_KEY && process.env.GROQ_API_KEY) {
       finalModelId = "openai/gpt-oss-120b";
-    } else if (!process.env.NVIDIA_API_KEY && !finalModelId.startsWith("google/")) {
-      finalModelId = "google/gemini-2.5-flash";
+    } else if (!process.env.NVIDIA_API_KEY) {
+      finalModelId = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
     }
 
-    let apiModelId = finalModelId;
-    if (finalModelId.startsWith("google/")) {
-      apiModelId = finalModelId.replace("google/", "");
-    }
+    const apiModelId = finalModelId;
 
     const aiClient = createAIClient(finalModelId);
     
