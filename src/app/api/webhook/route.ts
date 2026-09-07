@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/appwrite/server";
 import { createAIClient } from "@/lib/ai-client";
 import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
-import { CLAVIS_SYSTEM_PROMPT } from "@/lib/prompts";
+import { CLAVIS_SYSTEM_PROMPT, CLAVIS_CLI_SYSTEM_PROMPT } from "@/lib/prompts";
 import { NextRequest, NextResponse } from "next/server";
 import { ID, Query } from "node-appwrite";
 import { performWebSearch } from "@/lib/search";
@@ -18,7 +18,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let { message, chatId, model = "auto", webSearch = false } = await request.json();
+    let { message, chatId, model = "auto", webSearch = false, client = "web" } = await request.json();
+    const isCli = client === "cli";
+    const systemPrompt = isCli ? CLAVIS_CLI_SYSTEM_PROMPT : CLAVIS_SYSTEM_PROMPT;
 
     if (!message || !chatId) {
       return NextResponse.json({ error: "Missing message or chatId" }, { status: 400 });
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
     let completion = await aiClient.chat.completions.create({
       model: apiModelId,
       messages: [
-        { role: "system", content: CLAVIS_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         ...messages,
       ] as any[],
       ...(webSearchTool ? { tools: webSearchTool } : {}),
@@ -131,7 +133,7 @@ export async function POST(request: NextRequest) {
       const secondCompletion = await aiClient.chat.completions.create({
         model: apiModelId,
         messages: [
-          { role: "system", content: CLAVIS_SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           ...messages,
         ] as any[],
         stream: false,
@@ -140,7 +142,9 @@ export async function POST(request: NextRequest) {
       responseContent = (secondCompletion as any).choices?.[0]?.message?.content ?? "";
     }
 
-    const responseWithAttribution = `${responseContent.trim()}\n\n---\n_Model: ${finalModelId}_`;
+    const responseWithAttribution = isCli
+      ? responseContent.trim()
+      : `${responseContent.trim()}\n\n---\n_Model: ${finalModelId}_`;
 
     try {
       await admin.databases.createDocument(
