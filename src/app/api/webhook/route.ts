@@ -10,6 +10,8 @@ import { routeModel } from "@/lib/modelRouter";
 
 export const dynamic = "force-dynamic";
 
+const inMemorySessionHistory = new Map<string, Array<{ role: string; content: string }>>();
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -19,9 +21,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let { message, chatId, model = "auto", webSearch = false, client = "web" } = await request.json();
+    let {
+      message,
+      chatId,
+      model = "auto",
+      webSearch = false,
+      client = "web",
+      context,
+      messages: clientMessages,
+    } = await request.json();
     const isCli = client === "cli";
     const systemPrompt = isCli ? CLAVIS_CLI_SYSTEM_PROMPT : CLAVIS_SYSTEM_PROMPT;
+
+    let activeSystemPrompt = systemPrompt;
+    if (context && typeof context === "string" && context.trim().length > 0) {
+      activeSystemPrompt = systemPrompt + "\n\n=== COURSE CONTEXT ===\n" + context.trim() + "\n=====================\n";
+    }
 
     if (!message || !chatId) {
       return NextResponse.json({ error: "Missing message or chatId" }, { status: 400 });
@@ -30,15 +45,45 @@ export async function POST(request: NextRequest) {
     const admin = await createAdminClient();
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
-    let history: any = { documents: [] };
-    try {
-      history = await admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
-        Query.equal("chat_id", chatId),
-        Query.orderAsc("$createdAt"),
-        Query.limit(99),
-      ]);
-    } catch (e) {
-      console.warn("Could not fetch chat history:", e);
+    let messages: any[] = [];
+
+    if (clientMessages && Array.isArray(clientMessages) && clientMessages.length > 0) {
+      messages = clientMessages
+        .filter((m: any) => m && m.content && (m.role === "user" || m.role === "assistant" || m.role === "system"))
+        .map((m: any) => ({
+          role: m.role as "system" | "user" | "assistant",
+          content: String(m.content),
+        }));
+      const lastMsg = messages[messages.length - 1];
+      if (!lastMsg || lastMsg.role !== "user" || lastMsg.content !== message) {
+        messages.push({ role: "user", content: message });
+      }
+    } else {
+      let historyDocuments: any[] = [];
+      try {
+        const history = await admin.databases.listDocuments(dbId, COLLECTIONS.MESSAGES, [
+          Query.equal("chat_id", chatId),
+          Query.orderAsc("$createdAt"),
+          Query.limit(99),
+        ]);
+        historyDocuments = history.documents;
+      } catch (e) {
+        console.warn("Could not fetch chat history:", e);
+      }
+
+      if (historyDocuments.length > 0) {
+        messages = historyDocuments.map((m: any) => ({
+          role: m.role as "system" | "user" | "assistant",
+          content: m.content as string,
+        }));
+      } else {
+        const inMem = inMemorySessionHistory.get(chatId) || [];
+        messages = inMem.map((m) => ({
+          role: m.role as "system" | "user" | "assistant",
+          content: m.content,
+        }));
+      }
+      messages.push({ role: "user", content: message });
     }
 
     try {
@@ -55,13 +100,6 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.warn("Could not save user message:", e);
     }
-
-    const messages = history.documents.map((m: any) => ({
-      role: m.role as "system" | "user" | "assistant",
-      content: m.content as string,
-    }));
-
-    messages.push({ role: "user", content: message });
 
     let finalModelId = model;
     if (!finalModelId || finalModelId === "auto") {
@@ -100,7 +138,7 @@ export async function POST(request: NextRequest) {
       let completion = await aiClient.chat.completions.create({
         model: apiModelId,
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: activeSystemPrompt },
           ...messages,
         ] as any[],
         ...(webSearchTool ? { tools: webSearchTool } : {}),
@@ -136,7 +174,7 @@ export async function POST(request: NextRequest) {
         const secondCompletion = await aiClient.chat.completions.create({
           model: apiModelId,
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: activeSystemPrompt },
             ...messages,
           ] as any[],
           stream: false,
@@ -166,7 +204,7 @@ export async function POST(request: NextRequest) {
           const fallbackCompletion = await fallbackClient.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [
-              { role: "system", content: systemPrompt },
+              { role: "system", content: activeSystemPrompt },
               ...messages,
             ] as any[],
             stream: false,
@@ -205,6 +243,19 @@ export async function POST(request: NextRequest) {
       );
     } catch (e) {
       console.warn("Could not save assistant message:", e);
+    }
+
+    if (chatId && responseContent) {
+      const sessionMsgs = inMemorySessionHistory.get(chatId) || [];
+      const last = sessionMsgs[sessionMsgs.length - 1];
+      if (!last || last.role !== "user" || last.content !== message) {
+        sessionMsgs.push({ role: "user", content: message });
+      }
+      sessionMsgs.push({ role: "assistant", content: responseContent });
+      if (sessionMsgs.length > 20) {
+        sessionMsgs.splice(0, sessionMsgs.length - 20);
+      }
+      inMemorySessionHistory.set(chatId, sessionMsgs);
     }
 
     return NextResponse.json({ 
