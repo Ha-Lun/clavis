@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import { createAdminClient } from "@/lib/appwrite/server";
 import { createAIClient } from "@/lib/ai-client";
 import { DATABASE_ID, COLLECTIONS } from "@/lib/appwrite/config";
@@ -94,52 +95,97 @@ export async function POST(request: NextRequest) {
       }
     ] : undefined;
 
-    let completion = await aiClient.chat.completions.create({
-      model: apiModelId,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ] as any[],
-      ...(webSearchTool ? { tools: webSearchTool } : {}),
-      stream: false,
-    });
-
-    const responseMessage = (completion as any).choices?.[0]?.message;
-    let responseContent = responseMessage?.content ?? "";
-
-    if (responseMessage?.tool_calls?.length) {
-      messages.push(responseMessage);
-      
-      for (const tc of responseMessage.tool_calls) {
-        if (tc.function.name === "web_search" || tc.function.name === "search") {
-          try {
-            const args = JSON.parse(tc.function.arguments);
-            const formattedResults = await performWebSearch(args.query);
-            messages.push({
-              role: "tool",
-              tool_call_id: tc.id,
-              content: `Search Results for "${args.query}":\n\n${formattedResults}`
-            });
-          } catch (err: any) {
-            messages.push({
-              role: "tool",
-              tool_call_id: tc.id,
-              content: `Error performing search: ${err.message}`
-            });
-          }
-        }
-      }
-
-      const secondCompletion = await aiClient.chat.completions.create({
+    let responseContent = "";
+    try {
+      let completion = await aiClient.chat.completions.create({
         model: apiModelId,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
         ] as any[],
+        ...(webSearchTool ? { tools: webSearchTool } : {}),
         stream: false,
       });
 
-      responseContent = (secondCompletion as any).choices?.[0]?.message?.content ?? "";
+      const responseMessage = (completion as any).choices?.[0]?.message;
+      responseContent = responseMessage?.content ?? "";
+
+      if (responseMessage?.tool_calls?.length) {
+        messages.push(responseMessage);
+        
+        for (const tc of responseMessage.tool_calls) {
+          if (tc.function.name === "web_search" || tc.function.name === "search") {
+            try {
+              const args = JSON.parse(tc.function.arguments);
+              const formattedResults = await performWebSearch(args.query);
+              messages.push({
+                role: "tool",
+                tool_call_id: tc.id,
+                content: `Search Results for "${args.query}":\n\n${formattedResults}`
+              });
+            } catch (err: any) {
+              messages.push({
+                role: "tool",
+                tool_call_id: tc.id,
+                content: `Error performing search: ${err.message}`
+              });
+            }
+          }
+        }
+
+        const secondCompletion = await aiClient.chat.completions.create({
+          model: apiModelId,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ] as any[],
+          stream: false,
+        });
+
+        responseContent = (secondCompletion as any).choices?.[0]?.message?.content ?? "";
+      }
+    } catch (aiErr: any) {
+      const isOverload =
+        aiErr?.status === 503 ||
+        aiErr?.status === 429 ||
+        aiErr?.code === 503 ||
+        aiErr?.code === 429 ||
+        String(aiErr?.message || "").includes("ResourceExhausted") ||
+        String(aiErr?.message || "").includes("limit reached");
+
+      if (isOverload && process.env.GROQ_API_KEY) {
+        console.warn("NVIDIA NIM 503/ResourceExhausted, falling back to Groq llama-3.3-70b-versatile...");
+        try {
+          const fallbackClient = new OpenAI({
+            apiKey: process.env.GROQ_API_KEY,
+            baseURL: "https://api.groq.com/openai/v1",
+            timeout: 90 * 1000,
+            maxRetries: 1,
+          });
+
+          const fallbackCompletion = await fallbackClient.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...messages,
+            ] as any[],
+            stream: false,
+          });
+
+          responseContent = (fallbackCompletion as any).choices?.[0]?.message?.content ?? "";
+          finalModelId = "llama-3.3-70b-versatile";
+        } catch (groqErr: any) {
+          console.error("Groq fallback also failed:", groqErr);
+          return NextResponse.json({
+            response: "[Notice] The selected model is temporarily congested on NVIDIA's cloud servers. Please switch models with /model (e.g. model 2 or 4) and try again."
+          }, { status: 200 });
+        }
+      } else {
+        console.error("AI completion error:", aiErr);
+        return NextResponse.json({
+          response: "[Notice] The selected model is temporarily congested on NVIDIA's cloud servers. Please switch models with /model (e.g. model 2 or 4) and try again."
+        }, { status: 200 });
+      }
     }
 
     const responseWithAttribution = isCli
