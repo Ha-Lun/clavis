@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     let finalModelId = model;
     if (!finalModelId || finalModelId === "auto") {
-      finalModelId = routeModel(messages);
+      finalModelId = "meta/muse-glimmer-30b";
     }
 
     if (!process.env.NVIDIA_API_KEY && process.env.GROQ_API_KEY) {
