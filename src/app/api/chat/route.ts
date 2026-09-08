@@ -12,6 +12,9 @@ import type {
   ChatCompletion,
   ChatCompletionChunk,
 } from "openai/resources/index.mjs";
+import { getModelInfo } from "@/lib/models";
+import { fetchAndParseCalendar, filterEvents } from "@/lib/integrations/calendar";
+import { getCanvasUpcomingEvents, getCanvasCourses } from "@/lib/integrations/canvas";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +35,12 @@ async function callAIWithRetry(
   timeoutMs: number = 30000,
   onRetry?: (attempt: number) => void,
   enableWebSearch: boolean = true,
+  customTools?: any[]
 ) {
   let lastError: Error | null = null;
   const isQwen = model.includes("qwen3.5");
+  const modelInfo = getModelInfo(model);
+  const supportsTools = modelInfo.supportsTools !== false;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -45,9 +51,11 @@ async function callAIWithRetry(
         setTimeout(() => reject(new Error("Request timed out")), timeoutMs),
       );
 
-      const webSearchTool = enableWebSearch ? [
-          {
-            type: "function" as const,
+      const tools: any[] = [];
+      if (supportsTools) {
+        if (enableWebSearch) {
+          tools.push({
+            type: "function",
             function: {
               name: "web_search",
               description: "Search the web for current, up-to-date information",
@@ -59,8 +67,12 @@ async function callAIWithRetry(
                 required: ["query"]
               }
             }
-          }
-        ] : undefined;
+          });
+        }
+        if (customTools && customTools.length > 0) {
+          tools.push(...customTools);
+        }
+      }
 
       const aiPromise = aiClient.chat.completions.create({
         model,
@@ -68,7 +80,7 @@ async function callAIWithRetry(
           { role: "system", content: systemPrompt },
           ...messages,
         ] as any[],
-        ...(webSearchTool ? { tools: webSearchTool } : {}),
+        ...(tools.length > 0 ? { tools } : {}),
         stream: true,
         max_tokens: isQwen ? 16384 : 8192,
       }, { signal });
@@ -466,6 +478,42 @@ ${userMessageContent}`;
       console.log(`[API /chat] Auto-routed to model: ${finalModelId}`);
     }
 
+    const customTools: any[] = [];
+    if (prefs?.calendarIcsUrl) {
+      customTools.push({
+        type: "function",
+        function: {
+          name: "get_calendar_events",
+          description: "Get user's calendar events",
+          parameters: {
+            type: "object",
+            properties: {
+              filter: { type: "string", enum: ["today", "week", "all"], description: "Time filter" }
+            }
+          }
+        }
+      });
+    }
+
+    if (prefs?.canvasUrl && prefs?.canvasToken) {
+      customTools.push({
+        type: "function",
+        function: {
+          name: "get_canvas_upcoming",
+          description: "Get user's upcoming assignments and events from Canvas LMS",
+          parameters: { type: "object", properties: {} }
+        }
+      });
+      customTools.push({
+        type: "function",
+        function: {
+          name: "get_canvas_courses",
+          description: "Get user's active courses from Canvas LMS",
+          parameters: { type: "object", properties: {} }
+        }
+      });
+    }
+
     const apiModelId = finalModelId;
 
     if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek")) {
@@ -579,7 +627,8 @@ ${userMessageContent}`;
                   fullContent += retryMsg;
                   controller.enqueue(new TextEncoder().encode(retryMsg));
                 },
-                enableWebSearch
+                enableWebSearch,
+                customTools
               );
               await processStream(followUpCompletion);
               return;
@@ -597,7 +646,7 @@ ${userMessageContent}`;
               for (const tc of toolCalls) {
                 if (tc.function.name === "web_search" || tc.function.name === "search") {
                   try {
-                    const args = JSON.parse(tc.function.arguments);
+                    const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : { query: "" };
                     console.log("[API /chat] Executing web_search for:", args.query);
                     
                     const formattedResults = await performWebSearch(args.query);
@@ -608,14 +657,46 @@ ${userMessageContent}`;
                       tool_call_id: tc.id,
                       content: `Search Results for "${args.query}":\n\n${formattedResults}`
                     });
-                    
                   } catch (err: any) {
-                    console.error("[API /chat] Tool execution failed:", err);
-                    messages.push({
-                      role: "tool",
-                      tool_call_id: tc.id,
-                      content: `Error performing search: ${err.message}`
-                    });
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: `Error: ${err.message}` });
+                  }
+                } else if (tc.function.name === "get_calendar_events") {
+                  try {
+                    const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : { filter: "all" };
+                    if (!prefs?.calendarIcsUrl) throw new Error("Calendar URL not configured");
+                    
+                    const events = await fetchAndParseCalendar(prefs.calendarIcsUrl);
+                    const filtered = filterEvents(events, args.filter || "all");
+                    
+                    const content = filtered.length > 0 
+                      ? filtered.map(e => `- **${e.summary}**: ${e.startDate.toLocaleString()} to ${e.endDate.toLocaleString()} ${e.location ? `(at ${e.location})` : ""}`).join("\n")
+                      : "No events found.";
+                      
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: `Calendar Events:\n${content}` });
+                  } catch (err: any) {
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: `Error fetching calendar: ${err.message}` });
+                  }
+                } else if (tc.function.name === "get_canvas_upcoming") {
+                  try {
+                    if (!prefs?.canvasUrl || !prefs?.canvasToken) throw new Error("Canvas not configured");
+                    const events = await getCanvasUpcomingEvents(prefs.canvasUrl, prefs.canvasToken);
+                    const content = events.length > 0
+                      ? events.map(e => `- **${e.title}**: ${e.start_at ? new Date(e.start_at).toLocaleString() : 'N/A'}\n  Course: ${e.context_name}\n  [Link](${e.html_url})`).join("\n")
+                      : "No upcoming events found.";
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: `Canvas Upcoming:\n${content}` });
+                  } catch (err: any) {
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: `Error fetching Canvas upcoming events: ${err.message}` });
+                  }
+                } else if (tc.function.name === "get_canvas_courses") {
+                  try {
+                    if (!prefs?.canvasUrl || !prefs?.canvasToken) throw new Error("Canvas not configured");
+                    const courses = await getCanvasCourses(prefs.canvasUrl, prefs.canvasToken);
+                    const content = courses.length > 0
+                      ? courses.map(c => `- ${c.name} (${c.course_code}) [ID: ${c.id}]`).join("\n")
+                      : "No active courses found.";
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: `Canvas Active Courses:\n${content}` });
+                  } catch (err: any) {
+                    messages.push({ role: "tool", tool_call_id: tc.id, content: `Error fetching Canvas courses: ${err.message}` });
                   }
                 } else {
                   console.error(`[API /chat] Unknown tool called: ${tc.function.name}`);
@@ -642,6 +723,7 @@ ${userMessageContent}`;
                   controller.enqueue(new TextEncoder().encode(retryMsg));
                 },
                 enableWebSearch,
+                customTools
               );
               await processStream(nextCompletion);
               return;
@@ -734,6 +816,7 @@ ${userMessageContent}`;
               controller.enqueue(new TextEncoder().encode(retryMsg));
             },
             enableWebSearch,
+            customTools
           );
           await processStream(completion);
         } catch (err: any) {
