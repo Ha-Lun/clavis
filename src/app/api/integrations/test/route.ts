@@ -1,11 +1,19 @@
 import { NextRequest } from "next/server";
 import { testCanvasConnection } from "@/lib/integrations/canvas";
 import { fetchAndParseCalendar } from "@/lib/integrations/calendar";
+import { createSessionClient } from "@/lib/appwrite/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const client = await createSessionClient();
+    if (!client) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    }
+    const prefs = await client.account.getPrefs();
+
     const body = await req.json();
-    const { type, canvasUrl, canvasToken, calendarIcsUrl } = body;
+    const { type, canvasUrl, calendarIcsUrl } = body;
+    const canvasToken = body.canvasToken || (prefs as any).canvasToken;
 
     if (type === "canvas") {
       if (!canvasUrl || !canvasToken) {

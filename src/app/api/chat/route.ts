@@ -8,11 +8,8 @@ import { routeModel } from "@/lib/modelRouter";
 import { Chat, Project, FileRecord, Message } from "@/lib/appwrite/types";
 import { extractTextFromBuffer } from "@/lib/extract-text";
 import { performWebSearch } from "@/lib/search";
-import type {
-  ChatCompletion,
-  ChatCompletionChunk,
-} from "openai/resources/index.mjs";
 import { getModelInfo } from "@/lib/models";
+import type { ChatCompletionChunk } from "openai/resources/index.mjs";
 import { fetchAndParseCalendar, filterEvents } from "@/lib/integrations/calendar";
 import { getCanvasUpcomingEvents, getCanvasCourses } from "@/lib/integrations/canvas";
 
@@ -143,7 +140,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { chatId, message, model, webSearch, history } = await request.json();
+    const { chatId, message, model, history } = await request.json();
     const enableWebSearch = true;
     const isIncognito = chatId?.startsWith("incognito-");
     console.log("[API /chat] Request:", {

@@ -6,26 +6,45 @@ export interface CalendarEvent {
   description?: string;
 }
 
+function validateUrl(urlString: string): string {
+  let url = urlString;
+  if (url.startsWith('webcal://')) {
+    url = 'https://' + url.slice(9);
+  }
+  
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:') {
+    throw new Error('Only HTTPS URLs are allowed');
+  }
+
+  const hostname = parsed.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '0.0.0.0' || hostname === '169.254.169.254') {
+    throw new Error('Invalid hostname');
+  }
+  if (/^10\./.test(hostname) || /^192\.168\./.test(hostname) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) {
+    throw new Error('Invalid hostname');
+  }
+
+  return url;
+}
+
 export async function fetchAndParseCalendar(url: string): Promise<CalendarEvent[]> {
   try {
-    let fetchUrl = url;
-    if (fetchUrl.startsWith('webcal://')) {
-      fetchUrl = 'https://' + fetchUrl.slice(9);
-    }
+    const fetchUrl = validateUrl(url);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const response = await fetch(fetchUrl, { signal: controller.signal });
+    const response = await fetch(fetchUrl, { signal: controller.signal, redirect: "error" });
     clearTimeout(timeout);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch calendar: ${response.statusText}`);
+      throw new Error(`Failed to fetch calendar: ${response.status}`);
     }
 
     const icsData = await response.text();
     return parseICS(icsData);
   } catch (error: any) {
-    throw new Error(`Calendar fetch/parse error: ${error.message}`);
+    throw new Error("Calendar fetch/parse error");
   }
 }
 
@@ -35,8 +54,6 @@ function parseICS(icsData: string): CalendarEvent[] {
   
   let inEvent = false;
   let currentEvent: Partial<CalendarEvent> = {};
-  let currentKey = '';
-  let currentValue = '';
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
@@ -122,10 +139,9 @@ export function filterEvents(events: CalendarEvent[], filter: "today" | "week" |
     if (filter === "today") {
       const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
       return e.startDate >= startOfToday && e.startDate < endOfToday;
-    } else if (filter === "week") {
+    } else {
       const endOfWeek = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000);
       return e.startDate >= startOfToday && e.startDate < endOfWeek;
     }
-    return true;
   });
 }

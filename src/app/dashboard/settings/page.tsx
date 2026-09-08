@@ -27,6 +27,16 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [email, setEmail] = useState("");
 
+  const [canvasUrl, setCanvasUrl] = useState("");
+  const [canvasToken, setCanvasToken] = useState("");
+  const [showCanvasToken, setShowCanvasToken] = useState(false);
+  const [testingCanvas, setTestingCanvas] = useState(false);
+  const [canvasTestResult, setCanvasTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const [calendarIcsUrl, setCalendarIcsUrl] = useState("");
+  const [testingCalendar, setTestingCalendar] = useState(false);
+  const [calendarTestResult, setCalendarTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -38,6 +48,9 @@ export default function SettingsPage() {
           setDefaultModel(data.prefs?.defaultModel ?? DEFAULT_MODEL);
           setPreferredName(data.prefs?.preferredName ?? "");
           setShowReasoning(data.prefs?.showReasoning ?? false);
+          setCanvasUrl(data.prefs?.canvasUrl ?? "");
+          setCanvasToken(data.prefs?.canvasToken ?? "");
+          setCalendarIcsUrl(data.prefs?.calendarIcsUrl ?? "");
         }
       } catch {
         // Silently fail
@@ -53,7 +66,17 @@ export default function SettingsPage() {
       await fetch("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: displayName, prefs: { defaultModel, preferredName, showReasoning } }),
+        body: JSON.stringify({
+          name: displayName,
+          prefs: {
+            defaultModel,
+            preferredName,
+            showReasoning,
+            canvasUrl,
+            canvasToken,
+            calendarIcsUrl,
+          },
+        }),
       });
       setSaved(true);
       setTimeout(() => {
@@ -63,6 +86,46 @@ export default function SettingsPage() {
     } catch {
       // Handle error silently
       setLoading(false);
+    }
+  };
+
+  const handleTestIntegration = async (type: "canvas" | "calendar") => {
+    if (type === "canvas") {
+      setTestingCanvas(true);
+      setCanvasTestResult(null);
+    } else {
+      setTestingCalendar(true);
+      setCalendarTestResult(null);
+    }
+
+    try {
+      const res = await fetch("/api/integrations/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          ...(type === "canvas" ? { canvasUrl, canvasToken } : { calendarIcsUrl }),
+        }),
+      });
+      const data = await res.json();
+      
+      if (type === "canvas") {
+        setCanvasTestResult({ success: data.success, message: data.message });
+      } else {
+        setCalendarTestResult({ success: data.success, message: data.message });
+      }
+    } catch (err) {
+      if (type === "canvas") {
+        setCanvasTestResult({ success: false, message: "Network error occurred." });
+      } else {
+        setCalendarTestResult({ success: false, message: "Network error occurred." });
+      }
+    } finally {
+      if (type === "canvas") {
+        setTestingCanvas(false);
+      } else {
+        setTestingCalendar(false);
+      }
     }
   };
 
@@ -190,7 +253,19 @@ export default function SettingsPage() {
                         value={m.id}
                         className="text-foreground text-[12px] font-light pl-8 pr-2.5 py-1.5 rounded-md hover:bg-white/[0.04] focus:bg-white/[0.04] cursor-pointer"
                       >
-                        {m.name}
+                        <div className="flex items-center justify-between w-full">
+                          <span>{m.name}</span>
+                          {m.supportsTools ? (
+                            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 ml-4">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                              <span>Tools</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground/40 ml-4">
+                              Chat only
+                            </span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </div>
@@ -212,6 +287,141 @@ export default function SettingsPage() {
                 checked={showReasoning}
                 onCheckedChange={setShowReasoning}
               />
+            </div>
+          </div>
+
+          <Separator className="bg-border" />
+
+          {/* Academic & Schedule Integrations */}
+          <div className="space-y-1 pb-2">
+            <h2 className="text-[12px] font-medium text-muted-foreground/60 uppercase tracking-widest">
+              Academic & Schedule Integrations
+            </h2>
+            <p className="text-[12px] text-muted-foreground font-light pt-1">
+              Connect your university Canvas/Studium LMS and personal calendar feed to enable AI schedule & course assistance
+            </p>
+          </div>
+
+          <div className="space-y-5 p-5 rounded-lg border border-border bg-card">
+            {/* Canvas URL */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-canvas-url" className="text-[13px] font-medium text-foreground">
+                Canvas / Studium URL
+              </Label>
+              <Input
+                id="settings-canvas-url"
+                value={canvasUrl}
+                onChange={(e) => setCanvasUrl(e.target.value)}
+                placeholder="https://studium.uu.se or https://canvas.instructure.com"
+                className={cn(
+                  "h-10 bg-background border-border text-foreground text-[14px] font-light rounded-md",
+                  "focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
+                )}
+              />
+            </div>
+
+            {/* Canvas Token */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-canvas-token" className="text-[13px] font-medium text-foreground">
+                Canvas Personal Access Token
+              </Label>
+              <p className="text-[12px] text-muted-foreground font-light mb-2">
+                Generate in Canvas: Account → Settings → Approved Integrations → New Access Token
+              </p>
+              <div className="relative">
+                <Input
+                  id="settings-canvas-token"
+                  type={showCanvasToken ? "text" : "password"}
+                  value={canvasToken}
+                  onChange={(e) => setCanvasToken(e.target.value)}
+                  placeholder="Token"
+                  className={cn(
+                    "h-10 bg-background border-border text-foreground text-[14px] font-light rounded-md pr-10",
+                    "focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCanvasToken(!showCanvasToken)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showCanvasToken ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
+              <div className="pt-2 flex items-center gap-3">
+                <Button
+                  onClick={() => handleTestIntegration("canvas")}
+                  disabled={testingCanvas || !canvasUrl || !canvasToken}
+                  variant="outline"
+                  className="h-8 text-[12px] bg-transparent border-border hover:bg-white/[0.04] text-foreground"
+                >
+                  {testingCanvas && <Loader2 className="mr-2 size-3 animate-spin" />}
+                  Test Canvas Connection
+                </Button>
+                {canvasTestResult && (
+                  <span className={cn(
+                    "text-[12px] flex items-center gap-1.5",
+                    canvasTestResult.success ? "text-green-400" : "text-destructive"
+                  )}>
+                    {canvasTestResult.success ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                    )}
+                    {canvasTestResult.message}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <Separator className="bg-border/50 my-4" />
+
+            {/* Calendar URL */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-calendar-url" className="text-[13px] font-medium text-foreground">
+                Calendar (.ics) Feed URL
+              </Label>
+              <p className="text-[12px] text-muted-foreground font-light mb-2">
+                Canvas: Calendar → Calendar Feed link
+              </p>
+              <Input
+                id="settings-calendar-url"
+                value={calendarIcsUrl}
+                onChange={(e) => setCalendarIcsUrl(e.target.value)}
+                placeholder="https://... or webcal://..."
+                className={cn(
+                  "h-10 bg-background border-border text-foreground text-[14px] font-light rounded-md",
+                  "focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
+                )}
+              />
+              <div className="pt-2 flex items-center gap-3">
+                <Button
+                  onClick={() => handleTestIntegration("calendar")}
+                  disabled={testingCalendar || !calendarIcsUrl}
+                  variant="outline"
+                  className="h-8 text-[12px] bg-transparent border-border hover:bg-white/[0.04] text-foreground"
+                >
+                  {testingCalendar && <Loader2 className="mr-2 size-3 animate-spin" />}
+                  Test Calendar Connection
+                </Button>
+                {calendarTestResult && (
+                  <span className={cn(
+                    "text-[12px] flex items-center gap-1.5",
+                    calendarTestResult.success ? "text-green-400" : "text-destructive"
+                  )}>
+                    {calendarTestResult.success ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                    )}
+                    {calendarTestResult.message}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
