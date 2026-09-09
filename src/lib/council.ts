@@ -49,7 +49,7 @@ export type CouncilProgressEvent =
 
 // ─── Constants ────────────────────────────────────
 
-export const SYNTHESIZER_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
+export const SYNTHESIZER_MODEL = "nvidia/nemotron-3-ultra-550b-a55b";
 
 export const COUNCIL_MODELS = [
   { id: "meta/muse-glimmer-30b", name: "Muse Glimmer 30B" },
@@ -57,7 +57,7 @@ export const COUNCIL_MODELS = [
   { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning", name: "Nemotron 3 Nano Omni Reasoning" },
   { id: "nvidia/nemotron-3-super-120b-a12b", name: "Nemotron 3 Super 120B" },
   { id: "nvidia/nemotron-3.5-lightning-30b-a3b", name: "Nemotron 3.5 Lightning" },
-  { id: "nvidia/nemotron-3-ultra-550b-a55b", name: "Nemotron Ultra" },
+  { id: "google/gemma-4-31b-it", name: "Gemma 4 31B" },
 ] as const;
 
 export const COUNCIL_AVAILABLE_MODELS = COUNCIL_MODELS;

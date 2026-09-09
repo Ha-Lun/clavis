@@ -30,11 +30,25 @@ function validateUrl(urlString: string): string {
 
 export async function fetchAndParseCalendar(url: string): Promise<CalendarEvent[]> {
   try {
-    const fetchUrl = validateUrl(url);
+    let currentUrl = validateUrl(url);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const response = await fetch(fetchUrl, { signal: controller.signal, redirect: "error" });
+    
+    let response = await fetch(currentUrl, { signal: controller.signal, redirect: "manual" });
+    
+    let redirects = 0;
+    while ([301, 302, 303, 307, 308].includes(response.status) && redirects < 5) {
+      const location = response.headers.get("location");
+      if (!location) break;
+      
+      const nextUrl = new URL(location, currentUrl);
+      currentUrl = validateUrl(nextUrl.toString());
+      
+      response = await fetch(currentUrl, { signal: controller.signal, redirect: "manual" });
+      redirects++;
+    }
+
     clearTimeout(timeout);
 
     if (!response.ok) {
@@ -44,11 +58,11 @@ export async function fetchAndParseCalendar(url: string): Promise<CalendarEvent[
     const icsData = await response.text();
     return parseICS(icsData);
   } catch (error: any) {
-    throw new Error("Calendar fetch/parse error");
+    throw new Error(error?.message || "Calendar fetch/parse error");
   }
 }
 
-function parseICS(icsData: string): CalendarEvent[] {
+export function parseICS(icsData: string): CalendarEvent[] {
   const events: CalendarEvent[] = [];
   const lines = icsData.split(/\r?\n/);
   

@@ -9,6 +9,8 @@ import {
   getCanvasPages,
   getCanvasPage,
   getCanvasSyllabus,
+  getCanvasAnnouncements,
+  getCanvasCalendarEvents,
 } from "@/lib/integrations/canvas";
 import { fingerprintSources, hashContent, normalizeCourseText, replaceSourceChunks } from "@/lib/courses/knowledge";
 import type { CourseRecord, CourseSourceRecord } from "@/lib/courses/types";
@@ -92,13 +94,17 @@ async function syncCourse(
 
   try {
     const pages = await getCanvasPages(canvasUrl, token, course.external_id);
-    for (const page of pages) {
-      try {
-        const detail = await getCanvasPage(canvasUrl, token, course.external_id, page.url || String(page.page_id));
-        await add({ externalId: `page:${page.page_id}`, type: "page", title: detail.title || page.title, content: detail.body || "", url: detail.html_url || page.html_url, updatedAt: detail.updated_at || page.updated_at });
-      } catch {
-        await add({ externalId: `page:${page.page_id}`, type: "page", title: page.title, content: page.body || "", url: page.html_url, updatedAt: page.updated_at });
-      }
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < pages.length; i += BATCH_SIZE) {
+      const batch = pages.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map(async (page) => {
+        try {
+          const detail = await getCanvasPage(canvasUrl, token, course.external_id, page.url || String(page.page_id));
+          await add({ externalId: `page:${page.page_id}`, type: "page", title: detail.title || page.title, content: detail.body || "", url: detail.html_url || page.html_url, updatedAt: detail.updated_at || page.updated_at });
+        } catch {
+          await add({ externalId: `page:${page.page_id}`, type: "page", title: page.title, content: page.body || "", url: page.html_url, updatedAt: page.updated_at });
+        }
+      }));
     }
   } catch (error: any) { errors.push(`Pages: ${error?.message || "failed"}`); }
 
@@ -112,9 +118,29 @@ async function syncCourse(
 
   try {
     const modules = await getCanvasModules(canvasUrl, token, course.external_id);
-    const moduleText = modules.map((module) => `${module.position ?? ""}. ${module.name}`).join("\n");
-    await add({ externalId: "modules", type: "modules", title: "Course modules", content: moduleText });
+    for (const module of modules) {
+      const items = module.items || [];
+      const itemText = items.map(item => `  - [${item.type}] ${item.title}`).join("\n");
+      const content = `Module: ${module.name}\nItems:\n${itemText}`;
+      await add({ externalId: `module:${module.id}`, type: "modules", title: `Module: ${module.name}`, content });
+    }
   } catch (error: any) { errors.push(`Modules: ${error?.message || "failed"}`); }
+
+  try {
+    const announcements = await getCanvasAnnouncements(canvasUrl, token, course.external_id);
+    for (const a of announcements) {
+      const content = `Posted at: ${a.posted_at}\n\n${a.message || ""}`;
+      await add({ externalId: `announcement:${a.id}`, type: "announcement", title: `Announcement: ${a.title}`, content });
+    }
+  } catch (error: any) { errors.push(`Announcements: ${error?.message || "failed"}`); }
+
+  try {
+    const events = await getCanvasCalendarEvents(canvasUrl, token, course.external_id);
+    for (const e of events) {
+      const content = `Start: ${e.start_at}\nEnd: ${e.end_at}\nLocation: ${e.location_name || e.location_address || "None"}\n\n${e.description || ""}`;
+      await add({ externalId: `event:${e.id}`, type: "calendar_event", title: `Event: ${e.title}`, content });
+    }
+  } catch (error: any) { errors.push(`Calendar Events: ${error?.message || "failed"}`); }
 
   const fingerprint = fingerprintSources(sources);
   await admin.databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, course.$id, {
@@ -127,7 +153,7 @@ async function syncCourse(
   return { count, errors };
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await createSessionClient();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -137,11 +163,37 @@ export async function POST() {
     const token = typeof prefs.canvasToken === "string" ? prefs.canvasToken : "";
     if (!canvasUrl || !token) return NextResponse.json({ error: "Connect Canvas/Studium in Settings first." }, { status: 400 });
 
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (e) {}
+    const targetCourseId = body.courseId;
+    let targetExternalId: string | null = null;
+
     const admin = await createAdminClient();
+
+    if (targetCourseId) {
+      try {
+        const doc = await admin.databases.getDocument(DATABASE_ID, COLLECTIONS.COURSES, targetCourseId);
+        if ((doc as any).user_id !== user.$id) {
+          return NextResponse.json({ error: "Course not found" }, { status: 404 });
+        }
+        targetExternalId = (doc as any).external_id;
+      } catch (e) {
+        // if not found by appwrite ID, maybe it is the external ID directly
+        targetExternalId = String(targetCourseId);
+      }
+    }
+
     const canvasCourses = await getCanvasCourses(canvasUrl, token);
+    let coursesToSync = canvasCourses;
+    if (targetExternalId) {
+      coursesToSync = canvasCourses.filter(c => String(c.id) === targetExternalId);
+    }
+
     const stored: CourseRecord[] = [];
     let failures = 0;
-    for (const canvasCourse of canvasCourses) {
+    for (const canvasCourse of coursesToSync) {
       const existing = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSES, [
         Query.equal("user_id", user.$id),
         Query.equal("external_id", String(canvasCourse.id)),

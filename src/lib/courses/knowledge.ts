@@ -78,7 +78,7 @@ export async function replaceSourceChunks(
 
 function terms(question: string): string[] {
   return Array.from(new Set(
-    question.toLowerCase().normalize("NFKC").match(/[a-z0-9_]{3,}/g) ?? [],
+    question.toLowerCase().normalize("NFKC").match(new RegExp("[\\p{L}\\p{N}_]{3,}", "gu")) ?? [],
   )).slice(0, 8);
 }
 
@@ -98,11 +98,15 @@ export async function retrieveCourseContext(
   // The chunk collection is still bounded to the selected course and reranked locally.
   const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSE_CHUNKS, queries);
 
-  const scored = (result.documents as unknown as CourseChunkRecord[]).map((chunk) => {
+  let scored = (result.documents as unknown as CourseChunkRecord[]).map((chunk) => {
     const haystack = `${chunk.heading ?? ""} ${chunk.content}`.toLowerCase();
     const score = searchTerms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0);
     return { chunk, score };
-  }).sort((a, b) => b.score - a.score).slice(0, 8);
+  }).filter((x) => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+
+  if (scored.length === 0) {
+    scored = (result.documents as unknown as CourseChunkRecord[]).slice(0, 3).map(chunk => ({ chunk, score: 0 }));
+  }
 
   const citations = scored.map(({ chunk }, index) => ({
     id: `S${index + 1}`,

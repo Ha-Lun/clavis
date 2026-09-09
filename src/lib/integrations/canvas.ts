@@ -6,6 +6,9 @@ export interface CanvasEvent {
   description: string;
   context_name: string;
   html_url: string;
+  location_name?: string;
+  location_address?: string;
+  [key: string]: unknown;
 }
 
 export interface CanvasCourse {
@@ -41,6 +44,7 @@ export interface CanvasModule {
   name: string;
   position?: number;
   items_count?: number;
+  items?: CanvasModuleItem[];
   [key: string]: unknown;
 }
 
@@ -83,7 +87,11 @@ export function normalizeCanvasUrl(canvasUrl: string): string {
     throw new Error("Canvas URL must not contain credentials, a query, or a fragment");
   }
 
-  const hostname = parsed.hostname.toLowerCase().replace(/\.$/, "");
+  let hostname = parsed.hostname.toLowerCase().replace(/\.$/, "");
+  if (hostname === "studium.uu.se") {
+    hostname = "uppsala.instructure.com";
+  }
+
   if (isBlockedHostname(hostname)) {
     throw new Error("Invalid Canvas hostname");
   }
@@ -149,11 +157,30 @@ async function fetchJson<T>(url: string, token: string, timeoutMs = DEFAULT_TIME
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, {
+    let currentUrl = url;
+    let response = await fetch(currentUrl, {
       headers: authorizationHeaders(token),
-      redirect: "error",
+      redirect: "manual",
       signal: controller.signal,
     });
+
+    let redirects = 0;
+    while ([301, 302, 303, 307, 308].includes(response.status) && redirects < 5) {
+      const location = response.headers.get("location");
+      if (!location) break;
+      const nextUrl = new URL(location, currentUrl);
+      if (nextUrl.protocol !== "https:" || isBlockedHostname(nextUrl.hostname)) {
+        throw new Error("Canvas redirect points to an invalid host");
+      }
+      currentUrl = nextUrl.toString();
+      response = await fetch(currentUrl, {
+        headers: authorizationHeaders(token),
+        redirect: "manual",
+        signal: controller.signal,
+      });
+      redirects++;
+    }
+
     if (!response.ok) {
       throw new Error(`Canvas request failed: HTTP ${response.status}`);
     }
@@ -168,13 +195,13 @@ async function fetchJson<T>(url: string, token: string, timeoutMs = DEFAULT_TIME
   }
 }
 
-function validatePaginationUrl(url: URL): void {
-  if (url.protocol !== "https:" || url.username || url.password || isBlockedHostname(url.hostname)) {
+function validatePaginationUrl(url: URL, expectedOrigin: string): void {
+  if (url.protocol !== "https:" || url.username || url.password || isBlockedHostname(url.hostname) || url.origin !== expectedOrigin) {
     throw new Error("Canvas pagination link points to an invalid host");
   }
 }
 
-function nextLink(response: Response, currentUrl: string): string | undefined {
+function nextLink(response: Response, currentUrl: string, expectedOrigin: string): string | undefined {
   const linkHeader = response.headers.get("link");
   if (!linkHeader) return undefined;
 
@@ -186,7 +213,7 @@ function nextLink(response: Response, currentUrl: string): string | undefined {
 
     const next = new URL(match[1], currentUrl);
     // Pagination links are server-controlled, but must still pass the same SSRF checks.
-    validatePaginationUrl(next);
+    validatePaginationUrl(next, expectedOrigin);
     return next.toString();
   }
   return undefined;
@@ -195,13 +222,14 @@ function nextLink(response: Response, currentUrl: string): string | undefined {
 async function fetchAll<T>(firstUrl: string, token: string, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T[]> {
   const results: T[] = [];
   let url: string | undefined = firstUrl;
+  const expectedOrigin = new URL(firstUrl).origin;
 
   for (let page = 0; url && page < MAX_PAGES; page += 1) {
     const currentUrl = url;
     const { data, response } = await fetchJson<T[]>(currentUrl, token, timeoutMs);
     if (!Array.isArray(data)) throw new Error("Canvas returned an invalid paginated response");
     results.push(...data);
-    url = nextLink(response, currentUrl);
+    url = nextLink(response, currentUrl, expectedOrigin);
   }
 
   if (url) throw new Error(`Canvas pagination exceeded the ${MAX_PAGES}-page limit`);
@@ -225,9 +253,6 @@ export async function getCanvasUpcomingEvents(canvasUrl: string, token: string):
 export async function getCanvasCourses(canvasUrl: string, token: string): Promise<CanvasCourse[]> {
   return fetchAll<CanvasCourse>(apiUrl(canvasUrl, "/courses?enrollment_state=active&include[]=term&per_page=100"), token);
 }
-
-/** Explicit name for the active-course behavior retained by getCanvasCourses. */
-export const getCanvasActiveCourses = getCanvasCourses;
 
 export async function getCanvasSyllabus(
   canvasUrl: string,
@@ -254,13 +279,54 @@ export async function getCanvasAssignments(
   token: string,
   courseId: number | string,
 ): Promise<CanvasAssignment[]> {
-  return fetchAll<CanvasAssignment>(apiUrl(canvasUrl, `/courses/${coursePath(courseId)}/assignments`), token);
+  return fetchAll<CanvasAssignment>(apiUrl(canvasUrl, `/courses/${coursePath(courseId)}/assignments?per_page=50&order_by=due_at`), token);
+}
+
+export interface CanvasModuleItem {
+  id: string | number;
+  title: string;
+  type: string;
+  url?: string;
+  html_url?: string;
+  page_url?: string;
+  content_id?: string | number;
+  [key: string]: unknown;
 }
 
 export async function getCanvasModules(canvasUrl: string, token: string, courseId: number | string): Promise<CanvasModule[]> {
-  return fetchAll<CanvasModule>(apiUrl(canvasUrl, `/courses/${coursePath(courseId)}/modules`), token);
+  return fetchAll<CanvasModule>(apiUrl(canvasUrl, `/courses/${coursePath(courseId)}/modules?include[]=items&per_page=100`), token);
 }
 
 export async function getCanvasFiles(canvasUrl: string, token: string, courseId: number | string): Promise<CanvasFile[]> {
   return fetchAll<CanvasFile>(apiUrl(canvasUrl, `/courses/${coursePath(courseId)}/files`), token);
+}
+
+export async function getCanvasCourseDetails(canvasUrl: string, token: string, courseId: number | string): Promise<CanvasCourse> {
+  const { data } = await fetchJson<CanvasCourse>(
+    apiUrl(canvasUrl, `/courses/${coursePath(courseId)}?include[]=syllabus_body&include[]=term`),
+    token
+  );
+  return data;
+}
+
+export interface CanvasAnnouncement {
+  id: string | number;
+  title: string;
+  message: string;
+  posted_at: string;
+  [key: string]: unknown;
+}
+
+export async function getCanvasAnnouncements(canvasUrl: string, token: string, courseId: number | string): Promise<CanvasAnnouncement[]> {
+  return fetchAll<CanvasAnnouncement>(
+    apiUrl(canvasUrl, `/courses/${coursePath(courseId)}/discussion_topics?only_announcements=true&per_page=10`),
+    token
+  );
+}
+
+export async function getCanvasCalendarEvents(canvasUrl: string, token: string, courseId: number | string): Promise<CanvasEvent[]> {
+  return fetchAll<CanvasEvent>(
+    apiUrl(canvasUrl, `/calendar_events?context_codes[]=course_${coursePath(courseId)}&all_events=true&per_page=50`),
+    token
+  );
 }
