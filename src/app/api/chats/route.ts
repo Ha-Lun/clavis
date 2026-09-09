@@ -45,9 +45,21 @@ export async function POST(request: NextRequest) {
 
     const user = await client.account.get();
     const body = await request.json();
-    const { projectId, model } = body;
+    const { projectId, courseId, model } = body;
+    if (projectId && courseId) {
+      return NextResponse.json({ error: "A chat cannot belong to both a project and a course" }, { status: 400 });
+    }
     const admin = await createAdminClient();
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
+
+    if (courseId) {
+      try {
+        const course = await admin.databases.getDocument(dbId, COLLECTIONS.COURSES, courseId) as unknown as { user_id: string };
+        if (course.user_id !== user.$id) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      } catch {
+        return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      }
+    }
 
     const chat = await admin.databases.createDocument(
       dbId,
@@ -56,6 +68,7 @@ export async function POST(request: NextRequest) {
       {
         user_id: user.$id,
         project_id: projectId || null,
+        course_id: courseId || null,
         title: "New Chat",
         model: model || DEFAULT_MODEL,
         updatedAt: new Date().toISOString(),

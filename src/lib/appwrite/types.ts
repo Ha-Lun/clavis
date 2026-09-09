@@ -14,6 +14,7 @@ export interface Project extends AppwriteDocument {
 export interface Chat extends AppwriteDocument {
   user_id: string;
   project_id: string | null;
+  course_id?: string | null;
   title: string;
   model: string;
   isPinned: boolean;

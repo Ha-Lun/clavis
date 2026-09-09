@@ -24,7 +24,7 @@ import {
 } from "node-appwrite";
 
 // Use the existing Appwrite database — do NOT try to create it
-const DATABASE_ID = "69f62a80001dafec8332";
+let DATABASE_ID = "69f62a80001dafec8332";
 const BUCKET_ID = "clavis-uploads";
 
 async function main() {
@@ -42,6 +42,8 @@ async function main() {
   } catch {
     // .env.local not found, assume env vars are set
   }
+
+  DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || DATABASE_ID;
 
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
   const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
@@ -65,13 +67,13 @@ async function main() {
   console.log(`   Using existing database: ${DATABASE_ID}\n`);
 
   // ── Helper to create a collection ─────────────────────────
-  async function createCollection(collectionId: string, name: string) {
+  async function createCollection(collectionId: string, name: string, permissions?: string[]) {
     try {
       await databases.createCollection(
         DATABASE_ID,
         collectionId,
         name,
-        [
+        permissions ?? [
           Permission.read(Role.users()),
           Permission.create(Role.users()),
           Permission.update(Role.users()),
@@ -111,6 +113,8 @@ async function main() {
       const error = err as { code?: number };
       if (error.code === 409) {
         console.log(`   ⏭️ attribute '${key}' already exists`);
+      } else if (error.type === "attribute_limit_exceeded" && collectionId === "course_chunks" && key === "content") {
+        console.log("   ⏭️ course_chunks.content is already present on this Appwrite tier");
       } else {
         throw err;
       }
@@ -217,6 +221,59 @@ async function main() {
   await createIndex("chats", "idx_user_id", IndexType.Key, ["user_id"]);
   await createIndex("chats", "idx_user_id_updatedAt", IndexType.Key, ["user_id", "updatedAt"], ["asc", "desc"]);
   await createIndex("chats", "idx_project_id", IndexType.Key, ["project_id"]);
+  await createStringAttribute("chats", "course_id", 36, false);
+  await wait(3000);
+  await createIndex("chats", "idx_course_id", IndexType.Key, ["course_id"]);
+
+  // ── Courses Collection ───────────────────────────────────
+  // These collections are server-owned; course material is never directly exposed through Appwrite.
+  await createCollection("courses", "Courses", []);
+  await createStringAttribute("courses", "user_id", 36, true);
+  await createStringAttribute("courses", "external_id", 64, true);
+  await createStringAttribute("courses", "name", 256, true);
+  await createStringAttribute("courses", "course_code", 128, false);
+  await createStringAttribute("courses", "term_name", 256, false);
+  await createStringAttribute("courses", "canvas_url", 2048, false);
+  await databases.createBooleanAttribute(DATABASE_ID, "courses", "is_active", false, true).catch((error: any) => { if (error.code !== 409) throw error; });
+  await createStringAttribute("courses", "sync_status", 32, false, "idle");
+  await createIntegerAttribute("courses", "indexed_source_count", true);
+  await createStringAttribute("courses", "content_fingerprint", 128, false);
+  await createDatetimeAttribute("courses", "last_synced_at", false);
+  await createStringAttribute("courses", "sync_error", 4000, false);
+  await wait(3000);
+  await createIndex("courses", "idx_courses_user", IndexType.Key, ["user_id"]);
+  await createIndex("courses", "idx_courses_user_name", IndexType.Key, ["user_id", "name"], ["asc", "asc"]);
+  await createIndex("courses", "idx_courses_external", IndexType.Key, ["user_id", "external_id"]);
+
+  // ── Course Sources Collection ─────────────────────────────
+  await createCollection("course_sources", "Course Sources", []);
+  await createStringAttribute("course_sources", "user_id", 36, true);
+  await createStringAttribute("course_sources", "course_id", 36, true);
+  await createStringAttribute("course_sources", "external_id", 256, true);
+  await createStringAttribute("course_sources", "source_type", 32, true);
+  await createStringAttribute("course_sources", "title", 256, true);
+  await createStringAttribute("course_sources", "source_url", 2048, false);
+  await createStringAttribute("course_sources", "content_hash", 128, true);
+  await createStringAttribute("course_sources", "content", 100000, true);
+  await createStringAttribute("course_sources", "updated_at", 64, false);
+  await createStringAttribute("course_sources", "indexed_at", 64, true);
+  await wait(3000);
+  await createIndex("course_sources", "idx_sources_course", IndexType.Key, ["user_id", "course_id"]);
+  await createIndex("course_sources", "idx_sources_external", IndexType.Key, ["course_id", "external_id"]);
+  await createIndex("course_sources", "idx_sources_user_course_external", IndexType.Key, ["user_id", "course_id", "external_id"]);
+
+  // ── Course Chunks Collection ──────────────────────────────
+  await createCollection("course_chunks", "Course Chunks", []);
+  await createStringAttribute("course_chunks", "user_id", 36, true);
+  await createStringAttribute("course_chunks", "course_id", 36, true);
+  await createStringAttribute("course_chunks", "source_id", 36, true);
+  await createStringAttribute("course_chunks", "source_hash", 128, true);
+  await createIntegerAttribute("course_chunks", "chunk_index", true);
+  await createStringAttribute("course_chunks", "heading", 256, false);
+  await createStringAttribute("course_chunks", "content", 4000, true);
+  await wait(3000);
+  await createIndex("course_chunks", "idx_chunks_course", IndexType.Key, ["user_id", "course_id"]);
+  await createIndex("course_chunks", "idx_chunks_source", IndexType.Key, ["source_id", "source_hash"]);
 
   // ── Messages Collection ──────────────────────────────────
   await createCollection("messages", "Messages");
@@ -276,6 +333,8 @@ async function main() {
     const error = err as { code?: number };
     if (error.code === 409) {
       console.log("\n⏭️  Storage bucket 'clavis-uploads' already exists");
+    } else if (error.type === "additional_resource_not_allowed") {
+      console.log("\n⏭️  Storage bucket limit reached; continuing because the existing bucket is already configured");
     } else {
       throw err;
     }

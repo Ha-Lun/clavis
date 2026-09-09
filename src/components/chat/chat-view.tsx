@@ -140,10 +140,11 @@ interface ChatViewProps {
         const chatId = chat.$id || (chat as any).id;
         const isIncognito = chatId.startsWith("incognito-");
         
+        const selectedChatModel = activeChat?.$id === chat.$id ? activeChat.model : chat.model;
         const payload = {
           chatId,
           message: trimmedContent,
-          model: activeChat?.model || chat.model,
+          model: selectedChatModel,
           webSearch: (options as any).webSearch ?? true,
           ...(isIncognito && { history: messages.map(m => ({ role: m.role, content: m.content })) })
         };
@@ -183,7 +184,7 @@ interface ChatViewProps {
         }
 
         const resolvedModel = res.headers.get("X-Resolved-Model");
-        const finalModelId = resolvedModel || (activeChat?.model || chat.model);
+        const finalModelId = resolvedModel || selectedChatModel;
 
         const assistantMessage: Message = {
           $id: crypto.randomUUID(),

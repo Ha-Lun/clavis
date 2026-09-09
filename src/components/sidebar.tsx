@@ -28,6 +28,7 @@ import {
   RotateCcw,
   X,
   Users,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -453,6 +454,21 @@ function SidebarContent({
       {isCollapsed && (
         <div className="px-2 pb-2 shrink-0 space-y-1.5">
           <Link
+            href="/dashboard/courses"
+            onClick={onClose}
+            className={cn(
+              "size-9 mx-auto flex items-center justify-center rounded-full",
+              "text-[13px] font-medium",
+              "transition-colors duration-150",
+              pathname === "/dashboard/courses" || pathname.startsWith("/dashboard/courses/")
+                ? "bg-primary/[0.08] text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+            )}
+            title="My Courses"
+          >
+            <BookOpen className="size-4 shrink-0" />
+          </Link>
+          <Link
             href="/dashboard/chats"
             onClick={onClose}
             className={cn(
@@ -481,6 +497,24 @@ function SidebarContent({
             title="Projects"
           >
             <FolderOpen className="size-3.5 shrink-0" />
+          </Link>
+        </div>
+      )}
+
+      {!isCollapsed && (
+        <div className="px-3 pb-2 shrink-0">
+          <Link
+            href="/dashboard/courses"
+            onClick={onClose}
+            className={cn(
+              "w-full flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-150",
+              pathname === "/dashboard/courses" || pathname.startsWith("/dashboard/courses/")
+                ? "bg-primary/[0.08] text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+            )}
+          >
+            <BookOpen className="size-3.5 shrink-0" />
+            <span className="truncate">My Courses</span>
           </Link>
         </div>
       )}

@@ -21,7 +21,7 @@ interface ModelSelectorProps {
 
 export function ModelSelector({ chatId, currentModel, className, onModelChange }: ModelSelectorProps) {
   const { activeChat, updateChatModel } = useChat();
-  const model = activeChat?.model ?? currentModel;
+  const model = onModelChange ? currentModel : (activeChat?.model ?? currentModel);
 
   const handleModelChange = async (newModel: string) => {
     if (onModelChange) {
