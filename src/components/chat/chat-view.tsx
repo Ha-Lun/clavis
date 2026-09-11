@@ -185,6 +185,7 @@ interface ChatViewProps {
 
         const resolvedModel = res.headers.get("X-Resolved-Model");
         const finalModelId = resolvedModel || selectedChatModel;
+        const isAutoRouted = res.headers.get("X-Auto-Routed") === "true";
 
         const assistantMessage: Message = {
           $id: crypto.randomUUID(),
@@ -197,7 +198,8 @@ interface ChatViewProps {
           role: "assistant",
           content: fullContent,
           model: finalModelId,
-        };
+          isAutoRouted,
+        } as any;
         addMessage(assistantMessage);
       } catch (err: any) {
         if (err.name === "AbortError") {
@@ -299,6 +301,8 @@ interface ChatViewProps {
     }
   }
 
+  const currentChatModel = activeChat?.$id === chat.$id ? activeChat.model : chat.model;
+
   return (
     <motion.div
       className="flex flex-col h-full"
@@ -316,7 +320,7 @@ interface ChatViewProps {
       )}
       <div className="flex-1 overflow-hidden flex flex-col">
         <MessageList
-          modelId={chat.model}
+          modelId={currentChatModel}
           smoothContent={smoothContent}
           onSend={handleSend}
         />
@@ -338,7 +342,7 @@ interface ChatViewProps {
             onStop={handleStop}
             isStreaming={isStreaming}
             chatId={chat.$id}
-            currentModel={chat.model}
+            currentModel={currentChatModel}
           />
         )}
       </div>

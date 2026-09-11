@@ -38,7 +38,7 @@ async function callAIWithRetry(
   let lastError: Error | null = null;
   const isQwen = model.includes("qwen3.5");
   const modelInfo = getModelInfo(model);
-  const supportsTools = true;
+  const supportsTools = modelInfo.supportsTools !== false;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -608,7 +608,7 @@ ${userMessageContent}`;
 
     const apiModelId = finalModelId.replace(/^google\//, "");
 
-    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek")) {
+    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gemma")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
     }
 
@@ -626,8 +626,17 @@ ${userMessageContent}`;
     let fullContent = "";
     let chunkCount = 0;
 
+    const modelInfo = getModelInfo(finalModelId);
+    const supportsTools = modelInfo.supportsTools !== false;
+
     const stream = new ReadableStream({
       async start(controller) {
+        if (!supportsTools && (enableWebSearch || (customTools && customTools.length > 0))) {
+          const notice = `> ⚠️ **Notice**: *${modelInfo.name} does not support function calling or live tools (such as web search). This response was generated using the model's base knowledge.*\n\n`;
+          fullContent += notice;
+          controller.enqueue(new TextEncoder().encode(notice));
+        }
+
         async function processStream(currentCompletion: any) {
           try {
             console.log("[API /chat] Starting stream process...");
@@ -669,8 +678,11 @@ ${userMessageContent}`;
                 controller.enqueue(new TextEncoder().encode(reasoningContent));
               }
 
-              const content = delta?.content ?? "";
+              let content = delta?.content ?? "";
               if (content) {
+                // Map Gemma's native thought tags to standard think tags
+                content = content.replace(/<thought>/g, "<think>\n").replace(/<\/thought>/g, "\n</think>\n\n");
+
                 if (isThinking) {
                   isThinking = false;
                   const endTag = "\n</think>\n\n";
@@ -906,7 +918,7 @@ ${userMessageContent}`;
                 {
                   chat_id: chatId,
                   role: "assistant",
-                  content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
+                  content: fullContent + `\n\n<!-- model: ${finalModelId}${model === "auto" ? " | auto" : ""} -->`,
                 },
               );
             }
@@ -924,7 +936,7 @@ ${userMessageContent}`;
                     {
                       chat_id: chatId,
                       role: "assistant",
-                      content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
+                      content: fullContent + `\n\n<!-- model: ${finalModelId}${model === "auto" ? " | auto" : ""} -->`,
                     },
                   );
                   console.log("[API /chat] Partial response saved.");
@@ -949,7 +961,7 @@ ${userMessageContent}`;
                     {
                       chat_id: chatId,
                       role: "assistant",
-                      content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
+                      content: fullContent + `\n\n<!-- model: ${finalModelId}${model === "auto" ? " | auto" : ""} -->`,
                     },
                   );
                 } catch (dbErr) {
@@ -1007,7 +1019,7 @@ ${userMessageContent}`;
                 {
                   chat_id: chatId,
                   role: "assistant",
-                  content: fullContent + `\n\n<!-- model: ${finalModelId} -->`,
+                  content: fullContent + `\n\n<!-- model: ${finalModelId}${model === "auto" ? " | auto" : ""} -->`,
                 },
               );
             } catch (dbErr) {
@@ -1020,13 +1032,18 @@ ${userMessageContent}`;
       },
     });
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
-        "X-Resolved-Model": finalModelId,
-      },
-    });
+    const headers: Record<string, string> = {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+      "X-Resolved-Model": finalModelId,
+      "X-Auto-Routed": model === "auto" ? "true" : "false",
+    };
+
+    if (!supportsTools && (enableWebSearch || (customTools && customTools.length > 0))) {
+      headers["X-Tool-Notice"] = `${modelInfo.name} does not support function calling or live tools.`;
+    }
+
+    return new Response(stream, { headers });
   } catch (err) {
     console.error("Chat API error:", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {

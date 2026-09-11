@@ -35,11 +35,15 @@ export function MessageBubble({
   // Parse the model from the HTML comment if present
   let rawContent = message.content || "";
   let resolvedModel = (message as any).model || undefined;
+  let wasAutoRouted = (message as any).isAutoRouted || false;
 
-  const modelCommentMatch = rawContent.match(/<!--\s*model:\s*([^\s]+)\s*-->/);
+  const modelCommentMatch = rawContent.match(/<!--\s*model:\s*([^\s|]+)(?:\s*\|\s*(auto))?\s*-->/);
   if (modelCommentMatch) {
     resolvedModel = modelCommentMatch[1];
-    rawContent = rawContent.replace(/<!--\s*model:\s*[^\s]+\s*-->/, "").trim();
+    if (modelCommentMatch[2] === "auto") {
+      wasAutoRouted = true;
+    }
+    rawContent = rawContent.replace(/<!--\s*model:[\s\S]*?-->/, "").trim();
   }
 
   const { attachments, cleanContent: contentWithoutAttachments } = extractAttachments(rawContent);
@@ -47,13 +51,13 @@ export function MessageBubble({
 
   const { cleanContent: finalContent, askUserBlock, isPartial } = parseAskUserBlock(cleanContent, isStreaming);
 
-  // Handle <think> tags that some reasoning models stream in their content
+  // Handle <think> and <thought> tags that some reasoning models stream in their content
   let displayContent = finalContent;
-  if (displayContent.includes('<think>')) {
-    displayContent = displayContent.replace(/<think>\n?/g, '~~~reasoning\n');
-    displayContent = displayContent.replace(/<\/think>\n?/g, '\n~~~\n\n');
-  } else if (displayContent.includes('</think>')) {
-     displayContent = displayContent.replace(/<\/think>\n?/g, '\n~~~\n\n');
+  if (displayContent.includes('<think>') || displayContent.includes('<thought>')) {
+    displayContent = displayContent.replace(/<(think|thought)>\n?/g, '~~~reasoning\n');
+    displayContent = displayContent.replace(/<\/(think|thought)>\n?/g, '\n~~~\n\n');
+  } else if (displayContent.includes('</think>') || displayContent.includes('</thought>')) {
+     displayContent = displayContent.replace(/<\/(think|thought)>\n?/g, '\n~~~\n\n');
   }
   
   // Automatically close unclosed think blocks while streaming to ensure markdown renders correctly
@@ -287,9 +291,9 @@ export function MessageBubble({
                   <p className="text-[10px] text-muted-foreground/30 font-medium uppercase tracking-widest">
                     {resolvedModel ? getRoutingLabel(resolvedModel) : modelName}
                   </p>
-                  {((modelName === "Auto") || (resolvedModel && getRoutingLabel(resolvedModel) !== modelName)) && resolvedModel && resolvedModel !== "Auto" && (
+                  {wasAutoRouted && resolvedModel && (
                     <p className="text-[10px] text-muted-foreground/50 font-light italic">
-                      {modelName === "Auto" ? "Auto" : "Switched"} → {getRoutingLabel(resolvedModel)}
+                      Auto → {getRoutingLabel(resolvedModel)}
                     </p>
                   )}
                 </div>

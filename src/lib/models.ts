@@ -12,6 +12,7 @@ export interface ModelInfo {
   id: ModelId;
   name: string;
   shortName: string;
+  supportsTools?: boolean;
 }
 
 export const MODELS: ModelInfo[] = [
@@ -44,20 +45,23 @@ export const MODELS: ModelInfo[] = [
     id: "poolside/laguna-xs-2.1",
     name: "Laguna XS 2.1",
     shortName: "Laguna XS 2.1",
+    supportsTools: false,
   },
   {
     id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     name: "Nemotron 3 Nano Omni Reasoning",
     shortName: "Nemotron Nano Omni",
+    supportsTools: false,
   },
   {
     id: "google/gemma-4-31b-it",
     name: "Gemma 4 31B",
     shortName: "Gemma 4 31B",
+    supportsTools: false,
   },
 ];
 
-export const DEFAULT_MODEL: ModelId = "auto";
+export const DEFAULT_MODEL: ModelId = "meta/muse-glimmer-30b";
 
 export function getModelInfo(modelId: string): ModelInfo {
   return (
