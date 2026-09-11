@@ -11,7 +11,9 @@ import {
   getCanvasSyllabus,
   getCanvasAnnouncements,
   getCanvasCalendarEvents,
+  getCanvasFiles,
 } from "@/lib/integrations/canvas";
+import { extractTextFromBuffer } from "@/lib/extract-text";
 import { fingerprintSources, hashContent, normalizeCourseText, replaceSourceChunks } from "@/lib/courses/knowledge";
 import type { CourseRecord, CourseSourceRecord } from "@/lib/courses/types";
 
@@ -141,6 +143,55 @@ async function syncCourse(
       await add({ externalId: `event:${e.id}`, type: "calendar_event", title: `Event: ${e.title}`, content });
     }
   } catch (error: any) { errors.push(`Calendar Events: ${error?.message || "failed"}`); }
+
+  try {
+    const files = await getCanvasFiles(canvasUrl, token, course.external_id);
+    const documentExtensions = [".pdf", ".docx", ".doc", ".pptx", ".txt", ".md"];
+    const validFiles = files
+      .filter((file: any) => {
+        const ext = file.filename.slice(file.filename.lastIndexOf(".")).toLowerCase();
+        return documentExtensions.includes(ext) && file.size < 15 * 1024 * 1024;
+      })
+      .slice(0, 20);
+
+    for (const file of validFiles) {
+      const existing = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSE_SOURCES, [
+        Query.equal("user_id", userId),
+        Query.equal("course_id", course.$id),
+        Query.equal("external_id", `file:${file.id}`),
+        Query.limit(1),
+      ]);
+      
+      const doc = existing.documents[0] as any;
+      if (doc && doc.updated_at === file.updated_at) {
+        sources.push(doc as unknown as CourseSourceRecord);
+        continue; // Unchanged
+      }
+
+      try {
+        if (!file.url) continue;
+        const res = await fetch(file.url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error(`Failed to download file: ${res.statusText}`);
+        
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const extraction = await extractTextFromBuffer(buffer, file.display_name || file.filename);
+        
+        if (extraction.text) {
+          await add({
+            externalId: `file:${file.id}`,
+            type: "file",
+            title: `File: ${file.display_name || file.filename}`,
+            content: extraction.text,
+            url: file.html_url || file.url,
+            updatedAt: typeof file.updated_at === "string" ? file.updated_at : null,
+          });
+        }
+      } catch (err: any) {
+        errors.push(`File ${file.display_name || file.filename}: ${err?.message || "failed"}`);
+      }
+    }
+  } catch (error: any) { errors.push(`Files: ${error?.message || "failed"}`); }
 
   const fingerprint = fingerprintSources(sources);
   await admin.databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, course.$id, {

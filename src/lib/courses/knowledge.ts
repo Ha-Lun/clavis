@@ -82,6 +82,16 @@ function terms(question: string): string[] {
   )).slice(0, 8);
 }
 
+export function classifyReadingPriority(text: string, title: string = ""): "mandatory" | "optional" | "general" {
+  const mandatoryRegex = /\b(obligatorisk|krav|krävs|kurslitteratur|obligatoriskt|mandatory|required|compulsory|essential reading)\b/i;
+  const optionalRegex = /\b(valfri|valfritt|frivillig|frivilligt|rekommenderad|rekommenderat|fördjupning|optional|recommended|supplementary|further reading)\b/i;
+  
+  const content = `${title} ${text}`;
+  if (mandatoryRegex.test(content)) return "mandatory";
+  if (optionalRegex.test(content)) return "optional";
+  return "general";
+}
+
 export async function retrieveCourseContext(
   databases: Databases,
   userId: string,
@@ -108,14 +118,24 @@ export async function retrieveCourseContext(
     scored = (result.documents as unknown as CourseChunkRecord[]).slice(0, 3).map(chunk => ({ chunk, score: 0 }));
   }
 
-  const citations = scored.map(({ chunk }, index) => ({
-    id: `S${index + 1}`,
-    title: chunk.heading || "Course material",
-    url: chunk.content.match(/Source URL: (https?:\/\/[^\s]+)/)?.[1] ?? null,
-  }));
-  const text = scored.map(({ chunk }, index) =>
-    `[S${index + 1}] ${chunk.heading || "Course material"}\n${chunk.content}`,
-  ).join("\n\n");
+  const citations = scored.map(({ chunk }, index) => {
+    let title = chunk.heading || "Course material";
+    const priority = classifyReadingPriority(chunk.content, title);
+    if (priority === "mandatory") title = `[MANDATORY READING] ${title}`;
+    if (priority === "optional") title = `[OPTIONAL READING] ${title}`;
+    return {
+      id: `S${index + 1}`,
+      title,
+      url: chunk.content.match(/Source URL: (https?:\/\/[^\s]+)/)?.[1] ?? null,
+    };
+  });
+  const text = scored.map(({ chunk }, index) => {
+    let title = chunk.heading || "Course material";
+    const priority = classifyReadingPriority(chunk.content, title);
+    if (priority === "mandatory") title = `[MANDATORY READING] ${title}`;
+    if (priority === "optional") title = `[OPTIONAL READING] ${title}`;
+    return `[S${index + 1}] ${title}\n${chunk.content}`;
+  }).join("\n\n");
   return { text, citations };
 }
 
