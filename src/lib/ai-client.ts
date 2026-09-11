@@ -7,17 +7,6 @@ export function createAIClient(modelId: string) {
   const GOOGLE_API_KEY = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GEMINI_API_KEY;
   const modelInfo = getModelInfo(modelId);
 
-  if (modelId.startsWith("google/") || modelId.includes("gemma") || modelId.includes("gemini")) {
-    if (!GOOGLE_API_KEY) {
-      throw new Error("GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY is not configured in .env.local");
-    }
-    return new OpenAI({
-      apiKey: GOOGLE_API_KEY,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-      timeout: 90 * 1000,
-      maxRetries: 1,
-    });
-  }
 
   if (modelId.startsWith("groq/") || (!NVIDIA_API_KEY && GROQ_API_KEY)) {
     return new OpenAI({

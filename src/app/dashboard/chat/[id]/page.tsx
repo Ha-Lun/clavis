@@ -101,7 +101,7 @@ export default async function ChatPage({ params, searchParams }: ChatPageProps) 
 
   // Pass initial message from URL to client
   const initialMessage = resolvedSearchParams.msg ? decodeURIComponent(resolvedSearchParams.msg) : null;
-  const initialWebSearch = resolvedSearchParams.ws !== '0'; // default true unless explicitly '0'
+  const initialWebSearch = resolvedSearchParams.ws === '1'; // default false unless explicitly '1'
 
   // Flag to tell ChatView to process initial message
   const shouldProcessInitial = !!(initialMessage && messages.length === 0);

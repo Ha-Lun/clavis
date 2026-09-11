@@ -4,9 +4,7 @@ export type ModelId =
   | "nvidia/nemotron-3.5-lightning-30b-a3b"
   | "nvidia/nemotron-3-ultra-550b-a55b"
   | "nvidia/nemotron-3-super-120b-a12b"
-  | "poolside/laguna-xs-2.1"
-  | "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
-  | "google/gemma-4-31b-it";
+  | "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
 
 export interface ModelInfo {
   id: ModelId;
@@ -42,21 +40,9 @@ export const MODELS: ModelInfo[] = [
     shortName: "Nemotron Super",
   },
   {
-    id: "poolside/laguna-xs-2.1",
-    name: "Laguna XS 2.1",
-    shortName: "Laguna XS 2.1",
-    supportsTools: false,
-  },
-  {
     id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     name: "Nemotron 3 Nano Omni Reasoning",
     shortName: "Nemotron Nano Omni",
-    supportsTools: false,
-  },
-  {
-    id: "google/gemma-4-31b-it",
-    name: "Gemma 4 31B",
-    shortName: "Gemma 4 31B",
     supportsTools: false,
   },
 ];

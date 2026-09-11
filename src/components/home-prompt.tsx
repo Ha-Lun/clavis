@@ -57,7 +57,7 @@ export function HomePrompt({ userName }: HomePromptProps) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [isIncognito, setIsIncognito] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, offset: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);

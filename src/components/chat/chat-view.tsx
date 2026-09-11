@@ -21,7 +21,7 @@ interface ChatViewProps {
 
   const MAX_MESSAGE_LENGTH = 30000;
 
-  export function ChatView({ chat, initialMessages, processInitial, initialWebSearch = true, isNewChat }: ChatViewProps) {
+  export function ChatView({ chat, initialMessages, processInitial, initialWebSearch = false, isNewChat }: ChatViewProps) {
   const {
     messages,
     setMessages,

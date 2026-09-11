@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Paperclip, Send, Loader2, Square, Upload, FileText, Link as LinkIcon, X, ArrowUp, Globe } from "lucide-react";
 import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "./model-selector";
-import { getModelInfo } from "@/lib/models";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,16 +22,13 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }: ChatInputProps) {
-  const modelInfo = getModelInfo(currentModel);
-  const supportsTools = modelInfo.supportsTools !== false;
-
   const [content, setContent] = useState("");
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
-  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -369,17 +365,11 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
                     : "text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-foreground/[0.05]"
                 )}
                 id="web-search-toggle"
-                title={!supportsTools ? `${modelInfo.name} does not support function calling or web search` : "Toggle web search"}
+                title="Toggle web search"
               >
                 <Globe className="size-3.5" />
                 <span className="hidden sm:inline-block text-[11px] font-medium tracking-tight">Search</span>
               </button>
-              
-              {!supportsTools && webSearchEnabled && (
-                <span className="text-[10px] text-amber-500/80 font-normal hidden sm:inline-flex items-center gap-1">
-                  Tools unavailable on {modelInfo.shortName}
-                </span>
-              )}
             </div>
 
             {/* Right: model selector + send/stop */}

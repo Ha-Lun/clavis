@@ -141,8 +141,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { chatId, message, model, history } = await request.json();
-    const enableWebSearch = true;
+    const { chatId, message, model, history, webSearch } = await request.json();
+    const enableWebSearch = webSearch === true;
     const isIncognito = chatId?.startsWith("incognito-");
     console.log("[API /chat] Request:", {
       chatId: chatId?.slice(0, 20),
@@ -608,7 +608,7 @@ ${userMessageContent}`;
 
     const apiModelId = finalModelId.replace(/^google\//, "");
 
-    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gemma")) {
+    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
     }
 
@@ -631,11 +631,6 @@ ${userMessageContent}`;
 
     const stream = new ReadableStream({
       async start(controller) {
-        if (!supportsTools && (enableWebSearch || (customTools && customTools.length > 0))) {
-          const notice = `> ⚠️ **Notice**: *${modelInfo.name} does not support function calling or live tools (such as web search). This response was generated using the model's base knowledge.*\n\n`;
-          fullContent += notice;
-          controller.enqueue(new TextEncoder().encode(notice));
-        }
 
         async function processStream(currentCompletion: any) {
           try {
@@ -680,8 +675,6 @@ ${userMessageContent}`;
 
               let content = delta?.content ?? "";
               if (content) {
-                // Map Gemma's native thought tags to standard think tags
-                content = content.replace(/<thought>/g, "<think>\n").replace(/<\/thought>/g, "\n</think>\n\n");
 
                 if (isThinking) {
                   isThinking = false;
@@ -1039,9 +1032,6 @@ ${userMessageContent}`;
       "X-Auto-Routed": model === "auto" ? "true" : "false",
     };
 
-    if (!supportsTools && (enableWebSearch || (customTools && customTools.length > 0))) {
-      headers["X-Tool-Notice"] = `${modelInfo.name} does not support function calling or live tools.`;
-    }
 
     return new Response(stream, { headers });
   } catch (err) {
