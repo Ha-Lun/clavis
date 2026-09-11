@@ -5,10 +5,7 @@ import { ChatProvider } from "@/context/chat-context";
 import "./globals.css";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "https://clavis.lundstromslogiska.se");
+  process.env.NEXT_PUBLIC_APP_URL || "https://clavis.lundstromslogiska.se";
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
