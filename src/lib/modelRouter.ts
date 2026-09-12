@@ -14,7 +14,7 @@ export type MessageParam = {
 };
 
 export function routeModel(_messages: MessageParam[]): string {
-  return "nvidia/nemotron-3.5-lightning-30b-a3b";
+  return "meta/muse-glimmer-30b";
 }
 
 export function getRoutingLabel(modelId: string): string {
