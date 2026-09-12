@@ -40,3 +40,10 @@ next-env.d.ts
 
 # opencode worktrees
 /.worktrees/
+
+# android
+.gradle/
+*.apk
+*.aab
+local.properties
+

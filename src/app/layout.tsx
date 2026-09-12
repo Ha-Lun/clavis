@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Cinzel, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/context/theme-context";
 import { ChatProvider } from "@/context/chat-context";
@@ -30,6 +30,12 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
   preload: false,
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
