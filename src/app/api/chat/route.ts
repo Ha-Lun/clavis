@@ -228,6 +228,12 @@ export async function POST(request: NextRequest) {
       ? `Today's date is ${currentDate}. You have access to a web_search tool — use it whenever the user's query requires recent or time-sensitive information.\n\n`
       : `Today's date is ${currentDate}.\n\n`;
 
+    if (prefs?.canvasUrl && prefs?.canvasToken) {
+      finalSystemPrompt += `You are directly connected to Canvas LMS / Studium via live API tools. You MUST query these tools whenever the user asks about courses, assignments, syllabus, announcements, schedule, or deadlines. Tools available include get_canvas_upcoming, get_canvas_courses, get_course_details, get_course_assignments, get_course_modules, get_course_announcements, get_course_calendar_events, get_course_page, get_course_files, and get_course_overview. Do not say you cannot access live data.\n\n`;
+    } else {
+      finalSystemPrompt += `Canvas LMS / Studium is not currently connected. If the user asks about Canvas, courses, assignments, or university info, inform them they can connect Studium/Canvas via the "Connect Studium/Canvas" button on the home page or in Settings.\n\n`;
+    }
+
     if (activeCourse) {
       finalSystemPrompt += `══════════════════════════════════════════════════════════════════════════
 ACTIVE COURSE CONTEXT:

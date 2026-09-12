@@ -47,7 +47,7 @@ export const MODELS: ModelInfo[] = [
   },
 ];
 
-export const DEFAULT_MODEL: ModelId = "meta/muse-glimmer-30b";
+export const DEFAULT_MODEL: ModelId = "auto";
 
 export function getModelInfo(modelId: string): ModelInfo {
   return (

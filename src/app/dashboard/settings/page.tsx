@@ -298,6 +298,9 @@ export default function SettingsPage() {
               <Label htmlFor="settings-canvas-url" className="text-[13px] font-medium text-foreground">
                 Canvas / Studium URL
               </Label>
+              <p className="text-[12px] text-muted-foreground font-light mb-2 leading-relaxed">
+                Open your university portal and copy the base domain URL (e.g. <code>https://studium.uu.se</code>) without any trailing paths.
+              </p>
               <Input
                 id="settings-canvas-url"
                 value={canvasUrl}
@@ -315,9 +318,16 @@ export default function SettingsPage() {
               <Label htmlFor="settings-canvas-token" className="text-[13px] font-medium text-foreground">
                 Canvas Personal Access Token
               </Label>
-              <p className="text-[12px] text-muted-foreground font-light mb-2">
-                Generate in Canvas: Account → Settings → Approved Integrations → New Access Token
-              </p>
+              <div className="text-[12px] text-muted-foreground font-light leading-relaxed space-y-1 mb-3 mt-1">
+                <p>1. Log in to Canvas and click <strong>Account</strong> in the left global navigation.</p>
+                <p>2. Click <strong>Settings</strong>.</p>
+                <p>3. Scroll down to <strong>Approved Integrations</strong>.</p>
+                <p>4. Click <strong>+ New Access Token</strong>.</p>
+                <p>5. Set Purpose to "Clavis" and set an optional Expiry date.</p>
+                <p>6. Click <strong>Generate Token</strong>.</p>
+                <p className="text-primary font-medium">7. IMMEDIATELY copy the token string before closing because Canvas will never display it again.</p>
+                <p>8. Paste the token below.</p>
+              </div>
               <div className="relative">
                 <Input
                   id="settings-canvas-token"

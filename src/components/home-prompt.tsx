@@ -9,12 +9,13 @@ import {
   Layers,
   Paperclip, Plus, Loader2, Upload, Link as LinkIcon, X, ArrowUp, Globe,
   Users, FolderPlus, FileText, Check, ChevronDown, Ghost,
-  Lightbulb, PenLine, Search, Code2, Sparkles
+  Lightbulb, PenLine, Search, Code2, Sparkles, GraduationCap
 } from "lucide-react";
 import Link from "next/link";
 import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "@/components/chat/model-selector";
 import { useProjectStore } from "@/stores/project-store";
+import { ConnectCanvasDialog } from "@/components/canvas/connect-canvas-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +61,14 @@ export function HomePrompt({ userName }: HomePromptProps) {
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [isIncognito, setIsIncognito] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, offset: 0 });
+  const [hasCanvas, setHasCanvas] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user")
+      .then(res => res.json())
+      .then(data => setHasCanvas(!!data?.prefs?.canvasToken))
+      .catch(() => {});
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -575,6 +584,30 @@ export function HomePrompt({ userName }: HomePromptProps) {
           );
         })}
       </motion.div>
+
+      {/* ─── Connect Canvas CTA ─── */}
+      {hasCanvas !== null && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-8 flex justify-center"
+        >
+          {hasCanvas ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-card/30 backdrop-blur-sm text-[12px] text-muted-foreground">
+              <Check className="size-3.5 text-green-500/70" />
+              <span>Canvas Connected</span>
+            </div>
+          ) : (
+            <ConnectCanvasDialog onSuccess={() => setHasCanvas(true)}>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-[13px] font-medium text-primary/90 shadow-[0_0_15px_rgba(201,168,76,0.1)] cursor-pointer">
+                <GraduationCap className="size-4" />
+                <span>Connect Studium/Canvas</span>
+              </button>
+            </ConnectCanvasDialog>
+          )}
+        </motion.div>
+      )}
 
     </div>
     </>
