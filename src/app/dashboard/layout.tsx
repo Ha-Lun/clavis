@@ -6,7 +6,6 @@ import { SidebarProvider } from "@/components/sidebar";
 import { MobileNav } from "@/components/mobile-nav";
 import { CreateProjectDialog } from "@/components/project/create-project-dialog";
 import { AmbientGlow } from "@/components/ambient-glow";
-import { TestModelsFab } from "@/components/test-models-fab";
 import type { Chat, Project } from "@/lib/appwrite/types";
 
 export default async function DashboardLayout({
@@ -80,7 +79,6 @@ export default async function DashboardLayout({
         <main className="flex-1 overflow-hidden">{children}</main>
       </div>
       <CreateProjectDialog />
-      <TestModelsFab />
       <AmbientGlow />
     </div>
   );

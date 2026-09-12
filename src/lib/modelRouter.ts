@@ -1,7 +1,7 @@
 /**
  * Model Routing:
  *
- * Default Fallback (Nemotron 3 Nano)
+ * Default Fallback (Nemotron 3.5 Lightning)
  */
 
 import { getModelInfo } from "./models";
@@ -14,7 +14,7 @@ export type MessageParam = {
 };
 
 export function routeModel(_messages: MessageParam[]): string {
-  return "meta/muse-glimmer-30b";
+  return "nvidia/nemotron-3.5-lightning-30b-a3b";
 }
 
 export function getRoutingLabel(modelId: string): string {

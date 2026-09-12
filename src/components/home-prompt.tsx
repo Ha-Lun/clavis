@@ -16,6 +16,8 @@ import { cn, Attachment } from "@/lib/utils";
 import { ModelSelector } from "@/components/chat/model-selector";
 import { useProjectStore } from "@/stores/project-store";
 import { ConnectCanvasDialog } from "@/components/canvas/connect-canvas-dialog";
+import { CourseSelector } from "@/components/courses/course-selector";
+import type { Course } from "@/components/courses/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +55,8 @@ interface HomePromptProps {
 export function HomePrompt({ userName }: HomePromptProps) {
   const [content, setContent] = useState("");
   const [model, setModel] = useState(DEFAULT_MODEL);
+  const [courseId, setCourseId] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -62,6 +66,17 @@ export function HomePrompt({ userName }: HomePromptProps) {
   const [isIncognito, setIsIncognito] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, offset: 0 });
   const [hasCanvas, setHasCanvas] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/courses")
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data?.courses) ? data.courses : (Array.isArray(data) ? data : []);
+        setCourses(list);
+      })
+      .catch(() => {});
+  }, []);
+
 
   useEffect(() => {
     fetch("/api/user")
@@ -198,7 +213,7 @@ export function HomePrompt({ userName }: HomePromptProps) {
         const createRes = await fetch("/api/chats", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model }),
+          body: JSON.stringify({ model, courseId }),
         });
         const { chat } = await createRes.json();
         if (!chat) throw new Error("Failed to create chat");
@@ -228,6 +243,7 @@ export function HomePrompt({ userName }: HomePromptProps) {
       console.error("Failed to create chat:", err);
       setIsSubmitting(false);
     }
+
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -524,6 +540,15 @@ export function HomePrompt({ userName }: HomePromptProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              {courses.length > 0 && (
+                <div className="hidden sm:block w-[180px]">
+                  <CourseSelector
+                    courses={courses}
+                    value={courseId}
+                    onChange={setCourseId}
+                  />
+                </div>
+              )}
               <ModelSelector
                 currentModel={model}
                 onModelChange={(newModel) => setModel(newModel as typeof model)}
@@ -552,6 +577,7 @@ export function HomePrompt({ userName }: HomePromptProps) {
           </div>
         </motion.div>
       </motion.div>
+
 
       {/* ─── Suggestion Chips ─── */}
       <motion.div

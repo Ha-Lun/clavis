@@ -425,6 +425,22 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          <Separator className="bg-border" />
+
+          {/* Model Diagnostics */}
+          <div className="space-y-1 pb-2">
+            <h2 className="text-[12px] font-medium text-muted-foreground/60 uppercase tracking-widest">
+              Model Diagnostics / Availability
+            </h2>
+            <p className="text-[12px] text-muted-foreground font-light pt-1">
+              Ping each model to check if they are currently responding within 15 seconds.
+            </p>
+          </div>
+
+          <div className="space-y-4 p-5 rounded-lg border border-border bg-card">
+            <ModelDiagnostics />
+          </div>
+
           {/* Save */}
           <div className="flex items-center gap-3 pt-2">
             <motion.div whileTap={{ scale: 0.97 }}>
@@ -453,6 +469,126 @@ export default function SettingsPage() {
             </motion.div>
           </div>
         </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// Subcomponent for model testing logic
+type TestStatus = "idle" | "testing" | "success" | "error";
+
+interface ModelState {
+  id: string;
+  name: string;
+  status: TestStatus;
+  error?: string;
+}
+
+function ModelDiagnostics() {
+  const [isTestingAll, setIsTestingAll] = useState(false);
+  const [modelStates, setModelStates] = useState<ModelState[]>(
+    MODELS.filter((m) => m.id !== "auto").map((m) => ({
+      id: m.id,
+      name: m.name,
+      status: "idle",
+    }))
+  );
+
+  const testModel = async (modelId: string) => {
+    setModelStates((prev) =>
+      prev.map((s) => (s.id === modelId ? { ...s, status: "testing", error: undefined } : s))
+    );
+
+    try {
+      const res = await fetch("/api/models/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelId }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setModelStates((prev) =>
+          prev.map((s) => (s.id === modelId ? { ...s, status: "success" } : s))
+        );
+      } else {
+        setModelStates((prev) =>
+          prev.map((s) => (s.id === modelId ? { ...s, status: "error", error: data.error } : s))
+        );
+      }
+    } catch (err: any) {
+      setModelStates((prev) =>
+        prev.map((s) => (s.id === modelId ? { ...s, status: "error", error: "Failed to fetch" } : s))
+      );
+    }
+  };
+
+  const runAllTests = async () => {
+    setIsTestingAll(true);
+    setModelStates((prev) => prev.map((s) => ({ ...s, status: "idle", error: undefined })));
+    for (const model of modelStates) {
+      await testModel(model.id);
+    }
+    setIsTestingAll(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {modelStates.map((model) => (
+          <div
+            key={model.id}
+            className="flex items-center justify-between p-3 rounded-md bg-secondary/30 border border-border"
+          >
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[13px] font-medium text-foreground truncate">{model.name}</span>
+              {model.error && (
+                <span className="text-[11px] text-destructive truncate">
+                  {model.error}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              {model.status === "testing" && (
+                <Loader2 className="size-4 animate-spin text-primary" />
+              )}
+              {model.status === "success" && (
+                <Check className="size-4 text-green-400" />
+              )}
+              {model.status === "error" && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-destructive"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 hover:bg-primary/10 hover:text-primary transition-colors ml-1"
+                onClick={() => testModel(model.id)}
+                disabled={model.status === "testing" || isTestingAll}
+                title={`Test ${model.name}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-end pt-2">
+        <Button
+          onClick={runAllTests}
+          disabled={isTestingAll}
+          variant="outline"
+          className="h-8 text-[12px] bg-transparent border-border hover:bg-white/[0.04] text-foreground"
+        >
+          {isTestingAll ? (
+            <>
+              <Loader2 className="mr-2 size-3 animate-spin" />
+              Testing...
+            </>
+          ) : (
+            "Test All Models"
+          )}
+        </Button>
       </div>
     </div>
   );
