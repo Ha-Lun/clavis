@@ -59,6 +59,27 @@ export interface CanvasFile {
   [key: string]: unknown;
 }
 
+const canvasCache = new Map<string, { data: any; response: Response; expires: number }>();
+
+export function clearCanvasCache(token?: string) {
+  if (token) {
+    for (const key of canvasCache.keys()) {
+      if (key.startsWith(token + ":")) {
+        canvasCache.delete(key);
+      }
+    }
+  } else {
+    canvasCache.clear();
+  }
+}
+
+function getCacheTTL(url: string): number {
+  if (url.includes("/courses?enrollment_state=active") || url.includes("/courses?")) return 24 * 60 * 60 * 1000;
+  if (url.includes("include[]=syllabus_body") || url.includes("/modules") || url.includes("/pages")) return 3 * 60 * 60 * 1000;
+  if (url.includes("/assignments") || url.includes("only_announcements=true") || url.includes("/calendar_events")) return 15 * 60 * 1000;
+  return 0;
+}
+
 const DEFAULT_TIMEOUT_MS = 8_000;
 const MAX_PAGES = 100;
 const API_PATH = "/api/v1";
@@ -154,6 +175,15 @@ async function fetchJson<T>(url: string, token: string, timeoutMs = DEFAULT_TIME
     throw new Error("Canvas request timeout must be positive");
   }
 
+  const ttl = getCacheTTL(url);
+  const cacheKey = token + ":" + url;
+  if (ttl > 0) {
+    const cached = canvasCache.get(cacheKey);
+    if (cached && cached.expires > Date.now()) {
+      return { data: cached.data as T, response: cached.response.clone() };
+    }
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -184,7 +214,11 @@ async function fetchJson<T>(url: string, token: string, timeoutMs = DEFAULT_TIME
     if (!response.ok) {
       throw new Error(`Canvas request failed: HTTP ${response.status}`);
     }
-    return { data: (await response.json()) as T, response };
+    const data = await response.json();
+    if (ttl > 0) {
+      canvasCache.set(cacheKey, { data, response: response.clone(), expires: Date.now() + ttl });
+    }
+    return { data: data as T, response };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new Error(`Canvas request timed out after ${timeoutMs}ms`);

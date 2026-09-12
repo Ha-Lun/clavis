@@ -12,6 +12,7 @@ import {
   getCanvasAnnouncements,
   getCanvasCalendarEvents,
   getCanvasFiles,
+  clearCanvasCache,
 } from "@/lib/integrations/canvas";
 import { extractTextFromBuffer } from "@/lib/extract-text";
 import { fingerprintSources, hashContent, normalizeCourseText, replaceSourceChunks } from "@/lib/courses/knowledge";
@@ -146,51 +147,15 @@ async function syncCourse(
 
   try {
     const files = await getCanvasFiles(canvasUrl, token, course.external_id);
-    const documentExtensions = [".pdf", ".docx", ".doc", ".pptx", ".txt", ".md"];
-    const validFiles = files
-      .filter((file: any) => {
-        const ext = file.filename.slice(file.filename.lastIndexOf(".")).toLowerCase();
-        return documentExtensions.includes(ext) && file.size < 15 * 1024 * 1024;
-      })
-      .slice(0, 20);
-
-    for (const file of validFiles) {
-      const existing = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSE_SOURCES, [
-        Query.equal("user_id", userId),
-        Query.equal("course_id", course.$id),
-        Query.equal("external_id", `file:${file.id}`),
-        Query.limit(1),
-      ]);
-      
-      const doc = existing.documents[0] as any;
-      if (doc && doc.updated_at === file.updated_at) {
-        sources.push(doc as unknown as CourseSourceRecord);
-        continue; // Unchanged
-      }
-
-      try {
-        if (!file.url) continue;
-        const res = await fetch(file.url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error(`Failed to download file: ${res.statusText}`);
-        
-        const arrayBuffer = await res.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const extraction = await extractTextFromBuffer(buffer, file.display_name || file.filename);
-        
-        if (extraction.text) {
-          await add({
-            externalId: `file:${file.id}`,
-            type: "file",
-            title: `File: ${file.display_name || file.filename}`,
-            content: extraction.text,
-            url: file.html_url || file.url,
-            updatedAt: typeof file.updated_at === "string" ? file.updated_at : null,
-          });
-        }
-      } catch (err: any) {
-        errors.push(`File ${file.display_name || file.filename}: ${err?.message || "failed"}`);
-      }
-    }
+    const filesContent = files.length > 0 
+      ? files.map(f => `- ${f.display_name || f.filename} (Size: ${f.size} bytes, Updated: ${f.updated_at})\n  URL: ${f.html_url || f.url}`).join("\n") 
+      : "No files available.";
+    await add({
+      externalId: "course_files_list",
+      type: "files_list",
+      title: "Course Files Index",
+      content: `Available Course Files:\n${filesContent}`,
+    });
   } catch (error: any) { errors.push(`Files: ${error?.message || "failed"}`); }
 
   const fingerprint = fingerprintSources(sources);
@@ -242,9 +207,46 @@ export async function POST(request: Request) {
       coursesToSync = canvasCourses.filter(c => String(c.id) === targetExternalId);
     }
 
+    if (!targetCourseId) {
+      clearCanvasCache(token);
+      const existingCoursesRes = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSES, [
+        Query.equal("user_id", user.$id),
+        Query.limit(100),
+      ]);
+      const activeExternalIds = new Set(canvasCourses.map(c => String(c.id)));
+      const obsoleteCourses = (existingCoursesRes.documents as unknown as CourseRecord[]).filter(c => !activeExternalIds.has(String(c.external_id)));
+
+      for (const course of obsoleteCourses) {
+        while (true) {
+          const chunksRes = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSE_CHUNKS, [Query.equal("course_id", course.$id), Query.limit(100)]);
+          if (chunksRes.documents.length === 0) break;
+          await Promise.all(chunksRes.documents.map((d: any) => admin.databases.deleteDocument(DATABASE_ID, COLLECTIONS.COURSE_CHUNKS, d.$id)));
+          if (chunksRes.documents.length < 100) break;
+        }
+
+        while (true) {
+          const sourcesRes = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSE_SOURCES, [Query.equal("course_id", course.$id), Query.limit(100)]);
+          if (sourcesRes.documents.length === 0) break;
+          await Promise.all(sourcesRes.documents.map((d: any) => admin.databases.deleteDocument(DATABASE_ID, COLLECTIONS.COURSE_SOURCES, d.$id)));
+          if (sourcesRes.documents.length < 100) break;
+        }
+
+        while (true) {
+          const chatsRes = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.CHATS, [Query.equal("course_id", course.$id), Query.limit(100)]);
+          if (chatsRes.documents.length === 0) break;
+          await Promise.all(chatsRes.documents.map((d: any) => admin.databases.updateDocument(DATABASE_ID, COLLECTIONS.CHATS, d.$id, { course_id: null })));
+          if (chatsRes.documents.length < 100) break;
+        }
+
+        await admin.databases.deleteDocument(DATABASE_ID, COLLECTIONS.COURSES, course.$id);
+        console.log(`Deleted obsolete course: ${course.name} (${course.$id})`);
+      }
+    }
+
     const stored: CourseRecord[] = [];
     let failures = 0;
-    for (const canvasCourse of coursesToSync) {
+    
+    await Promise.all(coursesToSync.map(async (canvasCourse) => {
       const existing = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSES, [
         Query.equal("user_id", user.$id),
         Query.equal("external_id", String(canvasCourse.id)),
@@ -275,7 +277,7 @@ export async function POST(request: Request) {
         failures += 1;
         await admin.databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, record.$id, { sync_status: "failed", sync_error: error?.message || "Sync failed" });
       }
-    }
+    }));
     const result = await admin.databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSES, [Query.equal("user_id", user.$id), Query.orderAsc("name"), Query.limit(100)]);
     stored.push(...(result.documents as unknown as CourseRecord[]));
     return NextResponse.json({
