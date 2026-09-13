@@ -54,7 +54,7 @@ export const MODELS: ModelInfo[] = [
   },
 ];
 
-export const DEFAULT_MODEL: ModelId = "auto";
+export const DEFAULT_MODEL: ModelId = "openai/gpt-oss-120b";
 
 export function getModelInfo(modelId: string): ModelInfo {
   return (

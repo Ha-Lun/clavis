@@ -27,6 +27,7 @@ export function CourseQuestion({ courseId, onChatCreated }: CourseQuestionProps)
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [model, setModel] = useState<string>(DEFAULT_MODEL);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +86,7 @@ export function CourseQuestion({ courseId, onChatCreated }: CourseQuestionProps)
       const response = await fetch("/api/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseId, model: DEFAULT_MODEL })
+        body: JSON.stringify({ courseId, model })
       });
       const data = await response.json() as any;
       if (!response.ok) throw new Error(data.error || "Unable to create course chat");
@@ -244,7 +245,7 @@ export function CourseQuestion({ courseId, onChatCreated }: CourseQuestionProps)
           </div>
 
           <div className="flex items-center gap-2">
-            <ModelSelector />
+            <ModelSelector currentModel={model} onModelChange={setModel} />
 
             <motion.button
               whileHover={hasContent ? { scale: 1.05 } : {}}

@@ -1,7 +1,7 @@
 /**
  * Model Routing:
  *
- * Default Fallback (Nemotron 3.5 Lightning)
+ * Default Fallback (GPT OSS 120B)
  */
 
 import { getModelInfo } from "./models";
@@ -39,7 +39,7 @@ export function routeModel(messages: MessageParam[]): string {
     }
   }
 
-  return "nvidia/nemotron-3.5-lightning-30b-a3b";
+  return "openai/gpt-oss-120b";
 }
 
 export function getRoutingLabel(modelId: string): string {
