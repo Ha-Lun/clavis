@@ -295,7 +295,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
             rows={1}
             className={cn(
               "w-full resize-none bg-transparent",
-              "text-[15px] font-light text-foreground",
+              "text-[16px] sm:text-[15px] font-light text-foreground",
               "outline-none placeholder:text-muted-foreground/40",
               "pt-4 pb-2 px-5",
               "max-h-[200px] scrollbar-thin",
@@ -306,7 +306,7 @@ export function ChatInput({ onSend, onStop, isStreaming, chatId, currentModel }:
           />
 
           {/* Bottom toolbar */}
-          <div className="flex items-center justify-between px-3 pb-3">
+          <div className="flex items-center justify-between px-3 pb-3 pb-safe">
             {/* Left: attachment + web search */}
             <div className="flex items-center gap-1">
               <input

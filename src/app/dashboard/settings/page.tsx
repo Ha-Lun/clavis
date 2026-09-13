@@ -269,7 +269,7 @@ export default function SettingsPage() {
                   Show Reasoning
                 </Label>
                 <p className="text-[12px] text-muted-foreground font-light">
-                  Display the AI's internal reasoning process if available
+                  Display the AI&apos;s internal reasoning process if available
                 </p>
               </div>
               <Switch
@@ -323,7 +323,7 @@ export default function SettingsPage() {
                 <p>2. Click <strong>Settings</strong>.</p>
                 <p>3. Scroll down to <strong>Approved Integrations</strong>.</p>
                 <p>4. Click <strong>+ New Access Token</strong>.</p>
-                <p>5. Set Purpose to "Clavis" and set an optional Expiry date.</p>
+                <p>5. Set Purpose to &quot;Clavis&quot; and set an optional Expiry date.</p>
                 <p>6. Click <strong>Generate Token</strong>.</p>
                 <p className="text-primary font-medium">7. IMMEDIATELY copy the token string before closing because Canvas will never display it again.</p>
                 <p>8. Paste the token below.</p>

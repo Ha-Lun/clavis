@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Cinzel, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/context/theme-context";
 import { ChatProvider } from "@/context/chat-context";
+import { CapacitorDeepLinkHandler } from "@/components/capacitor-deep-link-handler";
 import "./globals.css";
 
 const BASE_URL =
@@ -158,6 +159,7 @@ export default function RootLayout({
         />
         <ThemeProvider>
           <ChatProvider>
+            <CapacitorDeepLinkHandler />
             {children}
           </ChatProvider>
         </ThemeProvider>

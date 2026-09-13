@@ -5,8 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Clavis',
   webDir: 'public',
   server: {
-    androidScheme: 'https',
+    url: process.env.CAPACITOR_SERVER_URL || 'https://clavis.lundstromslogiska.se',
     cleartext: true,
+    androidScheme: 'https',
   },
   plugins: {
     StatusBar: {

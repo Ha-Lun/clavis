@@ -103,11 +103,12 @@ export async function logout() {
   redirect("/login");
 }
 
-export async function getOAuthURL(provider: string, origin: string) {
+export async function getOAuthURL(provider: string, clientOrigin: string, source?: string) {
   try {
     const { account } = await createAdminClient();
-    const successUrl = `${origin}/api/oauth`;
-    const failureUrl = `${origin}/login?error=oauth_cancelled`;
+    const computedOrigin = process.env.NEXT_PUBLIC_APP_URL || "https://clavis.lundstromslogiska.se";
+    const successUrl = source === "app" ? `${computedOrigin}/api/oauth?source=app` : `${computedOrigin}/api/oauth`;
+    const failureUrl = `${computedOrigin}/login?error=oauth_cancelled`;
     
     // createOAuth2Token returns the provider's authorization URL
     // When the user completes login, Appwrite redirects to successUrl with userId and secret

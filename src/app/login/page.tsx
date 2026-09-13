@@ -37,7 +37,7 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-background relative overflow-hidden">
+    <div className="min-h-[100dvh] pt-safe pb-safe flex items-center justify-center px-4 bg-background relative overflow-hidden">
       {/* Subtle background gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(168,124,62,0.06),transparent)]" />
 
@@ -160,7 +160,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-[100dvh] pt-safe pb-safe flex items-center justify-center bg-background">
         <Loader2 className="size-6 animate-spin text-primary" />
       </div>
     }>

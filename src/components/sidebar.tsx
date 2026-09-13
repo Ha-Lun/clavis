@@ -85,7 +85,7 @@ export function SidebarProvider({
 
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-[272px] p-0 bg-card border-r border-border">
+        <SheetContent side="left" className="w-[272px] p-0 pt-safe pb-safe bg-card border-r border-border">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarContent
             userEmail={userEmail}

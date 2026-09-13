@@ -121,11 +121,11 @@ async function syncCourse(
 
   try {
     const modules = await getCanvasModules(canvasUrl, token, course.external_id);
-    for (const module of modules) {
-      const items = module.items || [];
+    for (const mod of modules) {
+      const items = mod.items || [];
       const itemText = items.map(item => `  - [${item.type}] ${item.title}`).join("\n");
-      const content = `Module: ${module.name}\nItems:\n${itemText}`;
-      await add({ externalId: `module:${module.id}`, type: "modules", title: `Module: ${module.name}`, content });
+      const content = `Module: ${mod.name}\nItems:\n${itemText}`;
+      await add({ externalId: `module:${mod.id}`, type: "modules", title: `Module: ${mod.name}`, content });
     }
   } catch (error: any) { errors.push(`Modules: ${error?.message || "failed"}`); }
 

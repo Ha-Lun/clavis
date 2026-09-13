@@ -67,7 +67,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="h-screen flex overflow-hidden animate-fade-in bg-background">
+    <div className="h-[100dvh] flex overflow-hidden animate-fade-in bg-background">
       <SidebarProvider
         initialChats={chats}
         initialProjects={projects}

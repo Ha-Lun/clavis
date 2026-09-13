@@ -4,6 +4,8 @@ import { useState } from "react";
 import { getOAuthURL } from "@/lib/appwrite/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -35,10 +37,17 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
     setLoadingProvider(provider);
 
     const origin = window.location.origin;
-    const result = await getOAuthURL(provider, origin);
+    const isApp = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+    
+    const result = await getOAuthURL(provider, origin, isApp ? "app" : undefined);
 
     if (result.url) {
-      window.location.href = result.url;
+      if (isApp) {
+        await Browser.open({ url: result.url });
+        setLoadingProvider(null);
+      } else {
+        window.location.href = result.url;
+      }
     } else {
       window.location.href = `${origin}/login?error=oauth_failed`;
     }
