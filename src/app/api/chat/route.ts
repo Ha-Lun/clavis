@@ -80,7 +80,7 @@ async function callAIWithRetry(
         ] as any[],
         ...(tools.length > 0 ? { tools } : {}),
         stream: true,
-        max_tokens: isQwen ? 16384 : 8192,
+        max_tokens: isQwen || model.includes("gpt-oss") ? 16384 : 8192,
       }, { signal });
 
       const completion = await Promise.race([aiPromise, timeoutPromise]);
@@ -638,7 +638,7 @@ ${userMessageContent}`;
 
     const apiModelId = finalModelId.replace(/^google\//, "");
 
-    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek")) {
+    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gpt-oss")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
     }
 
@@ -691,7 +691,7 @@ ${userMessageContent}`;
               }
 
               // Handle Reasoning Content (Chain of Thought)
-              const reasoningContent = (delta as any)?.reasoning_content ?? (delta as any)?.thought ?? "";
+              const reasoningContent = (delta as any)?.reasoning_content ?? (delta as any)?.thought ?? (delta as any)?.reasoning ?? "";
               if (reasoningContent) {
                 if (!isThinking) {
                   isThinking = true;
@@ -1110,9 +1110,9 @@ ${userMessageContent}`;
 
 
     return new Response(stream, { headers });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Chat API error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    return new Response(JSON.stringify({ error: err?.message || "Internal server error" }), {
       status: 500,
     });
   }
