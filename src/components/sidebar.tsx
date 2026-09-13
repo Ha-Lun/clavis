@@ -85,7 +85,7 @@ export function SidebarProvider({
 
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-[272px] p-0 pt-safe pb-safe bg-card border-r border-border">
+        <SheetContent side="left" className="w-[280px] p-0 bg-card border-r border-border flex flex-col h-[100dvh] max-h-[100dvh] [&>button]:hidden">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarContent
             userEmail={userEmail}
@@ -131,7 +131,7 @@ function SidebarContent({
       {/* Header */}
       <div
         className={cn(
-          "h-14 flex items-center justify-between px-4 shrink-0 border-b border-border relative group/header",
+          "min-h-[56px] pt-safe flex items-center justify-between px-4 shrink-0 border-b border-border relative group/header",
           isCollapsed && "justify-center px-0"
         )}
       >
@@ -297,7 +297,7 @@ function SidebarContent({
 
       {/* Footer */}
       <div className={cn(
-        "mt-auto px-3 py-3 border-t border-border shrink-0",
+        "mt-auto px-3 py-3 pb-safe border-t border-border shrink-0",
         isCollapsed && "px-2"
       )}>
         <div className={cn(
