@@ -8,7 +8,7 @@ export function createAIClient(modelId: string) {
   const modelInfo = getModelInfo(modelId);
 
 
-  if (modelId.startsWith("groq/") || (!NVIDIA_API_KEY && GROQ_API_KEY)) {
+  if (modelId.startsWith("groq/") || modelId === "openai/gpt-oss-120b" || (!NVIDIA_API_KEY && GROQ_API_KEY)) {
     return new OpenAI({
       apiKey: GROQ_API_KEY,
       baseURL: "https://api.groq.com/openai/v1",

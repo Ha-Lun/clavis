@@ -1,5 +1,6 @@
 export type ModelId =
   | "auto"
+  | "openai/gpt-oss-120b"
   | "meta/muse-glimmer-30b"
   | "nvidia/nemotron-3.5-lightning-30b-a3b"
   | "nvidia/nemotron-3-ultra-550b-a55b"
@@ -18,6 +19,12 @@ export const MODELS: ModelInfo[] = [
     id: "auto",
     name: "Auto",
     shortName: "Auto",
+  },
+  {
+    id: "openai/gpt-oss-120b",
+    name: "GPT OSS 120B (Groq)",
+    shortName: "GPT OSS 120B",
+    supportsTools: true,
   },
   {
     id: "nvidia/nemotron-3.5-lightning-30b-a3b",
