@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import { useRouter } from "next/navigation";
 
 export function CapacitorDeepLinkHandler() {
@@ -11,6 +12,12 @@ export function CapacitorDeepLinkHandler() {
 
   useEffect(() => {
     if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      if (Capacitor.getPlatform() === 'android') {
+        StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      }
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: '#0a0a0f' }).catch(() => {});
+
       const listener = CapacitorApp.addListener("appUrlOpen", async (data) => {
         if (data.url.startsWith("clavis://oauth")) {
           // e.g. clavis://oauth?ticket=...
