@@ -2,9 +2,7 @@ export type ModelId =
   | "auto"
   | "openai/gpt-oss-120b"
   | "openai/gpt-oss-20b"
-  | "groq/compound"
   | "qwen/qwen3.8-27b"
-  | "allam-2-7b"
   | "meta/muse-glimmer-30b"
   | "nvidia/nemotron-3.5-lightning-30b-a3b"
   | "nvidia/nemotron-3-ultra-550b-a55b"
@@ -26,32 +24,20 @@ export const MODELS: ModelInfo[] = [
   },
   {
     id: "openai/gpt-oss-120b",
-    name: "GPT OSS 120B (Groq)",
+    name: "GPT OSS 120B",
     shortName: "GPT OSS 120B",
     supportsTools: true,
   },
   {
     id: "openai/gpt-oss-20b",
-    name: "GPT OSS 20B (Groq)",
+    name: "GPT OSS 20B",
     shortName: "GPT OSS 20B",
     supportsTools: true,
   },
   {
-    id: "groq/compound",
-    name: "Compound (Groq)",
-    shortName: "Compound",
-    supportsTools: true,
-  },
-  {
     id: "qwen/qwen3.8-27b",
-    name: "Qwen 3.8 27B (Groq)",
+    name: "Qwen 3.8 27B",
     shortName: "Qwen 27B",
-    supportsTools: true,
-  },
-  {
-    id: "allam-2-7b",
-    name: "ALLaM 2 7B (Groq)",
-    shortName: "ALLaM 7B",
     supportsTools: true,
   },
   {

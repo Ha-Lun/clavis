@@ -72,7 +72,6 @@ async function callAIWithRetry(
         }
       }
 
-      const isAllam = model.includes("allam");
       const isQwen = model.includes("qwen3.5") || model.includes("qwen3.8");
       
       const aiPromise = aiClient.chat.completions.create({
@@ -83,7 +82,7 @@ async function callAIWithRetry(
         ] as any[],
         ...(tools.length > 0 ? { tools } : {}),
         stream: true,
-        max_tokens: isAllam ? 4096 : (isQwen || model.includes("gpt-oss") ? 16384 : 8192),
+        max_tokens: isQwen || model.includes("gpt-oss") ? 16384 : 8192,
       }, { signal });
 
       const completion = await Promise.race([aiPromise, timeoutPromise]);
@@ -651,7 +650,7 @@ ${userMessageContent}`;
     }
 
     let apiModelId = finalModelId.replace(/^google\//, "");
-    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gpt-oss") || finalModelId.toLowerCase().includes("compound")) {
+    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gpt-oss")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
     }
 
@@ -990,7 +989,7 @@ ${userMessageContent}`;
                 2,
                 30000,
                 (attempt) => {
-                  const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})..._\n\n`;
+                  const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})... Consider switching models if this persists._\n\n`;
                   fullContent += retryMsg;
                   controller.enqueue(new TextEncoder().encode(retryMsg));
                 },
@@ -1083,7 +1082,7 @@ ${userMessageContent}`;
             2,
             30000,
             (attempt) => {
-              const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})..._\n\n`;
+              const retryMsg = `\n_This is taking longer than usual, trying again (attempt ${attempt})... Consider switching models if this persists._\n\n`;
               fullContent += retryMsg;
               controller.enqueue(new TextEncoder().encode(retryMsg));
             },
@@ -1096,11 +1095,11 @@ ${userMessageContent}`;
           
           let errorText = "";
           if (err.status === 429 || err.message?.includes("busy")) {
-            errorText = "Model is busy. Please try again in a moment.";
+            errorText = "Model is busy. Please try again in a moment. Consider switching models.";
           } else {
             const errorMessage = err.message || "Failed to communicate with AI provider";
             errorText = errorMessage.toLowerCase().includes("timeout")
-              ? "The request timed out. Please try again."
+              ? "The request timed out. Please try again. Consider switching models."
               : `AI Error: ${errorMessage}`;
           }
           
