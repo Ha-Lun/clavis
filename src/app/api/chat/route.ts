@@ -72,6 +72,9 @@ async function callAIWithRetry(
         }
       }
 
+      const isAllam = model.includes("allam");
+      const isQwen = model.includes("qwen3.5") || model.includes("qwen3.8");
+      
       const aiPromise = aiClient.chat.completions.create({
         model,
         messages: [
@@ -80,7 +83,7 @@ async function callAIWithRetry(
         ] as any[],
         ...(tools.length > 0 ? { tools } : {}),
         stream: true,
-        max_tokens: isQwen || model.includes("gpt-oss") ? 16384 : 8192,
+        max_tokens: isAllam ? 4096 : (isQwen || model.includes("gpt-oss") ? 16384 : 8192),
       }, { signal });
 
       const completion = await Promise.race([aiPromise, timeoutPromise]);
@@ -548,11 +551,11 @@ ${userMessageContent}`;
         type: "function",
         function: {
           name: "get_calendar_events",
-          description: "Get user's calendar events",
+          description: "Get user's calendar schedule, lectures, meetings, and events",
           parameters: {
             type: "object",
             properties: {
-              filter: { type: "string", enum: ["today", "week", "all"], description: "Time filter" }
+              filter: { type: "string", enum: ["today", "tomorrow", "week", "month", "upcoming", "all"], description: "Time filter" }
             }
           }
         }
@@ -647,8 +650,8 @@ ${userMessageContent}`;
       });
     }
 
-    let apiModelId = finalModelId.replace(/^google\//, "").replace(/^groq\//, "");
-    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gpt-oss")) {
+    let apiModelId = finalModelId.replace(/^google\//, "");
+    if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gpt-oss") || finalModelId.toLowerCase().includes("compound")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
     }
 
@@ -796,15 +799,35 @@ ${userMessageContent}`;
                   }
                 } else if (tc.function.name === "get_calendar_events") {
                   try {
-                    const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : { filter: "all" };
+                    const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : { filter: "upcoming" };
                     if (!prefs?.calendarIcsUrl) throw new Error("Calendar URL not configured");
                     
                     const events = await fetchAndParseCalendar(prefs.calendarIcsUrl);
-                    const filtered = filterEvents(events, args.filter || "all");
+                    const filtered = filterEvents(events, args.filter || "upcoming");
                     
-                    const content = filtered.length > 0 
-                      ? filtered.map(e => `- **${e.summary}**: ${e.startDate.toLocaleString()} to ${e.endDate.toLocaleString()} ${e.location ? `(at ${e.location})` : ""}`).join("\n")
-                      : "No events found.";
+                    let content = "No events found.";
+                    if (filtered.length > 0) {
+                      const byDay: Record<string, typeof filtered> = {};
+                      for (const e of filtered) {
+                        const dayKey = e.startDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        if (!byDay[dayKey]) byDay[dayKey] = [];
+                        byDay[dayKey].push(e);
+                      }
+                      
+                      const parts: string[] = [];
+                      for (const [day, dayEvents] of Object.entries(byDay)) {
+                        parts.push(`### ${day}`);
+                        for (const e of dayEvents) {
+                          const timeStr = e.isAllDay 
+                            ? "All Day" 
+                            : `${e.startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} - ${e.endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+                          const locStr = e.location ? ` [${e.location}]` : "";
+                          const descStr = e.description ? ` - ${e.description.replace(/\n/g, ' ').substring(0, 100)}` : "";
+                          parts.push(`- **${e.summary}** (${timeStr})${locStr}${descStr}`);
+                        }
+                      }
+                      content = parts.join("\n");
+                    }
                       
                     messages.push({ role: "tool", tool_call_id: tc.id, content: `Calendar Events:\n${content}` });
                   } catch (err: any) {
