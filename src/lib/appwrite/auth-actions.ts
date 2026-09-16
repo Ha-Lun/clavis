@@ -6,6 +6,17 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ID } from "node-appwrite";
 
+function setSessionCookie(cookieStore: any, sessionSecret: string, sessionExpire: string) {
+  const isSecure = process.env.NODE_ENV === "production" || process.env.FORCE_SECURE_COOKIES === "true";
+  cookieStore.set(SESSION_COOKIE, sessionSecret, {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: "strict",
+    expires: new Date(sessionExpire),
+    path: "/",
+  });
+}
+
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -19,14 +30,7 @@ export async function login(formData: FormData) {
     const session = await account.createEmailPasswordSession(email, password);
 
     const cookieStore = await cookies();
-    const isSecure = process.env.NODE_ENV === "production" || process.env.FORCE_SECURE_COOKIES === "true";
-    cookieStore.set(SESSION_COOKIE, session.secret, {
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: "strict",
-      expires: new Date(session.expire),
-      path: "/",
-    });
+    setSessionCookie(cookieStore, session.secret, session.expire);
   } catch (err: unknown) {
     const error = err as { message?: string; type?: string };
     if (error.type === "user_invalid_credentials") {
@@ -60,14 +64,7 @@ export async function signup(formData: FormData) {
     const session = await account.createEmailPasswordSession(email, password);
 
     const cookieStore = await cookies();
-    const isSecure = process.env.NODE_ENV === "production" || process.env.FORCE_SECURE_COOKIES === "true";
-    cookieStore.set(SESSION_COOKIE, session.secret, {
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: "strict",
-      expires: new Date(session.expire),
-      path: "/",
-    });
+    setSessionCookie(cookieStore, session.secret, session.expire);
   } catch (err: unknown) {
     const error = err as { message?: string; type?: string };
     if (error.type === "user_already_exists") {
@@ -123,3 +120,31 @@ export async function getOAuthURL(provider: string, clientOrigin: string, source
     return { error: error.message ?? "OAuth initialization failed" };
   }
 }
+
+export async function loginAsGuest() {
+  try {
+    const cookieStore = await cookies();
+    const existingSession = cookieStore.get(SESSION_COOKIE);
+    if (existingSession) {
+      try {
+        const { createSessionClient } = await import("./server");
+        const client = await createSessionClient();
+        if (client) {
+          await client.account.deleteSession("current");
+        }
+      } catch (e) {}
+      cookieStore.delete(SESSION_COOKIE);
+    }
+
+    const { account } = await createAdminClient();
+    const session = await account.createAnonymousSession();
+
+    setSessionCookie(cookieStore, session.secret, session.expire);
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    return { error: error.message ?? "Guest login failed" };
+  }
+
+  redirect("/dashboard");
+}
+

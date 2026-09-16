@@ -92,7 +92,7 @@ async function callAIWithRetry(
       const isConnectionError =
         err.message?.toLowerCase().includes("connection") ||
         err.cause?.code === "ETIMEDOUT";
-      const is429 = err.status === 429;
+      const is429 = err.status === 429 || err.status === 503 || err.message?.toLowerCase().includes("rate limit") || err.message?.toLowerCase().includes("too many requests");
 
       console.error(
         `[API /chat] AI attempt ${attempt + 1} failed:`,
@@ -100,13 +100,23 @@ async function callAIWithRetry(
       );
 
       if (is429) {
-        // Don't retry 429s immediately, wait a bit
-        if (attempt < maxRetries) {
-          onRetry?.(attempt + 2);
-          await new Promise((r) => setTimeout(r, 2000));
-          continue;
+        if (model.startsWith("nvidia/") || model.startsWith("meta/")) {
+            console.log(`[API /chat] NVIDIA rate limited. Falling back to Groq/Gemini...`);
+            model = "llama-3.3-70b-versatile";
+            aiClient = createAIClient("groq/llama-3.3-70b-versatile");
+            if (attempt < maxRetries) {
+               onRetry?.(attempt + 2);
+               await new Promise((r) => setTimeout(r, 1000));
+               continue;
+            }
+        } else {
+            if (attempt < maxRetries) {
+              onRetry?.(attempt + 2);
+              await new Promise((r) => setTimeout(r, 2000));
+              continue;
+            }
+            throw new Error("Model is busy. Please try again in a moment.");
         }
-        throw new Error("Model is busy. Please try again in a moment.");
       }
 
       // Only retry on timeout or connection errors
@@ -284,7 +294,7 @@ MANDATORY INSTRUCTIONS:
             COLLECTIONS.PROJECTS,
             chat.project_id
           ) as unknown as Project;
-          if (project.instructions) {
+          if (project.user_id === user.$id && project.instructions) {
             finalSystemPrompt += `\n\nProject Instructions:\n${project.instructions}`;
             console.log("[API /chat] Applied project instructions");
           }
@@ -300,13 +310,13 @@ MANDATORY INSTRUCTIONS:
         let allFiles: FileRecord[] = [];
         if (chat.project_id) {
           const [chatFiles, projectFiles] = await Promise.all([
-            admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId)]),
-            admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("project_id", chat.project_id)])
+            admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId), Query.equal("user_id", user.$id)]),
+            admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("project_id", chat.project_id), Query.equal("user_id", user.$id)])
           ]);
           console.log(`[API /chat] Found ${chatFiles.documents.length} chat files and ${projectFiles.documents.length} project files`);
           allFiles = [...(chatFiles.documents as unknown as FileRecord[]), ...(projectFiles.documents as unknown as FileRecord[])];
         } else {
-          const chatFiles = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId)]);
+          const chatFiles = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [Query.equal("chat_id", chatId), Query.equal("user_id", user.$id)]);
           console.log(`[API /chat] Found ${chatFiles.documents.length} chat files`);
           allFiles = chatFiles.documents as unknown as FileRecord[];
         }
@@ -436,6 +446,7 @@ MANDATORY INSTRUCTIONS:
             try {
               const fileRecordsResult = await admin.databases.listDocuments(dbId, COLLECTIONS.FILES, [
                 Query.equal("file_id", fileId),
+                Query.equal("user_id", user.$id),
                 Query.limit(1)
               ]);
               const fileDocs = fileRecordsResult.documents as unknown as FileRecord[];
@@ -636,8 +647,10 @@ ${userMessageContent}`;
       });
     }
 
-    const apiModelId = finalModelId.replace(/^google\//, "");
-
+    let apiModelId = finalModelId.replace(/^google\//, "");
+    if (apiModelId === "openai/gpt-oss-120b" || apiModelId.startsWith("groq/")) {
+      apiModelId = "llama-3.3-70b-versatile";
+    }
     if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gpt-oss")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
     }
@@ -655,9 +668,6 @@ ${userMessageContent}`;
     // Stream response
     let fullContent = "";
     let chunkCount = 0;
-
-    const modelInfo = getModelInfo(finalModelId);
-    const supportsTools = modelInfo.supportsTools !== false;
 
     const stream = new ReadableStream({
       async start(controller) {

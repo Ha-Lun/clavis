@@ -37,7 +37,10 @@ export function CoursesClient() {
         const cached = window.localStorage.getItem(COURSES_CACHE_KEY);
         if (cached && !cancelled) {
           const parsed = JSON.parse(cached) as Course[];
-          if (Array.isArray(parsed)) saveCourses(parsed);
+          if (Array.isArray(parsed)) {
+            setCourses(parsed);
+            setSelectedCourseId((current) => parsed.some((course) => course.id === current) ? current : parsed[0]?.id ?? "");
+          }
         }
         const response = await fetch("/api/courses");
         const data = await readCoursesResponse(response);
@@ -55,6 +58,24 @@ export function CoursesClient() {
     void load();
     return () => { cancelled = true; };
   }, []);
+
+  const handleRemoveCourse = async (courseId: string) => {
+    try {
+      const response = await fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: courseId })
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to remove course (${response.status})`);
+      }
+      
+      const updatedCourses = courses.filter(c => c.id !== courseId);
+      saveCourses(updatedCourses);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Failed to remove course");
+    }
+  };
 
   const selectedCourse = useMemo(() => courses.find((course) => course.id === selectedCourseId), [courses, selectedCourseId]);
 
@@ -77,7 +98,7 @@ export function CoursesClient() {
           </div>
         )}
 
-        <CourseList courses={courses} selectedCourseId={selectedCourseId} onSelect={setSelectedCourseId} loading={loading} />
+        <CourseList courses={courses} selectedCourseId={selectedCourseId} onSelect={setSelectedCourseId} onRemove={handleRemoveCourse} loading={loading} />
 
         <section className="mt-8 border-t border-border pt-6" aria-labelledby="course-chat-heading">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

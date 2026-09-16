@@ -22,7 +22,7 @@ export function AmbientParticles() {
     canvas.height = height;
 
     const isMobile = width < 768;
-    const particleCount = isMobile ? 20 : 40;
+    const particleCount = isMobile ? 55 : 110;
     
     // Store mouse pos for avoidance
     let mouseX = -1000;
@@ -50,7 +50,6 @@ export function AmbientParticles() {
       speedX: number;
       speedY: number;
       opacity: number;
-      targetOpacity: number;
       twinklePhase: number;
       twinkleSpeed: number;
     }
@@ -58,16 +57,36 @@ export function AmbientParticles() {
     const particles: Particle[] = [];
 
     const createParticle = (): Particle => {
+      // 3 depth layers
+      const layer = Math.random();
+      let size, speedMult, opacityBase;
+      
+      if (layer < 0.33) {
+        // Background, slow, small, dim
+        size = Math.random() * 0.5 + 0.5; // 0.5 to 1.0
+        speedMult = 0.5;
+        opacityBase = 0.08;
+      } else if (layer < 0.66) {
+        // Midground, medium
+        size = Math.random() * 0.7 + 1.0; // 1.0 to 1.7
+        speedMult = 1.0;
+        opacityBase = 0.2;
+      } else {
+        // Foreground, fast, large, bright
+        size = Math.random() * 0.5 + 1.7; // 1.7 to 2.2
+        speedMult = 1.5;
+        opacityBase = 0.35;
+      }
+
       return {
         x: Math.random() * width,
         y: Math.random() * height,
-        size: Math.random() * 1.5 + 0.5,
-        baseSpeedX: (Math.random() - 0.5) * 0.2,
-        baseSpeedY: (Math.random() - 0.5) * 0.2,
+        size,
+        baseSpeedX: (Math.random() - 0.5) * 0.2 * speedMult,
+        baseSpeedY: (Math.random() - 0.5) * 0.2 * speedMult,
         speedX: 0,
         speedY: 0,
-        opacity: Math.random() * 0.35 + 0.1,
-        targetOpacity: Math.random() * 0.35 + 0.1,
+        opacity: Math.random() * 0.1 + opacityBase,
         twinklePhase: Math.random() * Math.PI * 2,
         twinkleSpeed: Math.random() * 0.02 + 0.01,
       };
@@ -81,6 +100,34 @@ export function AmbientParticles() {
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
+
+      // Draw lines between close particles
+      const maxConnectDist = 85;
+      const maxConnectDistSq = maxConnectDist * maxConnectDist;
+      
+      for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
+        
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const distSq = dx * dx + dy * dy;
+          
+          if (distSq < maxConnectDistSq) {
+            const dist = Math.sqrt(distSq);
+            // Alpha falls off as distance approaches maxConnectDist
+            const lineAlpha = (1 - dist / maxConnectDist) * 0.15;
+            
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(201, 168, 76, ${lineAlpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
 
       for (const p of particles) {
         // Drift and mouse avoidance
@@ -115,7 +162,7 @@ export function AmbientParticles() {
         // Twinkle
         p.twinklePhase += p.twinkleSpeed;
         const currentOpacity = p.opacity + Math.sin(p.twinklePhase) * 0.15;
-        const clampedOpacity = Math.max(0.1, Math.min(0.45, currentOpacity));
+        const clampedOpacity = Math.max(0.08, Math.min(0.45, currentOpacity));
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);

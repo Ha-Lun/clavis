@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { login } from "@/lib/appwrite/auth-actions";
+import { login, loginAsGuest } from "@/lib/appwrite/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -143,6 +143,36 @@ function LoginContent() {
               </Button>
             </motion.div>
           </form>
+
+          {/* Guest Login Divider */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-[11px]">
+              <span className="bg-card px-3 text-muted-foreground/60 font-light uppercase tracking-wider">or</span>
+            </div>
+          </div>
+
+          <motion.div whileTap={{ scale: 0.98 }}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                setError("");
+                setLoading(true);
+                const result = await loginAsGuest();
+                if (result?.error) {
+                  setError(result.error);
+                  setLoading(false);
+                }
+              }}
+              className="w-full h-10 text-[14px] font-medium border-primary/20 hover:bg-primary/10 hover:border-primary/40 rounded-md cursor-pointer transition-colors"
+              disabled={loading}
+            >
+              Try without account
+            </Button>
+          </motion.div>
         </div>
 
         {/* Footer */}
