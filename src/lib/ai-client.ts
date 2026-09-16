@@ -15,7 +15,7 @@ export function createAIClient(modelId: string) {
     });
   }
 
-  if (modelId.startsWith("groq/") || modelId === "openai/gpt-oss-120b" || (!NVIDIA_API_KEY && GROQ_API_KEY)) {
+  if (modelId.startsWith("groq/") || modelId.startsWith("openai/gpt-oss") || modelId.startsWith("llama-") || (!NVIDIA_API_KEY && GROQ_API_KEY)) {
     if (!GROQ_API_KEY) throw new Error("API key is not configured for this provider");
     return new OpenAI({
       apiKey: GROQ_API_KEY,

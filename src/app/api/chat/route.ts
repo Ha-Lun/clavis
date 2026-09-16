@@ -102,8 +102,8 @@ async function callAIWithRetry(
       if (is429) {
         if (model.startsWith("nvidia/") || model.startsWith("meta/")) {
             console.log(`[API /chat] NVIDIA rate limited. Falling back to Groq/Gemini...`);
-            model = "llama-3.3-70b-versatile";
-            aiClient = createAIClient("groq/llama-3.3-70b-versatile");
+            model = "openai/gpt-oss-120b";
+            aiClient = createAIClient("openai/gpt-oss-120b");
             if (attempt < maxRetries) {
                onRetry?.(attempt + 2);
                await new Promise((r) => setTimeout(r, 1000));
@@ -647,10 +647,7 @@ ${userMessageContent}`;
       });
     }
 
-    let apiModelId = finalModelId.replace(/^google\//, "");
-    if (apiModelId === "openai/gpt-oss-120b" || apiModelId.startsWith("groq/")) {
-      apiModelId = "llama-3.3-70b-versatile";
-    }
+    let apiModelId = finalModelId.replace(/^google\//, "").replace(/^groq\//, "");
     if (finalModelId.toLowerCase().includes("qwen") || finalModelId.toLowerCase().includes("reasoning") || finalModelId.toLowerCase().includes("deepseek") || finalModelId.toLowerCase().includes("gpt-oss")) {
       finalSystemPrompt += "\n\nCRITICAL INSTRUCTION: You must ALWAYS provide a final answer outside of your reasoning/thinking process. Never stop generating after the reasoning block without providing the final answer.";
     }

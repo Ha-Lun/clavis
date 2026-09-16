@@ -61,17 +61,17 @@ export function CoursesClient() {
 
   const handleRemoveCourse = async (courseId: string) => {
     try {
+      const updatedCourses = courses.filter(c => c.id !== courseId);
+      saveCourses(updatedCourses);
+
       const response = await fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: courseId })
       });
-      if (!response.ok) {
+      if (!response.ok && response.status !== 404) {
         throw new Error(`Failed to remove course (${response.status})`);
       }
-      
-      const updatedCourses = courses.filter(c => c.id !== courseId);
-      saveCourses(updatedCourses);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Failed to remove course");
     }

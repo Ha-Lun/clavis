@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, Check, Library, Trash2, X } from "lucide-react";
+import { BookOpen, Check, Library, Trash2, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Course } from "./types";
 
@@ -7,12 +7,13 @@ interface CourseListProps {
   courses: Course[];
   selectedCourseId: string;
   onSelect: (courseId: string) => void;
-  onRemove?: (courseId: string) => void;
+  onRemove?: (courseId: string) => void | Promise<void>;
   loading?: boolean;
 }
 
-function CourseCard({ course, selected, onSelect, onRemove }: { course: Course; selected: boolean; onSelect: () => void; onRemove?: () => void }) {
+function CourseCard({ course, selected, onSelect, onRemove }: { course: Course; selected: boolean; onSelect: () => void; onRemove?: () => void | Promise<void> }) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const name = course.name || course.title || course.id;
 
   return (
@@ -35,39 +36,51 @@ function CourseCard({ course, selected, onSelect, onRemove }: { course: Course; 
         </span>
         <div className="flex items-center gap-2">
           {onRemove && (
-            <div 
-              className="flex items-center gap-1 z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isConfirming) {
-                  onRemove();
-                } else {
-                  setIsConfirming(true);
-                }
-              }}
-            >
+            <div className="flex items-center gap-1 z-20">
               {isConfirming ? (
-                <div className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-1 rounded-md transition-colors hover:bg-destructive/20">
-                  <Check className="size-3" />
-                  <span className="text-[10px] font-medium uppercase tracking-wider">Confirm</span>
-                </div>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-1 rounded-md transition-colors hover:bg-destructive/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setIsDeleting(true);
+                    await onRemove();
+                  }}
+                >
+                  {isDeleting ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                  <span className="text-[10px] font-medium uppercase tracking-wider">
+                    {isDeleting ? "Removing..." : "Confirm"}
+                  </span>
+                </button>
               ) : (
-                <div className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
+                <button
+                  type="button"
+                  className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setIsConfirming(true);
+                  }}
+                >
                   <Trash2 className="size-3.5" />
-                </div>
+                </button>
               )}
             </div>
           )}
-          {isConfirming && (
-            <div
-              className="p-1 z-10 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+          {isConfirming && !isDeleting && (
+            <button
+              type="button"
+              className="p-1 z-20 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 setIsConfirming(false);
               }}
             >
               <X className="size-3.5" />
-            </div>
+            </button>
           )}
           {selected && !isConfirming && <Check className="size-4 text-primary" aria-label="Selected" />}
         </div>

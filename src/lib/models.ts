@@ -1,6 +1,9 @@
 export type ModelId =
   | "auto"
   | "openai/gpt-oss-120b"
+  | "openai/gpt-oss-20b"
+  | "llama-3.3-70b-versatile"
+  | "llama-3.1-8b-instant"
   | "meta/muse-glimmer-30b"
   | "nvidia/nemotron-3.5-lightning-30b-a3b"
   | "nvidia/nemotron-3-ultra-550b-a55b"
@@ -24,6 +27,24 @@ export const MODELS: ModelInfo[] = [
     id: "openai/gpt-oss-120b",
     name: "GPT OSS 120B (Groq)",
     shortName: "GPT OSS 120B",
+    supportsTools: true,
+  },
+  {
+    id: "openai/gpt-oss-20b",
+    name: "GPT OSS 20B (Groq)",
+    shortName: "GPT OSS 20B",
+    supportsTools: true,
+  },
+  {
+    id: "llama-3.3-70b-versatile",
+    name: "Llama 3.3 70B (Groq)",
+    shortName: "Llama 3.3 70B",
+    supportsTools: true,
+  },
+  {
+    id: "llama-3.1-8b-instant",
+    name: "Llama 3.1 8B (Groq)",
+    shortName: "Llama 3.1 8B",
     supportsTools: true,
   },
   {

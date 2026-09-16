@@ -54,7 +54,15 @@ export async function DELETE(request: NextRequest) {
     }
     if (!courseId) return NextResponse.json({ error: "Course ID is required" }, { status: 400 });
 
-    const course = await session.databases.getDocument(DATABASE_ID, COLLECTIONS.COURSES, courseId);
+    let course: any;
+    try {
+      course = await session.databases.getDocument(DATABASE_ID, COLLECTIONS.COURSES, courseId);
+    } catch (e: any) {
+      if (e.code === 404) {
+        return NextResponse.json({ success: true, message: "Course already removed" });
+      }
+      throw e;
+    }
     if ((course as any).user_id !== user.$id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
