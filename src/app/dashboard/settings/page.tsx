@@ -108,7 +108,7 @@ export default function SettingsPage() {
         }),
       });
       const data = await res.json();
-      
+
       if (type === "canvas") {
         setCanvasTestResult({ success: data.success, message: data.message });
       } else {
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                 Canvas / Studium URL
               </Label>
               <p className="text-[12px] text-muted-foreground font-light mb-2 leading-relaxed">
-                Open your university portal and copy the base domain URL (e.g. <code>https://studium.uu.se</code>) without any trailing paths.
+                Open your university portal and copy the base domain URL (e.g. <code>https://uppsala.instructure.com</code>) without any trailing paths.
               </p>
               <Input
                 id="settings-canvas-url"
